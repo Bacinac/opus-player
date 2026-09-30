@@ -1,0 +1,18 @@
+[project]
+name = "opus-player"
+version = "0.1.0"
+description = "The daily surface: one frontend, playback chosen by the hardware it is running on"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy[asyncio]>=2.0",
+    "psycopg[binary]",
+    "alembic",
+    "httpx",
+    "pydantic-settings",
+    "segno",
+]
+
+[tool.setuptools]
+packages = ["opus"]

@@ -1,0 +1,9 @@
+Award marks, recoloured to one gold. From Wikimedia:
+
+oscar.svg         "Oscar-free-version.svg" by Asav, CC BY-SA 4.0
+palme_dor.svg     "Palme d'Or gold silhouette.svg" by Carnby, public domain
+golden_lion.svg   "Leone d'Oro gold silhouette.svg" by Carnby, CC BY-SA 4.0
+golden_bear.svg   "Goldener Bär gold silhouette.svg" by Carnby, CC BY-SA 4.0
+bafta.svg         "BAFTA award icon gold silhouette.svg" by Carnby, CC BY-SA 4.0
+emmy.svg          "Emmy gold silhouette.svg" by Carnby, CC BY-SA 4.0
+golden_globe.svg  "Golden Globe icon (gold).svg" by Ddd-www, CC BY-SA 3.0

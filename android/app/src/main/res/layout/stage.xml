@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The picture, and nothing else. Media3's own view only for the surface it
+     manages, and a surface rather than a texture: a SurfaceView is its own
+     layer in the compositor, which is what lets HDR10 leave the box as HDR
+     instead of being flattened into the page's sRGB. Its controls are off —
+     the transport is the page's. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/screen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:surface_type="surface_view"
+        app:use_controller="false"
+        app:show_buffering="never"
+        app:resize_mode="fit" />
+</merge>

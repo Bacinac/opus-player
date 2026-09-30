@@ -1,0 +1,103 @@
+<!doctype html>
+<!--
+  Photographs one after another, for a screen nobody is holding: the Shield's
+  screensaver, and the television asked aloud to show somebody. By default
+  this day through the years, of whoever the profile picked on this box chose
+  (themselves, unless they said otherwise, or several); ?person=ID is one of the family
+  through the years, ?family the family. The years are taken in turns so one busy afternoon
+  cannot hold the screen all night, each photograph named by its year and the
+  people in it.
+
+  A plain page and not a route of the app: the screensaver is its own WebView
+  beside the app's, and the app's page would open a second mailbox for the same
+  box. It shares the cookie jar with the player, so it needs no credential of
+  its own.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050707}
+  /* the whole photograph, never cropped: cover cut off heads and the edges of landscapes */
+  .photo{position:fixed;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;background:#050707;opacity:0;transition:opacity 2.2s ease}
+  .photo.on{opacity:1}
+  .shade{position:fixed;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.08),transparent 55%,rgba(0,0,0,.55))}
+  #clock{position:fixed;right:54px;bottom:42px;color:#eef4f4;font:600 42px/1 system-ui,sans-serif;letter-spacing:.02em;text-shadow:0 2px 12px #000}
+  #when{position:fixed;left:54px;bottom:42px;color:#eef4f4;text-shadow:0 2px 12px #000;font-family:system-ui,sans-serif}
+  #year{font:600 42px/1 system-ui,sans-serif;letter-spacing:.02em}
+  #who{margin-top:10px;font:400 22px/1.2 system-ui,sans-serif;opacity:.85}
+</style>
+</head>
+<body>
+<img id="a" class="photo" alt=""><img id="b" class="photo" alt=""><div class="shade"></div>
+<div id="when"><div id="year"></div><div id="who"></div></div><div id="clock"></div>
+<script>
+  const photos = [document.getElementById('a'), document.getElementById('b')];
+  const asked = new URLSearchParams(location.search);
+  // below this a day is the same few pictures over and over, and the library
+  // is asked to reach for the days around it instead
+  const ENOUGH = 12;
+  // photographs of one year shown before the next year's turn
+  const TURN = 3;
+  const EACH_MS = 20000;
+  let items = [], at = 0, shown = 0, timer;
+
+  function tick() {
+    document.getElementById('clock').textContent = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+  }
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  const shows = (p) => p.kind === 'image' && p.ready && !p.undecodable;
+  function turns(years) {
+    const out = [];
+    for (let round = 0; years.some((y) => y.length > round * TURN); round++)
+      for (const y of years) out.push(...y.slice(round * TURN, (round + 1) * TURN));
+    return out;
+  }
+  function byYear(years) {
+    return turns((years || []).map((y) => shuffle(y.photographs.filter(shows)).map((p) => ({ id: p.id, turn: p.turn, year: y.year, who: p.people.join(', ') }))));
+  }
+  function label(item) {
+    document.getElementById('year').textContent = item.year || '';
+    document.getElementById('who').textContent = item.who || '';
+  }
+  function next() {
+    if (!items.length) return retry();
+    if (at === items.length) return load();
+    const target = photos[1 - shown], old = photos[shown], item = items[at++];
+    target.onload = () => { target.classList.add('on'); old.classList.remove('on'); shown = 1 - shown; label(item); timer = setTimeout(next, EACH_MS); };
+    target.onerror = () => { timer = setTimeout(next, 2500); };
+    target.src = '/api/photos/' + encodeURIComponent(item.id) + '/preview' + (item.turn ? '?turn=' + item.turn : '');
+  }
+  function retry() { clearTimeout(timer); timer = setTimeout(load, 30000); }
+  async function ask(path) {
+    const response = await fetch(path, { cache: 'no-store' });
+    if (!response.ok) throw new Error(response.status);
+    return response.json();
+  }
+  async function theDay() {
+    const chosen = await ask('/api/photos/screensaver');
+    const whose = new URLSearchParams(chosen.household ? { household: 'true' } : {});
+    for (const person of chosen.person || []) whose.append('person', person);
+    const day = await ask('/api/photos/onthisday?least=' + ENOUGH + '&' + whose);
+    const found = byYear(day.years);
+    if (found.length >= ENOUGH) return found;
+    const all = await ask('/api/photos/timeline?limit=120&' + whose);
+    return shuffle((all.photos || []).filter(shows)).map((p) => ({ id: p.id, turn: p.turn, year: p.taken_at ? p.taken_at.slice(0, 4) : '' }));
+  }
+  async function load() {
+    try {
+      if (asked.has('person')) items = byYear((await ask('/api/photos/years?person=' + encodeURIComponent(asked.get('person')))).years);
+      else if (asked.has('family')) items = byYear((await ask('/api/photos/years?family=true')).years);
+      else items = await theDay();
+      at = 0;
+      next();
+    } catch (_) { retry(); }
+  }
+  tick(); setInterval(tick, 30000); load();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_title">Dostupno ažuriranje</string>
+    <string name="update_body">Nova verzija aplikacije spremna je za instalaciju.</string>
+    <string name="update_install">Instaliraj</string>
+    <string name="update_later">Kasnije</string>
+    <string name="update_failed">Ažuriranje nije uspjelo: %1$s</string>
+    <string name="update_channel">Ažuriranja</string>
+</resources>

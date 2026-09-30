@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="failure_retrying">Trying again…</string>
+    <string name="link_unavailable">This link cannot be opened on this device.</string>
+    <string name="given_channel">Sending photographs</string>
+    <string name="given_progress">Sending %1$d of %2$d</string>
+    <string name="given_done">Sent: %1$d · already there: %2$d · failed: %3$d</string>
+    <string name="given_confirm">Send to OPUS</string>
+    <string name="given_count">Photographs and videos to send: %1$d</string>
+    <string name="given_refused">Refused: %1$d</string>
+    <string name="given_rule">OPUS takes only photographs and videos shared by the gallery or another app.</string>
+    <string name="given_nothing">Nothing to send</string>
+    <string name="given_send">Send</string>
+    <string name="webview_outdated">Android System WebView on this device is out of date. Update it from Google Play, then open OPUS again.</string>
+    <string name="home_outside">Outside</string>
+    <string name="home_living">Living room</string>
+    <string name="home_humidity_value">%1$s%%</string>
+    <string name="home_wind_value">%1$s km/h</string>
+    <string name="home_rain_value">%1$s mm</string>
+    <string name="home_temperature">%1$s °C</string>
+    <string name="home_cameras">Cameras</string>
+    <string name="cameras_empty">No cameras are available</string>
+    <string name="cameras_unavailable">The camera view is currently unavailable</string>
+    <string name="cameras_move_before">Move camera earlier</string>
+    <string name="cameras_move_after">Move camera later</string>
+    <string name="cameras_cancel">Cancel</string>
+    <string name="cameras_order_failed">Camera order was not saved</string>
+    <string name="cameras_stream_failed">Live camera picture is unavailable, reconnecting…</string>
+    <string name="cameras_codec_unsupported">This device cannot play the camera format</string>
+    <string name="home_move_before">Move earlier</string>
+    <string name="home_move_after">Move later</string>
+    <string name="home_app_info">App info</string>
+    <string name="home_uninstall">Uninstall</string>
+    <string name="home_unavailable">The app could not be opened.</string>
+    <string name="home_receiver_failed">The receiver did not switch to the television.</string>
+</resources>

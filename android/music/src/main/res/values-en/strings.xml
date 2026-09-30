@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="lib_artists">Artists</string>
+    <string name="lib_continue">Continue</string>
+    <string name="lib_favorites">Favorites</string>
+    <string name="lib_offline">Offline albums</string>
+    <string name="lib_recent">Recent</string>
+    <string name="lib_radio">Radio</string>
+    <plurals name="artist_held">
+        <item quantity="one">%d release</item>
+        <item quantity="other">%d releases</item>
+    </plurals>
+    <string name="setup_intro">Sign in with your OPUS account. The app keeps its own access key; the password is not stored.</string>
+    <string name="setup_username">Username</string>
+    <string name="setup_password">Password</string>
+    <string name="setup_connect">Connect</string>
+    <string name="setup_connected">Connected — available in the car</string>
+    <string name="cache_clear">Clear locally cached music</string>
+    <string name="cache_favorites">Save favorites for offline</string>
+    <string name="cache_albums">Save selected albums for offline</string>
+    <string name="offline_choose">Choose albums for offline</string>
+    <string name="offline_choose_artist">Choose an artist</string>
+    <string name="offline_choose_release">Choose a release: %1$s</string>
+    <string name="offline_selected">Selected offline albums</string>
+    <string name="offline_none_selected">No offline albums selected.</string>
+    <string name="offline_add">Add: %1$s</string>
+    <string name="offline_remove">Remove: %1$s</string>
+    <string name="offline_back">Back to artists</string>
+    <string name="offline_loading_release">Loading release: %1$s</string>
+    <string name="offline_load_failed">Could not load the offline album: %1$s</string>
+    <string name="cache_albums_progress">Saving selected albums: %1$d / %2$d</string>
+    <plurals name="cache_albums_done">
+        <item quantity="one">Saved for offline: %1$d track from selected albums.</item>
+        <item quantity="other">Saved for offline: %1$d tracks from selected albums.</item>
+    </plurals>
+    <string name="cache_albums_failed">Could not save selected albums for offline: %1$s</string>
+    <string name="cache_usage">Stored locally: %1$d MB of %2$d MB</string>
+    <string name="data_saver">Save data: stream music as 96 kb/s Opus</string>
+    <string name="cache_favorites_progress">Saving favorites: %1$d / %2$d</string>
+    <plurals name="cache_favorites_done">
+        <item quantity="one">Saved for offline: %1$d track.</item>
+        <item quantity="other">Saved for offline: %1$d tracks.</item>
+    </plurals>
+    <string name="cache_favorites_failed">Could not save favorites for offline: %1$s</string>
+    <string name="cache_cleared">Locally cached music has been cleared.</string>
+    <string name="cache_clear_failed">Could not clear locally cached music: %1$s</string>
+    <string name="setup_failed">Connecting failed: %1$s</string>
+    <string name="setup_bad_credentials">Wrong username or password</string>
+    <string name="car_not_paired">This phone is not connected to OPUS.</string>
+    <string name="car_refused">OPUS refused access. If the password was changed or access was revoked, connect the phone again.</string>
+    <string name="car_unreachable">OPUS cannot be reached right now.</string>
+    <string name="car_vault_unavailable">This phone\'s access key cannot be read right now. Try again; if it keeps happening, connect the phone again.</string>
+    <string name="car_pair">Connect the phone</string>
+    <string name="update_ready">A new version of OPUS Music is ready to install.</string>
+    <string name="search_failed">The voice request could not be carried out: OPUS Music is not answering.</string>
+</resources>

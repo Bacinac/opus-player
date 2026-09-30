@@ -1,0 +1,18 @@
+/* Where the remote is, said once for the things that say it their own way.
+
+   Everything a remote can land on is ringed. A word in the menu that brightens,
+   grows and underlines has already said it three times, and a face is a circle
+   that a square ring would frame as a box — so a control carrying
+   `data-own-mark` is left unringed, and a face inside one is ringed round its
+   own circle instead. `:focus` as well as `:focus-visible`: every move of a
+   remote is a programmatic focus, and whether that counts as visible is the
+   browser's own heuristic. */
+
+:root [data-own-mark]:is(:focus, :focus-visible) {
+	outline: none;
+}
+
+:root [data-own-mark]:is(:focus, :focus-visible, .chosen) > .portrait {
+	outline: var(--focus-ring);
+	outline-offset: var(--focus-offset, 3px);
+}

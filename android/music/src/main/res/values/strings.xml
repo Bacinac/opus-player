@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">OPUS Music</string>
+    <string name="lib_artists">Izvođači</string>
+    <string name="lib_continue">Nastavi</string>
+    <string name="lib_favorites">Favoriti</string>
+    <string name="lib_offline">Offline albumi</string>
+    <string name="lib_recent">Nedavno</string>
+    <string name="lib_radio">Radio</string>
+    <plurals name="artist_held">
+        <item quantity="one">%d izdanje</item>
+        <item quantity="few">%d izdanja</item>
+        <item quantity="other">%d izdanja</item>
+    </plurals>
+    <string name="setup_intro">Prijavite se svojim OPUS računom. Aplikacija sprema vlastiti pristupni ključ; lozinka se ne pohranjuje.</string>
+    <string name="setup_username">Korisničko ime</string>
+    <string name="setup_password">Lozinka</string>
+    <string name="setup_connect">Poveži</string>
+    <string name="setup_connected">Povezano — dostupno u vozilu</string>
+    <string name="cache_clear">Obriši lokalno spremljenu glazbu</string>
+    <string name="cache_favorites">Spremi favorite za offline</string>
+    <string name="cache_albums">Spremi odabrane albume za offline</string>
+    <string name="offline_choose">Odaberi albume za offline</string>
+    <string name="offline_choose_artist">Odaberite izvođača</string>
+    <string name="offline_choose_release">Odaberite izdanje: %1$s</string>
+    <string name="offline_selected">Odabrani offline albumi</string>
+    <string name="offline_none_selected">Nema odabranih offline albuma.</string>
+    <string name="offline_add">Dodaj: %1$s</string>
+    <string name="offline_remove">Ukloni: %1$s</string>
+    <string name="offline_back">Natrag na izvođače</string>
+    <string name="offline_loading_release">Učitavam izdanje: %1$s</string>
+    <string name="offline_load_failed">Offline album nije moguće učitati: %1$s</string>
+    <string name="cache_albums_progress">Spremam odabrane albume: %1$d / %2$d</string>
+    <plurals name="cache_albums_done">
+        <item quantity="one">Spremljeno za offline: %1$d pjesma iz odabranih albuma.</item>
+        <item quantity="few">Spremljeno za offline: %1$d pjesme iz odabranih albuma.</item>
+        <item quantity="other">Spremljeno za offline: %1$d pjesama iz odabranih albuma.</item>
+    </plurals>
+    <string name="cache_albums_failed">Odabrane albume nije moguće spremiti za offline: %1$s</string>
+    <string name="cache_usage">Lokalno spremljeno: %1$d MB od %2$d MB</string>
+    <string name="data_saver">Štedi podatke: streamaj glazbu kao Opus 96 kb/s</string>
+    <string name="cache_favorites_progress">Spremam favorite: %1$d / %2$d</string>
+    <plurals name="cache_favorites_done">
+        <item quantity="one">Spremljeno za offline: %1$d pjesma.</item>
+        <item quantity="few">Spremljeno za offline: %1$d pjesme.</item>
+        <item quantity="other">Spremljeno za offline: %1$d pjesama.</item>
+    </plurals>
+    <string name="cache_favorites_failed">Favorite nije moguće spremiti za offline: %1$s</string>
+    <string name="cache_cleared">Lokalno spremljena glazba je obrisana.</string>
+    <string name="cache_clear_failed">Lokalno spremljenu glazbu nije moguće obrisati: %1$s</string>
+    <string name="setup_failed">Povezivanje nije uspjelo: %1$s</string>
+    <string name="setup_bad_credentials">Pogrešno korisničko ime ili lozinka</string>
+    <string name="car_not_paired">Telefon nije povezan s OPUS-om.</string>
+    <string name="car_refused">OPUS je odbio pristup. Ako je lozinka promijenjena ili je pristup opozvan, ponovno povežite telefon.</string>
+    <string name="car_unreachable">OPUS trenutačno nije dostupan.</string>
+    <string name="car_vault_unavailable">Pristupni ključ ovog telefona trenutačno nije čitljiv. Pokušajte ponovno; ako se to ponavlja, ponovno povežite telefon.</string>
+    <string name="car_pair">Poveži telefon</string>
+    <string name="update_ready">Nova verzija aplikacije OPUS Music spremna je za instalaciju.</string>
+    <string name="search_failed">Glasovni zahtjev nije moguće izvršiti: OPUS Music se ne odaziva.</string>
+</resources>

@@ -1,0 +1,117 @@
+/* The ground the ten-foot surface stands on, measured off the skin the
+   television in this house actually runs: Arctic: Zephyr - Reloaded, in the
+   arrangement it is set to — menu down the side, rows of posters beside it,
+   the fanart of whatever has the remote behind the lot.
+
+   The box hands the page 960x540 at twice the density, so every number that
+   skin states on its 1920x1080 canvas is halved on the way in. Each one below
+   says what it was there.
+
+   It lives here rather than in the shared brand layer because the other two
+   modules have no television. */
+
+@font-face {
+	font-family: 'Inter';
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url('/fonts/inter-latin.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+		U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+		U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+	font-family: 'Inter';
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url('/fonts/inter-latin-ext.woff2') format('woff2');
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+		U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+		U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* The accent is the only colour on this surface that moves: it is taken from
+   the picture the panel is showing. Registered as a colour so it crossfades
+   instead of jumping between two films; the package's tokens give its value. */
+@property --accent {
+	syntax: '<color>';
+	inherits: true;
+	initial-value: transparent;
+}
+
+html.tv {
+	/* the palette is the package's; the skin adds only the two ends of its text
+	   scale — what has the remote, and a section you are not on */
+	--bright: var(--text);
+	--dim: color-mix(in srgb, var(--muted) 40%, var(--bg));
+	transition: --accent 400ms ease;
+
+	/* The title-safe area a television is designed to: 5 % of each edge, 48 of
+	   the 960 across and 27 of the 540 down. The skin's own 80 of 1920 is 4 %,
+	   and a panel that overscans crops inside that, a focused poster's edge
+	   first. */
+	--tenfoot-pad: 3rem;
+	--tenfoot-safe-y: 1.7rem;
+	--tenfoot-top: 6.75rem; /* PosterPad 216 */
+
+	--rail-w: 13.4rem; /* PosterW 428 — the column the sections keep */
+	/* The skin states 40 and 52 on its own canvas, and this surface takes its
+	   numbers from that skin. These two are the exception: the skin sets them
+	   for a menu of one word per section on a screen with nothing else on it,
+	   and here the same words stand beside a panel of counts. Read across the
+	   room they were shouting. */
+	--menu: var(--fs-l);
+	--menu-on: var(--fs-xl);
+	--menu-row: 2.5rem; /* item height 80, fixed: the label grows, the row does not */
+
+	/* How high the things on this surface stack. It was eight literals between
+	   2 and 500, decided one file at a time, which is how a menu ends up under
+	   the bar it was opened from. Named by what they are, so a new one has to
+	   say where it belongs rather than pick a number that looked free. */
+	--z-ground: -1; /* the fanart, behind everything */
+	--z-head: 5; /* the panel that keeps the top of the screen */
+	--z-rail: 6; /* the menu down the side */
+	--z-bar: 20; /* the transport across the bottom */
+	--z-over: 24; /* a menu opened from the bar, above it */
+	--z-stage: 30; /* a page that has taken the screen */
+	--z-info: 32; /* what else there is to know about that page, over it */
+	--z-watch: 40; /* the picture, above even that */
+	/* the name of the thing on the screen about it: big enough to read across a
+	   room, small enough that everything under it fits without scrolling */
+	--head-poster: clamp(8rem, 30vh, 12rem);
+	--head-title: var(--fs-2xl);
+	--heading-gap: 1rem;
+	/* the name a page about one thing is: 96 of the skin's 1920 */
+	--tenfoot-name: 3rem;
+
+	/* One card, wherever a card is drawn: the head of a film, the record that is
+	   playing, the bar along the bottom. They were three — a masked picture with
+	   one radius, a framed panel with another, a bar with a third — which is
+	   three answers to the question of what a card looks like. */
+	--card-radius: var(--radius-l);
+	--card-line: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+	--card-ground: color-mix(in srgb, var(--bg) 62%, transparent);
+	--card-air: 1rem 1.2rem;
+
+	/* PosterShadow 475x688 around a 428x640 poster: every poster stands on one,
+	   focused or not */
+	--poster-shadow: var(--shadow-l);
+}
+
+/* The skin's own default fontset is MC360, which is not ours to serve. The skin
+   ships Inter as an equal fontset of its own, so that is the one taken. */
+html.tv body {
+	font-family: 'Inter', system-ui, sans-serif;
+	background: var(--bg);
+	color: color-mix(in srgb, var(--text) 85%, var(--bg));
+}
+
+/* The one ring, restated so it stops disagreeing with its own token: the shared
+   base hard-codes a 2px offset where tokens.css says 3. Here, because fixing it
+   in the submodule would move two desks that have not complained. */
+html.tv :focus-visible {
+	outline: var(--focus-ring);
+	outline-offset: var(--focus-offset, 3px);
+}

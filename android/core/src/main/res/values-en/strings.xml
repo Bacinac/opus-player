@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_title">Update available</string>
+    <string name="update_body">A new version of the app is ready to install.</string>
+    <string name="update_install">Install</string>
+    <string name="update_later">Later</string>
+    <string name="update_failed">The update failed: %1$s</string>
+    <string name="update_channel">Updates</string>
+</resources>

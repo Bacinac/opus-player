@@ -1,0 +1,202 @@
+# The project name is set explicitly, and the containers carry the module in
+# their name: all three OPUS modules can share a box.
+name: opus-player
+
+# Docker's default json-file driver has no ceiling, and this box also holds the
+# libraries — a log is the last thing that should be what fills it. Applied to
+# every service by anchor so a new one cannot be added without one.
+x-log: &log
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "3"
+
+services:
+  backend:
+    # what the installation's plugins (opus_core/plugins.py) need is installed
+    # from the directory OPUS_PLUGINS names, and that directory is mounted over
+    # what the image baked, like the code
+    build:
+      context: ./backend
+      additional_contexts:
+        plugins: ${OPUS_PLUGINS:-./plugins}
+    container_name: opus_player_backend
+    logging: *log
+    # The backend needs only the artwork cache writable; original media mounts
+    # are read-only and the database runs under its image-specific user.
+    user: "${OPUS_APP_UID:-1000}:${OPUS_APP_GID:-1000}"
+    # the render node belongs to a group the app user is not in; without it the
+    # node is visible and libva still reports "No VA display found"
+    group_add:
+      - "${OPUS_RENDER_GID:-${OPUS_APP_GID:-1000}}"
+    env_file: .env
+    environment:
+      OPUS_DEV_RELOAD: ${OPUS_DEV_RELOAD:-0}
+      OPUS_DAC_CARD: ${OPUS_DAC_CARD:-none}
+      OPUS_DATABASE_URL: postgresql+psycopg://opus:${POSTGRES_PASSWORD:?set in .env}@postgres:5432/opus
+      # The image deliberately has no fixed app user. Give the configured UID
+      # a writable transient home rather than letting tools try `/.local`.
+      HOME: /tmp
+    ports:
+      - "8098:8098"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8098/api/ping', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: ${OPUS_BACKEND_MEMORY_LIMIT:-3g}
+    pids_limit: ${OPUS_BACKEND_PIDS_LIMIT:-512}
+    read_only: true
+    tmpfs:
+      - /tmp
+    # the transcoder is the GPU or it is nothing: a software fallback would
+    # quietly choke the host that also runs the photo library's ML
+    devices:
+      # the node keeps its own name on both sides: libva finds the card by the
+      # render node's number, so renaming renderD129 to renderD128 on the way in
+      # leaves it looking for a card that is not there
+      - ${OPUS_RENDER_DEVICE:-/dev/null}:${OPUS_RENDER_DEVICE:-/dev/null}
+    volumes:
+      - ./backend:/app:ro
+      - ${OPUS_PLUGINS:-./plugins}:/plugins:ro
+      # Read-only ALSA counters prove data reaches the DAC, not audible sound.
+      - ${OPUS_DAC_PROC:-/proc/asound}:/run/opus-asound:ro
+      # what android/build.sh made, read-only: the server hands it out and has
+      # no business writing to it
+      - ./android/dist:/apk:ro
+      # the same trees under the same names the library uses, so a path it hands
+      # over opens here without translation
+      # Playback and probing only read originals.  A compromised player must
+      # not be able to alter the household libraries.
+      - movies:/movies:ro
+      - television:/television:ro
+      - video:/video:ro
+      - music:/music:ro
+      - photos:/photos:ro
+      # artwork fetched once at the size a screen draws it, so the box never
+      # goes back to the CDN for a face it has already shown
+      - ./volumes/art:/art
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # The DAC hangs off this host by USB, and MPD beside the backend plays into
+  # it. A service of its own so that a deploy of the backend does not cut the
+  # music; the backend is its only client, so no port leaves the network.
+  dac:
+    build: ./dac
+    container_name: opus_player_dac
+    logging: *log
+    environment:
+      OPUS_DAC_CARD: ${OPUS_DAC_CARD:?set in .env — the ALSA id of the DAC, or none}
+    volumes:
+      # the whole directory rather than the card's nodes: a DAC unplugged and
+      # plugged back in comes back as new nodes, which a copy made at start
+      # would never see
+      - ${OPUS_DAC_SOUND:-/dev/null}:/dev/snd
+      - ./volumes/dac:/var/lib/mpd
+    device_cgroup_rules:
+      - "c 116:* rmw"
+    # the output thread asks for realtime scheduling, so the host's other work
+    # does not reach the DAC as a dropout
+    cap_add:
+      - SYS_NICE
+    mem_limit: ${OPUS_DAC_MEMORY_LIMIT:-512m}
+    pids_limit: ${OPUS_DAC_PIDS_LIMIT:-64}
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      target: ${OPUS_UI_TARGET:-prod}
+      args:
+        VITE_OPUS_DOWNLOADS_URL: ${VITE_OPUS_DOWNLOADS_URL:-}
+        VITE_OPUS_LIBRARY_URL: ${VITE_OPUS_LIBRARY_URL:-}
+    image: opus/player-ui:${OPUS_UI_TARGET:-prod}
+    container_name: opus_player_frontend
+    logging: *log
+    environment:
+      OPUS_DEV_HOST: ${OPUS_DEV_HOST:-}
+      OPUS_API_URL: http://backend:8098
+      OPUS_TRUSTED_PROXIES: ${OPUS_TRUSTED_PROXIES:-}
+      VITE_OPUS_DOWNLOADS_URL: ${VITE_OPUS_DOWNLOADS_URL:-}
+      VITE_OPUS_LIBRARY_URL: ${VITE_OPUS_LIBRARY_URL:-}
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/static:/app/static
+      - ./frontend/svelte.config.js:/app/svelte.config.js
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+    ports:
+      - "5283:5173"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: ${OPUS_FRONTEND_MEMORY_LIMIT:-512m}
+    pids_limit: ${OPUS_FRONTEND_PIDS_LIMIT:-128}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:18
+    container_name: opus_player_postgres
+    logging: *log
+    environment:
+      POSTGRES_USER: opus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: opus
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql
+    mem_limit: ${OPUS_DATABASE_MEMORY_LIMIT:-2g}
+    pids_limit: ${OPUS_DATABASE_PIDS_LIMIT:-128}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opus"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # without this the database stays down after a host reboot while backend,
+    # which does restart, spins on "failed to resolve host 'postgres'" forever
+    restart: unless-stopped
+
+# The libraries, mounted under the names the Library's paths already use. They may
+# come from another machine over NFS read-only — the player never writes to
+# them — or be local binds on the media host.
+volumes:
+  movies:
+    driver: local
+    driver_opts:
+      type: ${OPUS_MOVIES_VOLUME_TYPE:-none}
+      o: ${OPUS_MOVIES_VOLUME_OPTS:-bind}
+      device: ${OPUS_MOVIES_DEVICE:-/mnt/docker/opus-player/volumes/movies}
+  television:
+    driver: local
+    driver_opts:
+      type: ${OPUS_TV_VOLUME_TYPE:-none}
+      o: ${OPUS_TV_VOLUME_OPTS:-bind}
+      device: ${OPUS_TV_DEVICE:-/mnt/docker/opus-player/volumes/television}
+  video:
+    driver: local
+    driver_opts:
+      type: ${OPUS_VIDEO_VOLUME_TYPE:-none}
+      o: ${OPUS_VIDEO_VOLUME_OPTS:-bind}
+      device: ${OPUS_VIDEO_DEVICE:-/mnt/docker/opus-player/volumes/video}
+  music:
+    driver: local
+    driver_opts:
+      type: ${OPUS_MUSIC_VOLUME_TYPE:-none}
+      o: ${OPUS_MUSIC_VOLUME_OPTS:-bind}
+      device: ${OPUS_MUSIC_DEVICE:-/mnt/docker/opus-player/volumes/music}
+  photos:
+    driver: local
+    driver_opts:
+      type: ${OPUS_PHOTOS_VOLUME_TYPE:-none}
+      o: ${OPUS_PHOTOS_VOLUME_OPTS:-bind}
+      device: ${OPUS_PHOTOS_DEVICE:-/mnt/docker/opus-player/volumes/photos}

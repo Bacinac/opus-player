@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">OPUS</string>
+    <string name="failure_retrying">Pokušavam ponovno…</string>
+    <string name="link_unavailable">Ovu poveznicu nije moguće otvoriti na ovom uređaju.</string>
+    <string name="given_channel">Slanje fotografija</string>
+    <string name="given_progress">Šaljem %1$d od %2$d</string>
+    <string name="given_done">Poslano: %1$d · već postoji: %2$d · neuspjelo: %3$d</string>
+    <string name="given_confirm">Slanje u OPUS</string>
+    <string name="given_count">Fotografije i videozapisi za slanje: %1$d</string>
+    <string name="given_refused">Odbijeno: %1$d</string>
+    <string name="given_rule">U OPUS se šalju samo fotografije i videozapisi koje dijeli galerija ili druga aplikacija.</string>
+    <string name="given_nothing">Nema ničega za slanje</string>
+    <string name="given_send">Pošalji</string>
+    <string name="webview_outdated">Android System WebView na ovom uređaju je zastario. Ažurirajte ga u trgovini Google Play pa ponovno otvorite OPUS.</string>
+    <string name="home_outside">Vani</string>
+    <string name="home_living">Dnevni boravak</string>
+    <string name="home_humidity_value">%1$s%%</string>
+    <string name="home_wind_value">%1$s km/h</string>
+    <string name="home_rain_value">%1$s mm</string>
+    <string name="home_temperature">%1$s °C</string>
+    <string name="home_cameras">Kamere</string>
+    <string name="cameras_empty">Nema dostupnih kamera</string>
+    <string name="cameras_unavailable">Prikaz kamera trenutačno nije dostupan</string>
+    <string name="cameras_move_before">Pomakni kameru prije</string>
+    <string name="cameras_move_after">Pomakni kameru poslije</string>
+    <string name="cameras_cancel">Odustani</string>
+    <string name="cameras_order_failed">Redoslijed kamera nije spremljen</string>
+    <string name="cameras_stream_failed">Živa slika kamere nije dostupna, ponovno povezivanje…</string>
+    <string name="cameras_codec_unsupported">Ovaj uređaj ne može reproducirati format kamere</string>
+    <string name="home_move_before">Pomakni prije</string>
+    <string name="home_move_after">Pomakni poslije</string>
+    <string name="home_app_info">Informacije o aplikaciji</string>
+    <string name="home_uninstall">Deinstaliraj</string>
+    <string name="home_unavailable">Aplikaciju nije moguće otvoriti.</string>
+    <string name="home_receiver_failed">Pojačalo se nije prebacilo na televizor.</string>
+</resources>

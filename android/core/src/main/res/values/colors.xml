@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="opus_bg">#0e1213</color>
+    <color name="opus_ground">#181818</color>
+    <color name="opus_brand">#0d6d68</color>
+    <color name="opus_accent">#35b3ad</color>
+    <color name="opus_letter">#4aada7</color>
+    <color name="opus_soft">#8ce3dd</color>
+    <color name="opus_text">#e9eeee</color>
+    <color name="opus_text_dim">#8aa0a6</color>
+</resources>

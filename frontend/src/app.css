@@ -1,0 +1,274 @@
+/* OPUS · Player paints on the shared brand layer; anything a module could
+   change on its own would be drift. Rules only one page uses stay in that page. */
+
+@import './lib/kit/tokens.css';
+@import './lib/opus/tokens.css';
+@import './lib/kit/base.css';
+/* and what the ten-foot surface changes about all of it */
+@import '$lib/tv/tenfoot.css';
+@import '$lib/tvui/marks.css';
+
+/* A scrollbar is a thing you drag, and nothing on a television drags. It goes,
+   and what says there is more is the row half in view below. The gliding is the
+   same reason: a screen that jumps between rows reads as a screen that stuttered.
+
+   Everything, not just the page. The page was the only thing that scrolled when
+   this was written; now a shelf, a stage and a list of songs each keep their own
+   box so the head above them can stay put, and every one of those boxes drew the
+   bar this rule exists to be rid of — sideways ones too. */
+html.tv,
+html.tv body,
+html.tv * {
+	scrollbar-width: none;
+}
+
+/* There is no sideways on a remote: anything that widens the page is a bug, and
+   the page must not offer to scroll into it. On the root only — the same
+   declaration on body would make body a scroll container of its own, and every
+   sticky thing inside it would stick to a box that never scrolls. */
+html.tv {
+	overflow-x: hidden;
+}
+
+html.tv *::-webkit-scrollbar,
+html.tv body::-webkit-scrollbar {
+	display: none;
+}
+
+html.tv {
+	scroll-behavior: smooth;
+	/* What a row must clear to be moved to, MEASURED rather than guessed. It was
+	   three literals — one for no head, one for a head, one for an opened one —
+	   which is three numbers that had to be kept in step by hand with a panel
+	   whose height is decided by its own contents. PageHead publishes what it
+	   actually is; the fallback is what a page with no head needs, which is only
+	   the air above the first row. */
+	scroll-padding-block: calc(var(--page-head, 2rem) + 1.5rem) var(--tv-bar-h, 3rem);
+}
+
+/* a page with no panel at the top has to make its own air, since the frame
+   gives none: the panel starts flush against the top of the screen */
+html.tv:not(.has-hero) main {
+	padding-top: 2rem;
+}
+
+/* The one that cannot be measured: opened, the head is unmounted entirely and
+   the thing drawn in its place is somebody else's, so there is nothing
+   publishing a height. It keeps its literal until that screen is a page of its
+   own rather than a panel over this one. */
+html.tv.hero-open {
+	scroll-padding-block: 28rem 3rem;
+}
+
+/* Room for the bar that lies across the bottom while something is playing.
+   Reserved on the page rather than taken from the bar, because the bar comes
+   and goes and a shelf that reflowed each time a record ended would be a shelf
+   that moved on its own — and taken from the bar's own measure, so the two
+   cannot disagree about how tall it is. */
+html.tv.playing main {
+	padding-bottom: calc(var(--tv-bar-h, 3rem) + 1.5rem);
+}
+
+html.hero-open {
+	scroll-padding-block: 22rem 2rem;
+}
+
+html.has-hero {
+	scroll-padding-block: 13rem 2rem;
+}
+
+/* The head's line about what the ring is on keeps its room whether the ring is
+   on a poster or not, or the page under it moves on every step of a row. One
+   line: on a television it is the name and the facts, and everything longer
+   is behind INFO. It reserved five for a description it no longer shows, which
+   was a band of nothing between the head and the first row. */
+html.tv .head .under {
+	-webkit-line-clamp: 1;
+	line-clamp: 1;
+	min-height: 1.4em;
+}
+
+/* The viewer's foot, folded to one line on a television. Stacked it was three
+   rows of chrome under the photograph — a fifth of the screen describing the
+   picture instead of showing it. */
+html.tv .shade .foot {
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: baseline;
+	gap: 0.2rem 1.2rem;
+	padding-bottom: 0.4rem;
+}
+html.tv .shade .foot p {
+	margin: 0;
+}
+html.tv .shade .when {
+	font-size: var(--fs-s);
+	color: var(--muted);
+}
+
+/* The head is a caption over the picture, not a box in front of it. It painted
+   its own opaque ground — over the section's fanart that is the whole point of
+   the surface — and doubled the picture besides, drawing its own copy of the
+   backdrop inside the panel while the Ground already holds it behind the page. */
+html.tv .head {
+	background: none;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+/* What the glass was for stays; the pane it was in goes. A panel of frosted
+   glass is a card whichever way it is tinted — it began at the menu, ended in
+   mid-screen, and the two edges were the only straight lines on a surface whose
+   whole point is that the words lie on the picture. What is left is a fade: the
+   full width of the screen, darkest under the counts, gone by the time the
+   description ends, so the shelf that scrolls under the caption is dimmed where
+   there is something to read and untouched where there is not. */
+html.tv .head::before {
+	content: '';
+	position: absolute;
+	/* past the column on one side and the edge on the other: a caption that
+	   stops where its text column stops is the card again */
+	inset: 0 -50vw;
+	z-index: -1;
+	background: linear-gradient(
+		to bottom,
+		color-mix(in srgb, var(--bg) 72%, transparent) 0%,
+		color-mix(in srgb, var(--bg) 40%, transparent) 55%,
+		transparent 100%
+	);
+}
+html.tv .head .behind,
+html.tv .head .scrim {
+	display: none;
+}
+
+/* The screen about one thing, ten feet away.
+ *
+ * It was a card: a hairline, rounded corners, a ground of its own and a second,
+ * darker crop of the film's picture inside it — standing on an otherwise empty
+ * page. The layouts this surface is measured off have no cards at all; the
+ * picture is the screen and the words lie on it. The picture belongs to the
+ * stage now, whole and behind everything, so the head keeps only the words. */
+html.tv .sheet header,
+html.tv .screen > header ,
+html.tv .screen > .named > header {
+	--card-ground: transparent;
+	--card-line: none;
+	--card-radius: 0;
+	--card-air: 0;
+	overflow: visible;
+}
+/* the whole of what it is about is behind INFO, so the head does not offer a
+   second way to it */
+html.tv .sheet header .more {
+	display: none;
+}
+html.tv .sheet header .backdrop,
+html.tv .screen > header .backdrop ,
+html.tv .screen > .named > header .backdrop {
+	display: none;
+}
+/* the head of a film carries the same class as the head of a page, and what
+   stands above is the page's */
+html.tv .sheet header .head,
+html.tv .screen > header .head ,
+html.tv .screen > .named > header .head {
+	background: none;
+}
+html.tv .sheet header .head::before,
+html.tv .screen > header .head::before ,
+html.tv .screen > .named > header .head::before {
+	content: none;
+}
+/* The poster is what the eye lands on, and the frame it stood in was taking the
+   room it could have had. */
+html.tv .sheet,
+html.tv .screen {
+	--head-poster: clamp(9rem, 34vh, 14rem);
+}
+/* However much there is to say about a film, a sofa is where it is read before
+   anybody decides to watch it. The clamp that gives two lines is answering
+   "is this window short?", and every television answers yes. */
+html.tv .sheet header .overview,
+html.tv .screen > header .overview ,
+html.tv .screen > .named > header .overview {
+	-webkit-line-clamp: 5;
+	line-clamp: 5;
+}
+
+/* A row that holds more than the screen shows says so on the side that has
+   more. The remote already walks past the edge — what was missing is anything
+   telling the eye there is an edge to walk past, so the seventh face stood
+   flush against it and read as the last one there is. A row that fits is not
+   dimmed at all. */
+[data-more] {
+	--fade: 2.5rem;
+}
+[data-more='after'] {
+	-webkit-mask-image: linear-gradient(to right, black calc(100% - var(--fade)), transparent);
+	mask-image: linear-gradient(to right, black calc(100% - var(--fade)), transparent);
+}
+[data-more='before'] {
+	-webkit-mask-image: linear-gradient(to left, black calc(100% - var(--fade)), transparent);
+	mask-image: linear-gradient(to left, black calc(100% - var(--fade)), transparent);
+}
+[data-more='both'] {
+	-webkit-mask-image: linear-gradient(
+		to right,
+		transparent,
+		black var(--fade),
+		black calc(100% - var(--fade)),
+		transparent
+	);
+	mask-image: linear-gradient(
+		to right,
+		transparent,
+		black var(--fade),
+		black calc(100% - var(--fade)),
+		transparent
+	);
+}
+
+/* A stage is a head and a list: the head keeps its whole height and the list
+   takes what is left. A record's songs are that list as much as a series'
+   seasons are, and the sleeve that fills the screen while music plays draws the
+   same component without being a stage — so this is said of the stage. */
+html.tv .sheet .panel > header {
+	flex: none;
+}
+html.tv .sheet .turntable {
+	flex: 1;
+	min-height: 0;
+	margin-top: 1rem;
+}
+
+/* A ten-foot page is a head and something to walk: the head stays where it is,
+   and what is walked moves under nothing. It scrolled under the head instead —
+   and the head is a fade rather than a panel, so the description of the film
+   the ring was on was written across a row of posters and neither could be
+   read.
+
+   Laid in the frame's own terms: the menu keeps its column, the surface keeps
+   its air, the bar along the bottom keeps its room. Fixed, so nothing inside
+   can make the document scroll — subtracting what is above it instead left
+   eight pixels over, and eight pixels of document is a page that scrolls its
+   own head away. */
+html.tv .screen {
+	position: fixed;
+	top: var(--shell-main-top, 1.5rem);
+	right: var(--tenfoot-pad, 3rem);
+	bottom: max(calc(var(--tv-bar-h, 0px) + 0.5rem), var(--tenfoot-safe-y, 1.7rem));
+	left: calc(var(--rail-w, 11rem) + var(--tenfoot-pad, 3rem));
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+html.tv .screen > .walk {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	/* room for the ring, which is drawn outside the poster it is around */
+	padding: 0.4rem 0.5rem 1.5rem;
+	margin: 0 -0.5rem;
+}
