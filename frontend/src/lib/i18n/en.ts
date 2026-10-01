@@ -5,7 +5,7 @@ export const en = {
 	'about.tagline': 'The everyday surface: one frontend, with playback chosen by the device it runs on.',
 	'about.what': 'On the television it is the whole house: films, series, music, radio and the family photographs, driven by the remote. On a phone it is the same in a pocket, and it sends a film, a song or a photograph to the television or the DAC in the room. It remembers how far each person got and skips the intro and the end credits. Every member of the household has a profile of their own, and a guest sees only films, series and music.',
 	'about.why': 'Playback is chosen by the device, not the person: the television plays through its own engine with hardware decoding, a browser through what it knows itself, and the DAC is given the original sound, DSD included. The same screen works as an app on a phone and as a television on the wall because it is one frontend, not three apps.',
-	'demo.banner': 'Public demo with synthetic content. Choose a film, music or photos; changes disappear on refresh.',
+	'demo.banner': 'Public demo with an invented household; changes disappear on reload. Films: Blender open movies (CC BY) · photographs: Wikimedia Commons (CC0) · authors and licences',
 	'find.trending': 'Trending',
 	'find.awards': 'Award winners',
 	'find.genres': 'Genres',

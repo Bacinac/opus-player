@@ -40,6 +40,7 @@
 
 	let { children } = $props();
 	const demo = import.meta.env.VITE_OPUS_DEMO === '1';
+	let noticesHeight = $state(0);
 
 	let checked = 0;
 
@@ -223,7 +224,11 @@
 	</div>
 	<Toasts />
 {:else if me.open}
-	<div class="surface-{surface.current}" class:deep={where.level === 2}>
+	<div
+		class="surface-{surface.current}"
+		class:deep={where.level === 2}
+		style:--shell-notices-h="{noticesHeight}px"
+	>
 		<!-- On a television the sections go down the side, so the frame's own row of
 		     words is not there to be walked through on the way to the shelf. -->
 		<!-- who is watching is not a place in the rail: it is one of the things
@@ -247,7 +252,8 @@
 			backLabel={t('common.back')}
 			pathname={page.url.pathname}
 			modules={surface.isTv ? [] : MODULES}
-			alerts={demo ? [{ key: 'demo', message: t('demo.banner'), tone: 'quiet' as const }] : []}
+			alerts={demo ? [{ key: 'demo', message: t('demo.banner'), tone: 'quiet' as const, href: '/demo-credits.html' }] : []}
+			bind:noticesHeight
 			owner={me.admin}
 			account={surface.isTv || !watching.profile
 				? undefined

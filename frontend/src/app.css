@@ -255,7 +255,7 @@ html.tv .sheet .turntable {
    own head away. */
 html.tv .screen {
 	position: fixed;
-	top: var(--shell-main-top, 1.5rem);
+	top: calc(var(--shell-main-top, 1.5rem) + var(--shell-notices-h, 0px));
 	right: var(--tenfoot-pad, 3rem);
 	bottom: max(calc(var(--tv-bar-h, 0px) + 0.5rem), var(--tenfoot-safe-y, 1.7rem));
 	left: calc(var(--rail-w, 11rem) + var(--tenfoot-pad, 3rem));

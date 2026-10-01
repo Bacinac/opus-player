@@ -5,7 +5,7 @@ export const hr = {
 	'about.tagline': 'Svakodnevna površina: jedan frontend, a reprodukciju bira uređaj na kojem radi.',
 	'about.what': 'Na televizoru je cijela kuća: filmovi, serije, glazba, radio i obiteljske fotografije, vođeni daljinskim upravljačem. Na mobitelu je isto u džepu, a film, pjesmu ili fotografiju šalje na televizor ili DAC u sobi. Pamti dokle je tko stigao i preskače uvod i odjavnu špicu. Svaki ukućanin ima vlastiti profil, a gost vidi samo filmove, serije i glazbu.',
 	'about.why': 'Reprodukciju ne bira korisnik nego uređaj: televizor pušta kroz vlastiti pogon s hardverskim dekodiranjem, preglednik kroz ono što sam zna, a DAC dobiva izvorni zvuk, i DSD. Isti ekran radi kao aplikacija na mobitelu i kao televizor na zidu jer je to jedan frontend, a ne tri aplikacije.',
-	'demo.banner': 'Javni demo sa sintetičkim sadržajem. Odaberite film, glazbu ili fotografije; promjene se brišu osvježavanjem.',
+	'demo.banner': 'Javni demo s izmišljenim kućanstvom; promjene nestaju osvježavanjem. Filmovi: Blenderovi otvoreni filmovi (CC BY) · fotografije: Wikimedia Commons (CC0) · autori i licence',
 	'find.trending': 'U trendu',
 	'find.awards': 'Nagrađeno',
 	'find.genres': 'Žanrovi',
