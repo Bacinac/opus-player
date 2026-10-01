@@ -12,6 +12,29 @@ own address and its own release; they share the sign-in, the look and the words.
 
 **Try it:** [demo-opus.boskovic.biz](https://demo-opus.boskovic.biz), the real interface with a made-up household inside.
 
+<p align="center"><img src="docs/screenshots/tour.webp" alt="OPUS Player in the demo: home, music, people and the television" width="100%"></p>
+
+<details>
+<summary>More screenshots</summary>
+
+**Home:** what the household is in the middle of, then the films, series and records.
+
+![Home](docs/screenshots/home.webp)
+
+**Music:** where you left off, the artists played most and the songs you keep.
+
+![Music](docs/screenshots/music.webp)
+
+**Photos:** the family's people, recognised across every photograph.
+
+![Photos](docs/screenshots/photos.webp)
+
+**Television:** the same shelves at ten feet, walked with the remote.
+
+![Television](docs/screenshots/tv.webp)
+
+</details>
+
 ## What it does
 
 On the television it is the whole house: films, series, music, radio and the
