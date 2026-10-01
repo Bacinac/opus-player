@@ -322,6 +322,18 @@
 		   has to be legible, which is what keeps it a step above the desk's. */
 		--tag-font: var(--fs-s);
 	}
+	/* The notices stand in the page's column, over the screen that starts below
+	   them, rather than centred across the menu's mark. */
+	.surface-tv :global(.bare .notices) {
+		position: fixed;
+		top: var(--shell-main-top, 1.5rem);
+		left: calc(var(--rail-w, 11rem) + var(--tenfoot-pad, 3rem));
+		right: var(--tenfoot-pad, 3rem);
+		z-index: 6;
+	}
+	.surface-tv :global(.bare .alert) {
+		margin: 0;
+	}
 	/* three rem of air under the last row is a measure for a desk, where the
 	   window ends where the page ends. A television's does not, and that air was
 	   the whole of what a screen scrolled to reach. */
