@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import biz.boskovic.opus.core.OpusHttp
+import biz.boskovic.opus.core.fitSystemBars
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -37,6 +38,7 @@ class OfflineActivity : ComponentActivity() {
             addView(entries)
         }
         setContentView(ScrollView(this).apply { addView(body) })
+        fitSystemBars()
         showArtists()
     }
 

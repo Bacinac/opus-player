@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import biz.boskovic.opus.core.R as CoreR
 import biz.boskovic.opus.core.Updater
+import biz.boskovic.opus.core.fitSystemBars
 import java.io.IOException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +43,7 @@ class SetupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_setup)
+        fitSystemBars()
         val username = findViewById<EditText>(R.id.username)
         val password = findViewById<EditText>(R.id.password)
         val connect = findViewById<Button>(R.id.connect)

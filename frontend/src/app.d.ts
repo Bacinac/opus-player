@@ -27,6 +27,11 @@ declare global {
 			quit?(): void;
 			/** which build of the wrapper this is. Older wrappers do not answer. */
 			version?(): number;
+			saveFile(name: string, type: string, size: number): string;
+			fileState(id: string): string;
+			writeFile(id: string, at: number, bytes: string): number;
+			finishFile(id: string): boolean;
+			cancelFile(id: string): void;
 			engine(): string;
 			probe(): string;
 			/** what the picture goes into, as that device names itself over

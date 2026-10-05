@@ -28,6 +28,8 @@ afterEach(async () => {
 async function open(initial: Card) {
 	surface.current = 'tv';
 	window.opusTv = {
+		saveFile: vi.fn(() => ''), fileState: vi.fn(() => '{"state":"cancelled"}'),
+		writeFile: vi.fn(() => -1), finishFile: vi.fn(() => false), cancelFile: vi.fn(),
 		engine: () => 'media3', probe: () => '{}', plugged: () => '', canVideo: () => true,
 		play: vi.fn(), toggle: vi.fn(), seek: vi.fn(), stop: vi.fn(), captionsUp: vi.fn(),
 		chooseAudio: vi.fn(), chooseText: vi.fn(),

@@ -20,6 +20,7 @@ import android.os.Bundle
 import android.os.Process
 import android.os.SystemClock
 import android.provider.Settings
+import android.provider.DocumentsContract
 import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -54,8 +55,10 @@ import biz.boskovic.opus.core.R as CoreR
 import biz.boskovic.opus.core.CrashReporter
 import biz.boskovic.opus.core.Opus
 import biz.boskovic.opus.core.Updater
+import biz.boskovic.opus.core.fitSystemBars
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -202,6 +205,86 @@ class PlayerActivity : ComponentActivity() {
     }
 
     private val fileChoice = FileChoice<Array<Uri>>()
+    internal val fileExport = FileExport()
+    private val exportWorker = Executors.newSingleThreadExecutor()
+    @Volatile private var exportPicking: String? = null
+    private val exportPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val id = exportPicking
+        exportPicking = null
+        val uri = result.data?.data?.takeIf { result.resultCode == RESULT_OK }
+        if (id != null) exportWorker.execute {
+            try {
+                if (uri == null) {
+                    fileExport.cancel(id)
+                } else {
+                    require(uri.scheme == "content" &&
+                        checkUriPermission(uri, Process.myPid(), Process.myUid(), Intent.FLAG_GRANT_WRITE_URI_PERMISSION) ==
+                        PackageManager.PERMISSION_GRANTED) { "the file provider returned an unwritable URI" }
+                    val discard = {
+                        check(DocumentsContract.deleteDocument(contentResolver, uri)) { "the unfinished file could not be removed" }
+                    }
+                    if (fileExport.status(id).state != "waiting") {
+                        discard()
+                    } else {
+                        try {
+                            val output = contentResolver.openOutputStream(uri, "w")
+                                ?: throw IOException("the file provider returned no output stream")
+                            fileExport.accept(id, output, discard)
+                        } catch (failure: Exception) {
+                            try { discard() } catch (cleanup: Exception) { failure.addSuppressed(cleanup) }
+                            throw failure
+                        }
+                    }
+                }
+            } catch (failure: Exception) {
+                Log.e(TAG, "could not create the export file", failure)
+                fileExport.fail(id, failure.message ?: "the file could not be created")
+            }
+        }
+    }
+
+    internal fun saveFile(name: String, type: String, size: Long): String {
+        require(name.isNotBlank() && name.length <= 240 && name.none { it == '/' || it == '\\' || it.isISOControl() }) {
+            "the export filename is invalid"
+        }
+        require(type.matches(Regex("[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+"))) { "the export MIME type is invalid" }
+        check(exportPicking == null) { "the file provider is already open" }
+        val id = fileExport.begin(size)
+        exportPicking = id
+        runOnUiThread {
+            try {
+                check(!isFinishing && !isDestroyed && Opus.ours(web.url.orEmpty())) { "the OPUS page is no longer open" }
+                exportPicker.launch(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    this.type = type
+                    putExtra(Intent.EXTRA_TITLE, name)
+                })
+            } catch (failure: RuntimeException) {
+                exportPicking = null
+                fileExport.fail(id, failure.message ?: "the file provider could not be opened")
+            }
+        }
+        return id
+    }
+
+    internal fun writeFile(id: String, at: Long, bytes: String): Long =
+        exportWorker.submit<Long> { fileExport.write(id, at, bytes) }.get()
+
+    internal fun finishFile(id: String): Boolean = exportWorker.submit<Boolean> {
+        fileExport.finish(id)
+        true
+    }.get()
+
+    internal fun cancelFile(id: String? = null) {
+        val active = id ?: fileExport.currentId()
+        exportWorker.execute {
+            val before = active?.let(fileExport::status)
+            fileExport.cancel(active)
+            val after = active?.let(fileExport::status)
+            if (before?.state != "failed" && after?.state == "failed") Log.e(TAG, "could not cancel the export: ${after.detail}")
+        }
+    }
+
     private val files = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val chosen = WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
         val safe = chosen?.takeIf { uris ->
@@ -268,6 +351,7 @@ class PlayerActivity : ComponentActivity() {
     private inner class Client : WebViewClient() {
         override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
             fileChoice.cancel()
+            cancelFile()
             if (Opus.ours(url)) failed = false
             engine.orphaned()
         }
@@ -315,6 +399,7 @@ class PlayerActivity : ComponentActivity() {
          *  was showing it. */
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
             fileChoice.cancel()
+            cancelFile()
             Log.e(TAG, "page renderer gone (crashed: ${detail.didCrash()}); loading the page again")
             engine.orphaned()
             customView?.let { root.removeView(it) }
@@ -381,6 +466,8 @@ class PlayerActivity : ComponentActivity() {
 
         setContentView(R.layout.stage)
         root = findViewById(android.R.id.content)
+        exportPicking = savedInstanceState?.getString("exportPicking")
+        if (!isTelevision()) fitSystemBars()
         engine = Engine(this, findViewById(R.id.screen))
         plant()
         root.setOnKeyListener { _, _, _ -> quiet }
@@ -586,6 +673,8 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onDestroy() {
         fileChoice.cancel()
+        cancelFile()
+        exportWorker.shutdown()
         network.unregisterNetworkCallback(onNetwork)
         web.removeCallbacks(retry)
         hearing.release()
@@ -598,6 +687,7 @@ class PlayerActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         web.saveState(outState)
+        outState.putString("exportPicking", exportPicking)
     }
 
     private fun page(message: String, vararg notes: String): String {

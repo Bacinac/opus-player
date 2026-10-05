@@ -10,6 +10,7 @@
 	import { ArmedButton, Button, Card, Dialog, Field, Icon, json, Progress, request } from '$lib/kit';
 	import { formatBytes, formatDate, formatNumber, t } from '$lib/i18n';
 	import { available, b64, recoveryCode } from '$lib/ask/crypto';
+	import { saveBlob } from '$lib/ask/save';
 	import { backup } from '$lib/keep/backup.svelte';
 	import { answered, vault, type Item } from '$lib/keep/vault.svelte';
 	import Wall from '$lib/tvui/Wall.svelte';
@@ -148,13 +149,7 @@
 
 	const save = (item: Item) =>
 		guard(async () => {
-			const blob = await vault.whole(item);
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement('a');
-			link.href = url;
-			link.download = item.told.name;
-			link.click();
-			URL.revokeObjectURL(url);
+			await saveBlob(await vault.whole(item), item.told.name);
 		});
 
 	const drop = (item: Item) =>

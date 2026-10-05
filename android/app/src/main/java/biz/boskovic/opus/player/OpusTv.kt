@@ -9,6 +9,7 @@ import biz.boskovic.opus.core.Opus
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONArray
 import org.json.JSONException
+import org.json.JSONObject
 
 /** What the page can ask of the box it is running on.
  *
@@ -75,6 +76,43 @@ class OpusTv(private val host: PlayerActivity, private val engine: Engine) {
     fun version(key: String): Long {
         admit(key)
         return Opus.versionCode(host)
+    }
+
+    @JavascriptInterface
+    fun saveFile(key: String, name: String, type: String, size: Long): String {
+        admit(key)
+        return host.saveFile(name, type, size)
+    }
+
+    @JavascriptInterface
+    fun fileState(key: String, id: String): String {
+        admit(key)
+        val status = host.fileExport.status(id)
+        return JSONObject().put("state", status.state).put("at", status.at).put("detail", status.detail).toString()
+    }
+
+    @JavascriptInterface
+    fun writeFile(key: String, id: String, at: Long, bytes: String): Long {
+        admit(key)
+        return try { host.writeFile(id, at, bytes) } catch (failure: Exception) {
+            Log.e(TAG, "could not write the export file", failure)
+            -1
+        }
+    }
+
+    @JavascriptInterface
+    fun finishFile(key: String, id: String): Boolean {
+        admit(key)
+        return try { host.finishFile(id) } catch (failure: Exception) {
+            Log.e(TAG, "could not finish the export file", failure)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun cancelFile(key: String, id: String) {
+        admit(key)
+        host.cancelFile(id)
     }
 
     @JavascriptInterface
