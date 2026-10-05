@@ -509,6 +509,9 @@ class PlayerActivity : ComponentActivity() {
             web.url?.let(Opus::ours) != true
         ) {
             web.post(retry)
+        } else {
+            // Restored history must load with this activity's new bridge key.
+            web.reload()
         }
 
         // A recreated activity is handed its original intent again, and a share
