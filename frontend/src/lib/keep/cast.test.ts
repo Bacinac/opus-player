@@ -3,6 +3,7 @@ import { cast } from './cast.svelte';
 import { film, type FilmOnTv } from './film.svelte';
 import { queue, type QueueTrack } from './queue.svelte';
 import { shown } from './tvPhoto.svelte';
+import { surface } from './surface.svelte';
 
 const track = (id: number): QueueTrack => ({
 	id,
@@ -27,7 +28,53 @@ afterEach(() => {
 	queue.clear();
 	film.current = null;
 	shown.close();
+	surface.current = 'desktop';
+	cast.active = 'browser';
+	queue.autocast = null;
+	vi.restoreAllMocks();
+	vi.unstubAllGlobals();
 	delete (globalThis as { window?: unknown }).window;
+});
+
+test.each(['play', 'pause', 'play_pause'])('native %s reaches the engine and survives its next state report', (command) => {
+	let playing = command === 'play' ? false : true;
+	const engine = { engine: () => true, state: () => JSON.stringify({ playing }),
+		toggle: vi.fn(() => { playing = !playing; }) };
+	(globalThis as { window?: unknown }).window = { opusTv: engine };
+	surface.current = 'tv';
+	queue.play([track(1)]);
+	cast.obey(command);
+	expect(engine.toggle).toHaveBeenCalledOnce();
+	expect(queue.playing).toBe(command === 'play');
+	expect(JSON.parse(engine.state()).playing).toBe(queue.playing);
+});
+
+test.each(['play', 'pause'])('native %s is idempotent against engine state', (command) => {
+	const engine = { engine: () => true, state: () => JSON.stringify({ playing: command === 'play' }), toggle: vi.fn() };
+	(globalThis as { window?: unknown }).window = { opusTv: engine };
+	surface.current = 'tv';
+	queue.play([track(1)]);
+	cast.obey(command);
+	expect(engine.toggle).not.toHaveBeenCalled();
+});
+
+test.each(['output', 'queue', 'track', 'stop'])('a deferred cast poll cannot overwrite a new %s', async (change) => {
+	let answer: (value: Response) => void = () => {};
+	vi.stubGlobal('fetch', () => new Promise<Response>((resolve) => { answer = resolve; }));
+	queue.play([track(1), track(2)]);
+	cast.active = 'stereo';
+	cast.position = 3;
+	const polling = (cast as unknown as { poll(): Promise<void> }).poll();
+	if (change === 'output') cast.active = 'browser';
+	else if (change === 'queue') queue.play([track(9)]);
+	else if (change === 'track') queue.jump(1);
+	else queue.clear();
+	answer(new Response(JSON.stringify({ transport: 'playing', title: 'stale station',
+		position: 90, duration: 200, source: 'radio', index: 0 }),
+		{ headers: { 'Content-Type': 'application/json' } }));
+	await polling;
+	expect(cast.position).toBe(3);
+	expect(queue.current?.id ?? null).toBe(change === 'queue' ? 9 : change === 'track' ? 2 : change === 'stop' ? null : 1);
 });
 
 describe('stopping', () => {

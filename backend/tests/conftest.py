@@ -1,6 +1,8 @@
 import asyncio
 import os
 
+TEST_DATABASE_URL = os.environ.get("OPUS_DATABASE_URL")
+
 os.environ.update({
     "OPUS_SESSION_KEY": "test-session-key-long-enough-to-sign-with",
     "OPUS_LIBRARY_URL": "http://library.invalid:8095",

@@ -11,6 +11,7 @@ type Reservation = {
 	chunk: number;
 	keyed: string;
 	meta: string;
+	thumb: boolean;
 };
 
 const reply = (body: unknown) =>
@@ -32,6 +33,62 @@ describe('vault backup transport', () => {
 		Reflect.deleteProperty(vault, 'mark');
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
+	});
+
+	test('a failed thumbnail is retried without sending the completed original again', async () => {
+		const raw = crypto.getRandomValues(new Uint8Array(32));
+		const [key, mark] = await Promise.all([fromBytes(raw), markKey(raw)]);
+		Object.defineProperties(vault, {
+			key: { configurable: true, get: () => key }, mark: { configurable: true, get: () => mark }
+		});
+		vi.spyOn(vault, 'read').mockResolvedValue();
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.stubGlobal('createImageBitmap', async () => ({ width: 10, height: 10, close() {} }));
+		vi.stubGlobal('HTMLVideoElement', class {});
+		vi.stubGlobal('document', { createElement: () => ({ width: 0, height: 0,
+			getContext: () => ({ drawImage() {} }), toBlob: (done: (value: Blob) => void) => done(new Blob(['thumbnail']))
+		}) });
+		const file = Object.assign(new Blob(['original'], { type: 'image/png' }),
+			{ name: 'photo.png', lastModified: Date.UTC(2026, 8, 18) }) as File;
+		let reservation: Reservation | null = null;
+		let at = 0, originals = 0, thumbnails = 0;
+		let held: Uint8Array = new Uint8Array();
+		let thumb = false;
+		vi.stubGlobal('fetch', async (input: RequestInfo | URL, init: RequestInit = {}) => {
+			const url = String(input);
+			if (url === '/api/photos/vault') {
+				const announced = JSON.parse(String(init.body));
+				const known = reservation !== null;
+				reservation ??= { ...announced, id: 'photo', known: false, at: 0, thumb: false };
+				return reply({ ...reservation, known, at, thumb });
+			}
+			if (url.startsWith('/api/photos/vault/photo?at=')) {
+				originals++;
+				held = bodyBytes(init.body);
+				at = held.length;
+				return reply({ at });
+			}
+			if (url === '/api/photos/vault/photo/thumb') {
+				if (++thumbnails === 1) return new Response(JSON.stringify({ detail: 'thumbnail unavailable' }),
+					{ status: 503, headers: { 'Content-Type': 'application/json' } });
+				expect(new TextDecoder().decode(await unseal(key, bodyBytes(init.body)))).toBe('thumbnail');
+				thumb = true;
+				return reply({ thumb });
+			}
+			throw new Error(`unexpected request: ${url}`);
+		});
+		await backup.put([file]);
+		expect(backup.failed).toBe(1);
+		const original = held.slice();
+		await backup.put([file]);
+		expect(backup.failed).toBe(0);
+		expect(backup.skipped).toBe(1);
+		expect(originals).toBe(1);
+		expect(thumbnails).toBe(2);
+		expect(held).toEqual(original);
+		await backup.put([file]);
+		expect(originals).toBe(1);
+		expect(thumbnails).toBe(2);
 	});
 
 	test('resumes an interrupted upload with the first reservation encryption material', async () => {
@@ -64,7 +121,7 @@ describe('vault backup transport', () => {
 					reservation = {
 						id: 'first-reservation', known: false, at: 0,
 						bytes: Number(announced.bytes), chunk: Number(announced.chunk),
-						keyed: String(announced.keyed), meta: String(announced.meta)
+						keyed: String(announced.keyed), meta: String(announced.meta), thumb: false
 					};
 					return reply(reservation);
 				}

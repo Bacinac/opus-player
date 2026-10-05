@@ -49,6 +49,12 @@ class SurfaceState {
 	init() {
 		if (this.started) return;
 		this.started = true;
+		const update = () => {
+			if (!this.forced) this.current = detect();
+		};
+		window.addEventListener('resize', update);
+		window.matchMedia('(pointer: coarse)').addEventListener('change', update);
+		window.matchMedia('(hover: none)').addEventListener('change', update);
 		// an address can say it outright: the laptop plugged into a television
 		// is the case no capability query can see
 		const asked = new URLSearchParams(window.location.search).get('surface') as Surface | null;
@@ -63,10 +69,6 @@ class SurfaceState {
 			return;
 		}
 		this.current = detect();
-		const onResize = () => {
-			if (!this.forced) this.current = detect();
-		};
-		window.addEventListener('resize', onResize);
 	}
 
 	force(surface: Surface | null) {

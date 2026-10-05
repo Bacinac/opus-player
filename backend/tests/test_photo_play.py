@@ -1,12 +1,40 @@
 from types import SimpleNamespace
 
 import pytest
+import httpx
+from starlette.requests import Request
 
-from conftest import run
+from conftest import person_cookie, request, run
 from opus import library, playback
 from opus.api.routers import photos
 
 SUM = "a" * 40
+
+
+def test_personal_vault_relay_keeps_resume_metadata_and_range_headers(house, monkeypatch):
+    async def scenario():
+        def upstream(asked):
+            assert asked.headers["range"] == "bytes=4-7"
+            assert "x-opus-token" not in asked.headers
+            return httpx.Response(200, headers={"X-Vault-At": "12", "X-Vault-Bytes": "20",
+                                               "Accept-Ranges": "bytes"})
+
+        async def receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async with httpx.AsyncClient(base_url="http://library/api", transport=httpx.MockTransport(upstream)) as client:
+            monkeypatch.setattr(photos, "_personal", lambda: client)
+            scope = request({"opus_session": person_cookie("filip")}, {"Range": "bytes=4-7"},
+                            method="HEAD", path="/api/photos/vault/123").scope
+            response = await photos._as_the_person(Request(scope, receive), "/photos/vault/123", "no person")
+            assert response.headers["x-vault-at"] == "12"
+            assert response.headers["x-vault-bytes"] == "20"
+            assert response.headers["accept-ranges"] == "bytes"
+            assert response.headers["cache-control"] == "no-store"
+            async for _ in response.body_iterator:
+                pass
+
+    run(scenario())
 
 
 def recording(path, container, codec, width, height, sound=None, transfer=""):

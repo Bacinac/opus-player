@@ -6,6 +6,7 @@ refusal (no GPU for a file that needs one) arrives as an answer rather than as a
 video element that never starts."""
 
 import asyncio
+import hashlib
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -193,14 +194,14 @@ def stream_url(config, track_id: int, codec: str | None, prefer: str = "stereo")
     return f"{base}{prefix}stream?ticket={ticket}&prefer={prefer}&fmt=.{suffix}"
 
 
-def _queued(config, t: dict) -> dict:
+def _queued(config, t: dict, prefer: str) -> dict:
     return {
         "id": t["id"], "release_id": t.get("release_id"),
         "title": t.get("title") or "", "artist": t.get("artist") or "",
         "album": t.get("album") or "", "art": t.get("cover_url") or "",
         "duration_s": t.get("duration_s"), "codec": t.get("codec"),
         "channels": t.get("channels"), "live": False,
-        "uri": stream_url(config, t["id"], t.get("codec")),
+        "uri": stream_url(config, t["id"], t.get("codec"), prefer=prefer),
     }
 
 
@@ -237,17 +238,17 @@ async def queue(kind: str, id: int, prefer: str = "stereo"):
             raise HTTPException(502, str(exc))
         return {"kind": kind, "id": id, "title": record.get("title") or "",
                 "artist": record.get("artist") or "", "art": record.get("cover_url") or "",
-                "tracks": [_queued(config, t) for t in record.get("tracks") or []]}
+                "tracks": [_queued(config, t, prefer) for t in record.get("tracks") or []]}
     if kind == "track":
         try:
-            song = await library.get(f"/music/tracks/{id}/playback")
+            song = await library.get(f"/music/tracks/{id}/playback", prefer=prefer)
         except library.NotInLibrary:
             raise HTTPException(404, "no such song")
         except library.LibraryError as exc:
             raise HTTPException(502, str(exc))
         return {"kind": kind, "id": id, "title": song.get("title") or "",
                 "artist": song.get("artist") or "", "art": song.get("cover_url") or "",
-                "tracks": [_queued(config, song)]}
+                "tracks": [_queued(config, song, prefer)]}
     raise HTTPException(404, "nothing of that kind can be queued")
 
 
@@ -276,12 +277,14 @@ async def rebuilt(request: Request, command: list[str], mode: str, what: str,
 
     # the same viewer starting the same title again HAS abandoned their old
     # stream, whether or not the hops between the browser and here say so
-    marker = (request.cookies.get(auth.SESSION_COOKIE)
+    bearer = auth.bearer_of(request)
+    car = bearer if bearer and await auth.person(None, bearer) is not None else None
+    marker = (car or request.cookies.get(auth.SESSION_COOKIE)
               or request.cookies.get(auth.DEVICE_COOKIE)
-              or request.query_params.get("ticket")
-              or (request.client.host if request.client else ""))
+              or request.query_params.get("ticket"))
+    viewer = f"{hashlib.sha256(marker.encode()).hexdigest()}:{what}" if marker else None
     try:
-        body = playback.stream(command, is_gone=gone, kind=mode, viewer=f"{marker}:{what}")
+        body = playback.stream(command, is_gone=gone, kind=mode, viewer=viewer)
         first = await body.__anext__()
     except playback.PlaybackError as exc:
         raise HTTPException(503, str(exc))

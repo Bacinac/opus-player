@@ -34,4 +34,5 @@
     <string name="home_uninstall">Deinstaliraj</string>
     <string name="home_unavailable">Aplikaciju nije moguće otvoriti.</string>
     <string name="home_receiver_failed">Pojačalo se nije prebacilo na televizor.</string>
+    <string name="file_choice_unavailable">Odabir datoteka nije dostupan na ovom uređaju.</string>
 </resources>

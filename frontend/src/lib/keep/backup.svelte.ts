@@ -86,6 +86,7 @@ class Backup {
 			chunk: number;
 			keyed: string;
 			meta: string;
+			thumb: boolean;
 		}>(
 			'/api/photos/vault',
 			json({
@@ -98,6 +99,7 @@ class Backup {
 		);
 
 		if (said.known && said.at >= said.bytes) {
+			if (!said.thumb) await this.#thumbnail(file, said.id);
 			this.skipped++;
 			return;
 		}
@@ -144,15 +146,19 @@ class Backup {
 			n++;
 		}
 
+		if (!said.thumb) await this.#thumbnail(file, said.id);
+		this.done++;
+	}
+
+	async #thumbnail(file: File, id: string) {
 		const thumb = await thumbnailOf(file);
 		if (thumb) {
-			await answered(`/api/photos/vault/${said.id}/thumb`, {
+			await answered(`/api/photos/vault/${id}/thumb`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/octet-stream' },
 				body: (await seal(vault.key, thumb)) as BodyInit
 			});
 		}
-		this.done++;
 	}
 }
 

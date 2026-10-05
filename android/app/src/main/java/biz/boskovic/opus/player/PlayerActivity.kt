@@ -17,6 +17,7 @@ import android.net.Network
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
@@ -28,6 +29,7 @@ import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
+import android.webkit.ValueCallback
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -144,6 +146,36 @@ class PlayerActivity : ComponentActivity() {
     }
 
     private val chrome = object : WebChromeClient() {
+        override fun onShowFileChooser(
+            view: WebView, callback: ValueCallback<Array<Uri>>, params: FileChooserParams,
+        ): Boolean {
+            if (view !== web || !Opus.ours(view.url.orEmpty()) ||
+                params.mode !in intArrayOf(FileChooserParams.MODE_OPEN, FileChooserParams.MODE_OPEN_MULTIPLE)) {
+                callback.onReceiveValue(null)
+                return true
+            }
+            if (!fileChoice.begin(callback::onReceiveValue)) return true
+            try {
+                val accepted = params.acceptTypes.flatMap { it.split(',') }.map { it.trim() }
+                    .filter { it.contains('/') }.distinct()
+                val pick = params.createIntent().apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, params.mode == FileChooserParams.MODE_OPEN_MULTIPLE)
+                    if (accepted.isNotEmpty()) {
+                        type = accepted.singleOrNull() ?: "*/*"
+                        putExtra(Intent.EXTRA_MIME_TYPES, accepted.toTypedArray())
+                    }
+                }
+                files.launch(pick)
+            } catch (failure: RuntimeException) {
+                Log.e(TAG, "could not open the file provider", failure)
+                fileChoice.finish(null)
+                Toast.makeText(this@PlayerActivity, R.string.file_choice_unavailable, Toast.LENGTH_LONG).show()
+            }
+            return true
+        }
+
         // The player enters fullscreen through the Fullscreen API on its stage
         // element, which a WebView answers by handing over a view to host.
         override fun onShowCustomView(view: View, callback: CustomViewCallback) {
@@ -167,6 +199,23 @@ class PlayerActivity : ComponentActivity() {
             customViewCallback?.onCustomViewHidden()
             customViewCallback = null
         }
+    }
+
+    private val fileChoice = FileChoice<Array<Uri>>()
+    private val files = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val chosen = WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
+        val safe = chosen?.takeIf { uris ->
+            uris.isNotEmpty() && uris.all { uri ->
+                uri.scheme == "content" && uri.authority?.startsWith("$packageName.") != true &&
+                    checkUriPermission(uri, Process.myPid(), Process.myUid(), Intent.FLAG_GRANT_READ_URI_PERMISSION) ==
+                    PackageManager.PERMISSION_GRANTED
+            }
+        }
+        if (chosen != null && safe == null) {
+            Log.w(TAG, "file provider returned an unreadable or private URI")
+            Toast.makeText(this, R.string.file_choice_unavailable, Toast.LENGTH_LONG).show()
+        }
+        fileChoice.finish(safe)
     }
 
     /** A box starts before its network is up, so a failure is tried again after
@@ -218,6 +267,7 @@ class PlayerActivity : ComponentActivity() {
     @SuppressLint("MissingOnRenderProcessGone")
     private inner class Client : WebViewClient() {
         override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+            fileChoice.cancel()
             if (Opus.ours(url)) failed = false
             engine.orphaned()
         }
@@ -264,6 +314,7 @@ class PlayerActivity : ComponentActivity() {
          *  planted again; a record plays on, a film stops with the page that
          *  was showing it. */
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+            fileChoice.cancel()
             Log.e(TAG, "page renderer gone (crashed: ${detail.didCrash()}); loading the page again")
             engine.orphaned()
             customView?.let { root.removeView(it) }
@@ -534,6 +585,7 @@ class PlayerActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        fileChoice.cancel()
         network.unregisterNetworkCallback(onNetwork)
         web.removeCallbacks(retry)
         hearing.release()

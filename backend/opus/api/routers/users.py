@@ -38,7 +38,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from opus_auth import ADMIN, GUEST
 from opus_auth.authority import Person
 from pydantic import BaseModel, Field, StringConstraints, field_validator
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from opus import auth
@@ -162,6 +162,12 @@ async def _adopt(session, person: str) -> User:
     of them. Matched without regard to case, which is the only way the two lists
     ever differed — the roster keeps one spelling and nobody typing at a
     television did."""
+    await session.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                          {"key": f"profile-adoption:{person.lower()}"})
+    existing = await session.scalar(select(User).where(User.person == person))
+    if existing is not None:
+        await session.commit()
+        return existing
     mine = await session.execute(
         select(User).where(User.person.is_(None), func.lower(User.name) == person.lower()))
     user = mine.scalar_one_or_none()

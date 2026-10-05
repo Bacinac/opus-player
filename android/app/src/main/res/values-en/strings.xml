@@ -33,4 +33,5 @@
     <string name="home_uninstall">Uninstall</string>
     <string name="home_unavailable">The app could not be opened.</string>
     <string name="home_receiver_failed">The receiver did not switch to the television.</string>
+    <string name="file_choice_unavailable">File selection is unavailable on this device.</string>
 </resources>

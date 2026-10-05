@@ -85,6 +85,7 @@ class CastState {
 	album = $state('');
 
 	private timer: ReturnType<typeof setInterval> | null = null;
+	private generation = 0;
 
 	get casting(): boolean {
 		return this.active !== 'browser';
@@ -355,9 +356,17 @@ class CastState {
 			this.letGo();
 			return;
 		}
-		if (command === 'play') queue.playing = true;
-		else if (command === 'pause') queue.playing = false;
-		else if (command === 'play_pause') queue.playing = !queue.playing;
+		if (command === 'play' || command === 'pause' || command === 'play_pause') {
+			if (this.casting) { void this.control(command); return; }
+			if (surface.isTv && hasEngine()) {
+				onBox((box) => {
+					const playing = Boolean((JSON.parse(box.state()) as { playing?: boolean }).playing);
+					const wanted = command === 'play_pause' ? !playing : command === 'play';
+					if (playing !== wanted) box.toggle();
+					queue.playing = wanted;
+				});
+			} else queue.playing = command === 'play_pause' ? !queue.playing : command === 'play';
+		}
 		else if (command === 'next') {
 			if (this.casting) void this.next();
 			else queue.next();
@@ -459,6 +468,9 @@ class CastState {
 	/** queue.play happened: aim it. Called through queue.autocast so the pages
 	 *  keep saying only queue.play(...) no matter where the sound goes. */
 	async begin() {
+		this.stopPolling();
+		const generation = this.generation;
+		const tracks = queue.tracks;
 		const to = this.resolve(queue.tracks);
 		this.active = to;
 		if (to === 'browser') {
@@ -471,6 +483,7 @@ class CastState {
 			json({ output: to, tracks: payload(queue.tracks), start: queue.index }),
 			{ on: { 503: asleep } }
 		);
+		if (generation !== this.generation || this.active !== to || queue.tracks !== tracks) return;
 		// The device would not take it — the amplifier is off, the television is
 		// not listening, the house did not answer. A screen that never took the
 		// record is not one to mirror, so this stops following it; but somebody
@@ -493,7 +506,11 @@ class CastState {
 		if (!queue.current) return;
 		const to = this.resolve(queue.tracks);
 		if (to === this.active) return;
+		this.stopPolling();
+		const generation = this.generation;
+		const tracks = queue.tracks;
 		if (this.casting) await this.control('stop');
+		if (generation !== this.generation || queue.tracks !== tracks || this.choice !== choice) return;
 		if (to === 'browser') {
 			// back onto this screen, from where the device left off
 			this.active = 'browser';
@@ -527,14 +544,18 @@ class CastState {
 	}
 
 	async toggle() {
+		const generation = this.generation;
 		await this.control(this.playing ? 'pause' : 'play');
+		if (generation !== this.generation) return;
 		// the poll confirms; flip now so the key answers the finger
 		this.transport = this.playing ? 'paused' : 'playing';
 	}
 
 	async stop() {
-		await this.control('stop');
 		this.stopPolling();
+		const generation = this.generation;
+		await this.control('stop');
+		if (generation !== this.generation) return;
 		this.active = 'browser';
 		this.transport = 'stopped';
 		this.position = 0;
@@ -547,8 +568,11 @@ class CastState {
 	 *  emptied it — so the screen went quiet, the bar went away, and the box
 	 *  played the record out to the end with nothing left to stop it with. */
 	async silence() {
+		const tracks = queue.tracks;
 		if (this.casting) await this.stop();
 		else if (hasEngine()) onBox((box) => box.stop());
+		if (queue.tracks !== tracks) return;
+		this.stopPolling();
 		queue.clear();
 	}
 
@@ -562,11 +586,12 @@ class CastState {
 	}
 
 	private stopPolling() {
+		++this.generation;
 		if (this.timer) clearInterval(this.timer);
 		this.timer = null;
 	}
 
-	private polling = false;
+	private polling: number | null = null;
 
 	private async poll() {
 		if (!this.casting || !queue.current) {
@@ -574,14 +599,19 @@ class CastState {
 			return;
 		}
 		// a device slower to answer than the beat is asked once, not over itself
-		if (this.polling) return;
-		this.polling = true;
+		const generation = this.generation;
+		if (this.polling === generation) return;
+		this.polling = generation;
+		const output = this.active;
+		const tracks = queue.tracks;
+		const index = queue.index;
 		// a missed heartbeat is not a verdict
-		const got = await request<CastReport>(`/api/cast/state?output=${this.active}`, {}, {
+		const got = await request<CastReport>(`/api/cast/state?output=${output}`, {}, {
 			failed: () => {}
 		});
-		this.polling = false;
-		if (!got) return;
+		if (this.polling === generation) this.polling = null;
+		if (!got || generation !== this.generation || this.active !== output ||
+			queue.tracks !== tracks || queue.index !== index) return;
 		// The house has put something else on — the radio, most often, or a
 		// record started from its own surfaces. What is on the screen has to be
 		// what is playing: the last record's sleeve, its songs and its words

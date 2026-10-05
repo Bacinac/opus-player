@@ -12,6 +12,7 @@
 	import { sleeve } from '$lib/keep/sleeve.svelte';
 	import { surface } from '$lib/keep/surface.svelte';
 	import { onBox } from '$lib/tv/bridge';
+	import { Crossfade } from '$lib/keep/crossfade';
 
 	/** Two elements, not one. A song used to end, and only THEN was the next
 	 *  address handed to the same element — so the record stopped dead, the
@@ -57,12 +58,19 @@
 	const onEngine = $derived(
 		!cast.casting && surface.isTv && hasEngine()
 	);
+	const fade = new Crossfade((active) => { handing = active; });
+	$effect(() => {
+		const enabled = queue.playing && !cast.casting && !onEngine;
+		const song = queue.current;
+		if (!enabled || !song) fade.cancel();
+		return () => fade.cancel();
+	});
 
 	// a new track means a new file; the element is told to play only when the
 	// queue says it should be, so pausing survives moving to the next song
 	$effect(() => {
 		const src = queue.src;
-		if (cast.casting || !audio || !src) return;
+		if (cast.casting || onEngine || !audio || !src) return;
 		// the deck that was brought up under the last one is already playing this
 		// song, some way into it; handing it the address again would start it over
 		if (audio.src && new URL(audio.src, location.href).pathname === new URL(src, location.href).pathname
@@ -111,30 +119,18 @@
 		const coming = spare;
 		const next = queue.nextSrc;
 		if (!going || !coming || !next || handing) return;
-		handing = true;
-		coming.src = next;
-		coming.volume = 0;
-		coming.currentTime = 0;
-		ask(coming);
-		const began = performance.now();
-		const step = () => {
-			const through = Math.min(1, (performance.now() - began) / (FADE * 1000));
-			going.volume = Math.max(0, 1 - through);
-			coming.volume = Math.min(1, through);
-			if (through < 1) {
-				requestAnimationFrame(step);
-				return;
-			}
-			going.pause();
-			going.volume = 1;
+		const song = queue.current;
+		const index = queue.index;
+		fade.start(going, coming, next, FADE, ask,
+			() => queue.playing && !cast.casting && !onEngine && queue.current === song
+				&& queue.index === index && queue.nextSrc === next,
+			() => {
 			// the deck that came up IS the next song, so the queue is told where it
 			// already is rather than asked to start it
 			frontIsA = !frontIsA;
-			handing = false;
 			keep();
 			queue.next();
-		};
-		requestAnimationFrame(step);
+		});
 	}
 
 	/** Asking an element to play in the same breath as handing it a new address
@@ -142,12 +138,20 @@
 	 *  a refusal taken at face value left a station chosen, loaded and silent,
 	 *  with the remote sitting on a play button somebody had already pressed.
 	 *  The element says when it is ready; that is when it is asked again. */
-	function ask(el: HTMLAudioElement) {
-		el.play().catch(() => {
+	const requests = new WeakMap<HTMLAudioElement, number>();
+	function ask(el: HTMLAudioElement, valid = () => queue.playing && !cast.casting && !onEngine) {
+		const generation = (requests.get(el) ?? 0) + 1;
+		requests.set(el, generation);
+		const src = el.src;
+		const mine = () => requests.get(el) === generation && el.src === src;
+		const current = () => mine() && valid();
+		el.play().then(() => { if (mine() && !valid()) el.pause(); }).catch(() => {
+			if (!current()) return;
 			el.addEventListener(
 				'canplay',
 				() => {
-					if (queue.playing) el.play().catch(() => (queue.playing = false));
+					if (current()) el.play().then(() => { if (mine() && !valid()) el.pause(); })
+						.catch(() => { if (current()) queue.playing = false; });
 				},
 				{ once: true }
 			);
@@ -277,9 +281,9 @@
 	});
 
 	$effect(() => {
-		if (cast.casting || !audio) return;
-		if (queue.playing) audio.play().catch(() => (queue.playing = false));
-		else audio.pause();
+		if (cast.casting || onEngine || !audio) return;
+		if (queue.playing) ask(audio);
+		else { audio.pause(); spare?.pause(); }
 	});
 
 	function toggle() {

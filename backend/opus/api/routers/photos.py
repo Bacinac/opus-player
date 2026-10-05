@@ -35,15 +35,15 @@ router = APIRouter()
 
 # A derivative of a photograph is named by the digest of what it was made from,
 # so it can never change and the browser may keep it for as long as it likes.
-FOREVER = "public, max-age=31536000, immutable"
+FOREVER = "private, max-age=31536000, immutable"
 
 # A face and a person are named by their id, not by their content. A portrait is
 # stable in practice and a day is a fair bet on it; a morph is remade whenever
 # somebody gains a year or a group is corrected, and marking that immutable
 # would mean the new one is never seen. It is asked about every time and answered
 # from the cache when it has not changed.
-A_DAY = "public, max-age=86400"
-ASK_AGAIN = "no-cache"
+A_DAY = "private, max-age=86400"
+ASK_AGAIN = "private, no-cache"
 
 # what the library calls the two sizes it keeps
 SIZES = {"tile", "preview"}
@@ -309,6 +309,9 @@ async def _as_the_person(request: Request, path: str, refusal: str) -> Streaming
     # library can only refuse a file too large for it after it has all arrived
     if "content-length" in request.headers:
         headers["content-length"] = request.headers["content-length"]
+    for name in ("range", "if-range"):
+        if name in request.headers:
+            headers[name] = request.headers[name]
     http = _personal()
     upstream = http.build_request(
         request.method, path,
@@ -329,6 +332,10 @@ async def _as_the_person(request: Request, path: str, refusal: str) -> Streaming
     return StreamingResponse(
         through(), status_code=resp.status_code,
         media_type=resp.headers.get("content-type"),
+        headers={"Cache-Control": "no-store", **{
+            name: resp.headers[name] for name in
+            ("x-vault-at", "x-vault-bytes", "content-range", "accept-ranges") if name in resp.headers
+        }},
     )
 
 
