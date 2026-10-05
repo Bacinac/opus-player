@@ -8,7 +8,7 @@
 	// shelf in the order it happened. People is who is on it, each one gathered
 	// across the years. Places is where the house has been.
 
-	import { untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { formatNumber, i18n, t } from '$lib/i18n';
 	import { narrow, request } from '$lib/kit';
 	import { cropOf, me, MediaHead, morphOf, previewOf } from '$lib/opus';
@@ -219,10 +219,15 @@
 	// address: the screen never writes the address, so a person opened from
 	// People is still at ?find=people, and pressing People again is how you get
 	// back to the faces.
-	afterNavigate(() => {
+	function arrive() {
 		// on a television the section's own link is the section's first view
 		const asked = page.url.searchParams.get('find') ?? (surface.isTv ? waysHere[0] : '');
 		if (asked && waysHere.includes(asked)) pick(asked as Way);
+	}
+
+	onMount(arrive);
+	afterNavigate(({ from }) => {
+		if (from) arrive();
 	});
 
 	function pick(k: Way) {
