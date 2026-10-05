@@ -6,6 +6,8 @@
 // Every part that can be on top says so here rather than each of them fighting
 // over window.opusBack, which is what the wrapper asks.
 
+import { dismissLayer } from '$lib/kit/layers';
+
 /** Returns true when this step swallowed the press. */
 export type Step = () => boolean;
 
@@ -66,6 +68,7 @@ export function onBack(step: Step, holding?: Holding): () => void {
 }
 
 export function goBack(): boolean {
+	if (dismissLayer()) return true;
 	for (const step of [...steps]) {
 		if (step()) return true;
 	}
