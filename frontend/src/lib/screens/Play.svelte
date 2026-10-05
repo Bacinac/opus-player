@@ -30,7 +30,8 @@
 	import { FilmRemote } from '$lib/tv/filmRemote.svelte';
 	import { untrack } from 'svelte';
 
-	let { card, onclose }: { card: Card; onclose: () => void } = $props();
+	let { card: requested, onclose }: { card: Card; onclose: () => void } = $props();
+	const card = untrack(() => requested);
 	const lent = $derived(film.lentFor(card));
 
 	let plan = $state<Plan | null>(null);

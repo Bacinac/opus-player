@@ -309,6 +309,7 @@ export const hr = {
 	'series.tally.seen': 'pogledano',
 	'series.tally.total': 'ukupno',
 	'series.tally.upcoming': 'nije emitirano',
+	'queue.pause': 'Pauziraj',
 	'queue.previous': 'Prethodna',
 	'queue.next': 'Sljedeća',
 	'queue.position': 'Položaj',

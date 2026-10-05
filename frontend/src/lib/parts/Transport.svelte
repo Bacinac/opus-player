@@ -84,7 +84,7 @@
 			<Icon name="previous" size={glyph} />
 		</Press>
 	{/if}
-	<Press tone="key" data-control="toggle" onclick={toggle} label={t('card.play')}>
+	<Press tone="key" data-control="toggle" onclick={toggle} label={t(going ? 'queue.pause' : 'card.play')}>
 		<Icon name={going ? 'pause' : 'play'} size={glyph + 4} />
 	</Press>
 	{#if next}

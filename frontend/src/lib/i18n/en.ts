@@ -309,6 +309,7 @@ export const en = {
 	'series.tally.seen': 'watched',
 	'series.tally.total': 'in total',
 	'series.tally.upcoming': 'not aired yet',
+	'queue.pause': 'Pause',
 	'queue.previous': 'Previous',
 	'queue.next': 'Next',
 	'queue.position': 'Position',
