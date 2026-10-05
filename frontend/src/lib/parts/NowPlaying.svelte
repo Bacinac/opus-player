@@ -60,10 +60,18 @@
 	);
 	const fade = new Crossfade((active) => { handing = active; });
 	$effect(() => {
+		const decks = [audio, spare];
 		const enabled = queue.playing && !cast.casting && !onEngine;
 		const song = queue.current;
 		if (!enabled || !song) fade.cancel();
-		return () => fade.cancel();
+		return () => {
+			fade.cancel();
+			const src = queue.src ? new URL(queue.src, location.href).href : '';
+			for (const deck of decks) {
+				if (deck && (!queue.playing || cast.casting || onEngine || deck !== audio || deck.src !== src))
+					deck.pause();
+			}
+		};
 	});
 
 	// a new track means a new file; the element is told to play only when the
@@ -73,12 +81,11 @@
 		if (cast.casting || onEngine || !audio || !src) return;
 		// the deck that was brought up under the last one is already playing this
 		// song, some way into it; handing it the address again would start it over
-		if (audio.src && new URL(audio.src, location.href).pathname === new URL(src, location.href).pathname
-			&& !audio.paused) return;
-		if (audio.src !== src) audio.src = src;
 		const at = queue.startAt;
+		const changed = audio.src !== new URL(src, location.href).href;
+		if (changed) audio.src = src;
 		queue.startAt = 0;
-		elapsed = at;
+		if (changed || at) elapsed = at;
 		if (at) audio.currentTime = at;
 		if (queue.playing) ask(audio);
 	});
