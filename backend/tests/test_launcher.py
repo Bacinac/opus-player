@@ -1,4 +1,79 @@
+import httpx
+import opus_auth
+import pytest
+
+from conftest import BOX_TOKEN, person_cookie, run
+from opus import auth
+from opus.api.routers import launcher
 from opus.api.routers.launcher import camera_list, ordered_cameras, summarize
+from opus.main import app
+
+
+@pytest.fixture
+def camera_upstream(monkeypatch):
+    calls = []
+
+    async def entities(config):
+        calls.append("entities")
+        return [
+            {"entity_id": "baba:door", "capabilities": ["camera"], "exposed": True},
+            {"entity_id": "baba:hidden", "capabilities": ["camera"], "exposed": False},
+            {"entity_id": "sensor:door", "capabilities": ["temperature"]},
+        ]
+
+    async def content(config, path):
+        calls.append(path)
+        return b"frame", "image/jpeg"
+
+    async def stream(config, path):
+        calls.append(path)
+
+        async def body():
+            yield b"stream"
+
+        return body(), "video/mp4"
+
+    monkeypatch.setattr(launcher.house, "entities", entities)
+    monkeypatch.setattr(launcher.dida, "content", content)
+    monkeypatch.setattr(launcher.dida, "stream", stream)
+    return calls
+
+
+def camera_get(path, cookies):
+    async def scenario():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),
+                                    base_url="http://player", cookies=cookies) as client:
+            return await client.get(path)
+
+    return run(scenario())
+
+
+@pytest.mark.parametrize("kind", ["snapshot", "mp4", "mjpeg"])
+@pytest.mark.parametrize("name", ["gost", "filip", "boss", "box"])
+def test_camera_access_uses_the_callers_household_permission(house, camera_upstream, name, kind):
+    cookies = ({auth.DEVICE_COOKIE: BOX_TOKEN} if name == "box"
+               else {opus_auth.SESSION_COOKIE: person_cookie(name), auth.DEVICE_COOKIE: BOX_TOKEN})
+    answer = camera_get(f"/api/launcher/cameras/baba:door/{kind}", cookies)
+    if name == "gost":
+        assert answer.status_code == 403
+        assert camera_upstream == []
+    else:
+        assert answer.status_code == 200
+        assert answer.content == (b"frame" if kind == "snapshot" else b"stream")
+        assert camera_upstream == ["entities", f"/api/camera/baba%3Adoor/{kind}"
+                                   + ("?w=640" if kind == "snapshot" else "")]
+
+
+@pytest.mark.parametrize("entity", [
+    "%2E%2E%2Fsettings%3Fx=", "%2E%2E", "%2E", "baba%2Fdoor", "baba%3Fdoor",
+    "baba%23door", "baba%252Fdoor", "baba%5Cdoor", "baba:unknown", "baba:hidden", "sensor:door",
+])
+@pytest.mark.parametrize("kind", ["snapshot", "mp4"])
+def test_camera_proxy_rejects_non_camera_paths(house, camera_upstream, entity, kind):
+    answer = camera_get(f"/api/launcher/cameras/{entity}/{kind}",
+                        {opus_auth.SESSION_COOKIE: person_cookie("filip")})
+    assert answer.status_code == 404
+    assert not any(path.startswith("/api/camera/") for path in camera_upstream)
 
 
 def test_launcher_selects_outside_and_living_room_sensors():

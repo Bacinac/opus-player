@@ -23,6 +23,7 @@ import logging
 import secrets
 import time
 
+import opus_auth
 from fastapi import APIRouter, Depends, HTTPException, Request
 from opus_core import dida
 from pydantic import BaseModel, Field
@@ -991,9 +992,17 @@ LINKS = [
 _LINK = {link["key"]: link for link in LINKS}
 
 
+async def _may_open_photos(request: Request) -> bool:
+    return await auth.allowed(
+        "/api/photos", person_cookie=request.cookies.get(opus_auth.SESSION_COOKIE),
+        box=request.cookies.get(auth.DEVICE_COOKIE),
+        token=request.headers.get(opus_auth.TOKEN_HEADER), bearer=auth.bearer_of(request))
+
+
 @router.get("/tv/links")
-async def tv_links():
-    return {"links": LINKS}
+async def tv_links(request: Request):
+    photos = await _may_open_photos(request)
+    return {"links": [link for link in LINKS if link["key"] != "photos" or photos]}
 
 
 async def _shelf(key: str, lang: str) -> list[dict]:
@@ -1061,6 +1070,8 @@ async def tv_open(body: TvOpen, request: Request):
     """Take the television somewhere, or open a thing on it — what a press on
     the television itself would do: a film or an episode plays, a series and an
     artist open their page, a station comes on."""
+    if body.link == "photos" and not await _may_open_photos(request):
+        raise HTTPException(403, "not yours to open")
     config = await current_runtime()
     if body.link is None and body.id is None:
         raise HTTPException(400, "nothing to open")

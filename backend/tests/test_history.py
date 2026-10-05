@@ -6,14 +6,75 @@ from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
+from fastapi import HTTPException
 
-from conftest import run
+from conftest import BOX_TOKEN, person_cookie, request, run
 from opus import history
-from opus.models import HistoryLink, HistorySend
+from opus.api.routers import history as routes, users
+from opus.db import get_session
+from opus.main import app
+from opus.models import HistoryLink, HistorySend, User
 from opus.settings_store import RuntimeConfig
 
 AT = datetime(2026, 9, 24, 18, 30, tzinfo=UTC)
 CONFIG = RuntimeConfig(values={"simkl_client_id": "cid"})
+
+
+@pytest.mark.parametrize(("cookies", "profile", "expected"), [
+    ({"opus_device": BOX_TOKEN}, "filip", False),
+    ({"opus_session": person_cookie("filip")}, "filip", True),
+    ({"opus_session": person_cookie("filip")}, "jana", False),
+    ({"opus_session": person_cookie("gost")}, "gost", True),
+    ({"opus_session": person_cookie("gost")}, "filip", False),
+    ({"opus_session": person_cookie("boss")}, "filip", True),
+    ({"opus_session": person_cookie("boss")}, None, True),
+    ({}, "filip", False),
+])
+def test_history_management_requires_the_profile_person_or_an_admin(house, cookies, profile, expected):
+    who = User(id=1, person=profile, name="Local")
+    if expected:
+        assert run(routes.require_history_profile(request(cookies), who)) is who
+    else:
+        with pytest.raises(HTTPException) as refused:
+            run(routes.require_history_profile(request(cookies), who))
+        assert refused.value.status_code == 403
+
+
+@pytest.mark.parametrize("cookies", [
+    {"opus_device": BOX_TOKEN}, {"opus_session": person_cookie("gost")},
+    {"opus_session": person_cookie("filip")},
+])
+def test_unauthorized_history_routes_do_not_read_write_or_contact_a_provider(house, monkeypatch, cookies):
+    who = User(id=1, person="jana", name="")
+
+    class Session:
+        async def execute(self, *args):
+            pytest.fail("an unauthorized request reached history storage")
+
+    async def provider(*args):
+        pytest.fail("an unauthorized request reached the history provider")
+
+    monkeypatch.setattr(app, "dependency_overrides", {
+        users.require_picked: lambda: who, get_session: lambda: Session(),
+    })
+    for name in ("listenbrainz_account", "simkl_code", "simkl_grant"):
+        monkeypatch.setattr(history, name, provider)
+
+    async def scenario():
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),
+                                    base_url="http://player", cookies=cookies) as client:
+            for method, path, body in [
+                ("GET", "/api/history", None),
+                ("PUT", "/api/history/listenbrainz", {"token": "synthetic"}),
+                ("POST", "/api/history/simkl/code", {}),
+                ("POST", "/api/history/simkl/token", {"device_code": "synthetic"}),
+                ("DELETE", "/api/history/listenbrainz", None),
+                ("POST", "/api/history/retry", {}),
+            ]:
+                answer = await client.request(method, path, json=body)
+                assert answer.status_code == 403, path
+
+    run(scenario())
 
 
 def row(kind: str, item_id: int) -> HistorySend:

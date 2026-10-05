@@ -77,7 +77,7 @@
 	</section>
 {/if}
 
-{#if mine && !surface.isTv}
+{#if mine && watching.person && (me.admin || mine.key === watching.person) && !surface.isTv}
 	<section>
 		<Heading label={t('history.title')} />
 		<History />

@@ -8,7 +8,9 @@ the camera wall, not the complete state of the house.
 
 import asyncio
 import json
+import re
 from typing import Literal
+from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
@@ -172,23 +174,34 @@ async def save_camera_order(wanted: CameraOrder):
     return {"order": order}
 
 
-@router.get("/launcher/cameras/{entity_id:path}/snapshot")
+async def _camera_path(config, entity_id: str, kind: str) -> str:
+    if not re.fullmatch(r"[A-Za-z0-9_:.-]{1,128}", entity_id) or entity_id in (".", ".."):
+        raise HTTPException(404, "no camera")
+    entities = await house.entities(config)
+    if not any(entity.get("entity_id") == entity_id
+               and "camera" in (entity.get("capabilities") or [])
+               and entity.get("exposed") is not False for entity in entities):
+        raise HTTPException(404, "no camera")
+    return f"/api/camera/{quote(entity_id, safe='')}/{kind}"
+
+
+@router.get("/launcher/cameras/{entity_id}/snapshot")
 async def camera_snapshot(entity_id: str, w: int = Query(640, ge=160, le=1920)):
     config = await current_runtime()
     try:
-        body, media_type = await dida.content(
-            config, f"/api/camera/{entity_id}/snapshot?w={w}")
+        path = await _camera_path(config, entity_id, "snapshot")
+        body, media_type = await dida.content(config, f"{path}?{urlencode({'w': w})}")
     except dida.DidaError as exc:
         raise HTTPException(502, "camera unavailable") from exc
     return Response(body, media_type=media_type, headers={"Cache-Control": "no-store"})
 
 
-@router.get("/launcher/cameras/{entity_id:path}/{kind}")
+@router.get("/launcher/cameras/{entity_id}/{kind}")
 async def camera_stream(entity_id: str, kind: Literal["mp4", "mjpeg"]):
     config = await current_runtime()
     try:
-        body, media_type = await dida.stream(
-            config, f"/api/camera/{entity_id}/{kind}")
+        path = await _camera_path(config, entity_id, kind)
+        body, media_type = await dida.stream(config, path)
     except dida.DidaError as exc:
         raise HTTPException(502, "camera stream unavailable") from exc
     return StreamingResponse(body, media_type=media_type, headers={"Cache-Control": "no-store"})

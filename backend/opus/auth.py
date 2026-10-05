@@ -127,7 +127,7 @@ ADMIN_PATHS = ("/api/settings", "/api/cast/options", "/api/cast/boxes", "/api/st
 # a box is nobody here, so refusing nobody would refuse the remote, which is the
 # one place somebody actually points at a record they do not have.
 HOUSEHOLD_ONLY = ("/api/photos", "/api/explore/want", "/api/game", "/api/tv/photo",
-                  "/api/tv/show")
+                  "/api/tv/show", "/api/launcher/cameras")
 
 
 # What of the album the house itself may put on the television: somebody of the

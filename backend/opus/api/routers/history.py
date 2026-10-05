@@ -3,18 +3,26 @@ ListenBrainz and Simkl, linked from their settings. What is sent, and when, is
 opus.history's."""
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+import opus_auth
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from opus import history
+from opus import auth, history
 from opus.api.routers.users import require_picked
 from opus.db import get_session
 from opus.models import HistoryLink, HistorySend, User
 from opus.settings_store import current_runtime
 
 router = APIRouter()
+
+
+async def require_history_profile(request: Request, who: User = Depends(require_picked)) -> User:
+    person = await auth.person(request.cookies.get(opus_auth.SESSION_COOKIE), auth.bearer_of(request))
+    if person is None or (person.role != opus_auth.ADMIN and who.person != person.name):
+        raise HTTPException(403, "only the person or an admin may manage this history")
+    return who
 
 
 async def _state(session: AsyncSession, who: User) -> dict:
@@ -58,7 +66,7 @@ async def _simkl():
 
 
 @router.get("/history")
-async def linked(who: User = Depends(require_picked), session: AsyncSession = Depends(get_session)):
+async def linked(who: User = Depends(require_history_profile), session: AsyncSession = Depends(get_session)):
     return await _state(session, who)
 
 
@@ -67,7 +75,7 @@ class Token(BaseModel):
 
 
 @router.put("/history/listenbrainz")
-async def link_listenbrainz(body: Token, who: User = Depends(require_picked),
+async def link_listenbrainz(body: Token, who: User = Depends(require_history_profile),
                             session: AsyncSession = Depends(get_session)):
     token = body.token.strip()
     try:
@@ -84,7 +92,7 @@ async def link_listenbrainz(body: Token, who: User = Depends(require_picked),
 
 
 @router.post("/history/simkl/code")
-async def simkl_code(who: User = Depends(require_picked)):
+async def simkl_code(who: User = Depends(require_history_profile)):
     config = await _simkl()
     try:
         code = await history.simkl_code(config)
@@ -99,7 +107,7 @@ class Code(BaseModel):
 
 
 @router.post("/history/simkl/token")
-async def simkl_token(body: Code, who: User = Depends(require_picked),
+async def simkl_token(body: Code, who: User = Depends(require_history_profile),
                       session: AsyncSession = Depends(get_session)):
     """Asked every few seconds while the code waits to be approved."""
     config = await _simkl()
@@ -123,7 +131,7 @@ async def simkl_token(body: Code, who: User = Depends(require_picked),
 
 
 @router.delete("/history/{service}", status_code=204)
-async def unlink(service: str, who: User = Depends(require_picked),
+async def unlink(service: str, who: User = Depends(require_history_profile),
                  session: AsyncSession = Depends(get_session)):
     """What had not gone yet goes nowhere now: it was on its way to an account
     that is no longer this person's to write to."""
@@ -135,7 +143,7 @@ async def unlink(service: str, who: User = Depends(require_picked),
 
 
 @router.post("/history/retry", status_code=204)
-async def retry(who: User = Depends(require_picked), session: AsyncSession = Depends(get_session)):
+async def retry(who: User = Depends(require_history_profile), session: AsyncSession = Depends(get_session)):
     """Everything waiting, now — including what a service said it did not know,
     which it may since have learnt."""
     await session.execute(update(HistorySend).where(HistorySend.user_id == who.id)

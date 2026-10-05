@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 from fastapi import HTTPException
 
-from conftest import request, run
+from conftest import BOX_TOKEN, HOUSE_TOKEN, person_cookie, request, run
 from opus import auth
 from opus.api.routers import cast
 from opus.api.routers.cast import CastTrack
@@ -152,6 +152,29 @@ def test_a_film_on_the_television_is_sent_to_a_place_in_it(house_tv):
     assert house_tv.control == {"command": "seek", "at": 1834.5, "seq": 1}
     run(cast.tv_control(cast.TvControl(command="pause", at=12.0)))
     assert house_tv.control == {"command": "pause", "seq": 2}
+
+
+@pytest.mark.parametrize(("cookies", "headers", "photos"), [
+    ({"opus_session": person_cookie("gost"), auth.DEVICE_COOKIE: BOX_TOKEN}, {}, False),
+    ({"opus_session": person_cookie("filip")}, {}, True),
+    ({"opus_session": person_cookie("boss")}, {}, True),
+    ({auth.DEVICE_COOKIE: BOX_TOKEN}, {}, True),
+    ({}, {"X-OPUS-Token": HOUSE_TOKEN}, False),
+])
+def test_photo_navigation_and_choices_obey_the_senders_permission(house, house_tv, cookies, headers, photos):
+    asked = request(cookies, headers)
+    links = run(cast.tv_links(asked))["links"]
+    assert any(link["key"] == "photos" for link in links) is photos
+    if photos:
+        run(cast.tv_open(cast.TvOpen(link="photos"), asked))
+        assert house_tv.order == {"go": "/photos", "seq": 1}
+    else:
+        with pytest.raises(HTTPException) as refused:
+            run(cast.tv_open(cast.TvOpen(link="photos"), asked))
+        assert refused.value.status_code == 403
+        assert house_tv.order is None
+    run(cast.tv_open(cast.TvOpen(link="movies"), asked))
+    assert house_tv.order == {"go": "/movies", "seq": 2 if photos else 1}
 
 
 @pytest.mark.parametrize("at", [None, -1.0])
