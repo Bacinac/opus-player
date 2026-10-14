@@ -8,3 +8,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
     CMD printf 'close\n' | nc -w 3 127.0.0.1 6600 | grep -q '^OK MPD'
 
 ENTRYPOINT ["/entrypoint.sh"]
+
+ARG OPUS_DAC_TREE=
+LABEL opus.dac.tree=$OPUS_DAC_TREE
