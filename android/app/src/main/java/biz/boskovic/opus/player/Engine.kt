@@ -737,8 +737,11 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
         session?.release()
         session = null
         staged = null
-        screen.player = null
+        // Released before the view lets go of it: a live player would first move the
+        // decoder onto a placeholder surface and wait up to 2 s for it, which the
+        // Dolby Vision decoder takes to stop, holding the menu's thread meanwhile.
         player?.release()
+        screen.player = null
         player = null
         stage.visibility = View.INVISIBLE
         drawn = -1
