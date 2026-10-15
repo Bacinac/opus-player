@@ -26,11 +26,14 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
+import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
 import androidx.media3.session.MediaSession
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
@@ -391,7 +394,7 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
         // the library is drawn on.
         screen.setBackgroundColor(Color.BLACK)
         val engine = ExoPlayer.Builder(host, Renderers(host))
-            .setMediaSourceFactory(DefaultMediaSourceFactory(sources))
+            .setMediaSourceFactory(DefaultMediaSourceFactory(sources).setLoadErrorHandlingPolicy(WaitsForTheServer))
             .setAudioAttributes(Box.SOUND, true)
             .build()
         player = engine
@@ -828,3 +831,19 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
         )
     }
 }
+
+/** A deploy takes the server away for about twenty seconds, and Media3's three
+ *  retries in three seconds turned that into a dead film. A server or network that
+ *  is away is waited for, from the buffer and then on the buffering wheel, for about
+ *  a minute; a request the server answered with a refusal fails at once. */
+@UnstableApi
+private object WaitsForTheServer : DefaultLoadErrorHandlingPolicy(RETRIES) {
+    override fun getRetryDelayMsFor(loadErrorInfo: LoadErrorHandlingPolicy.LoadErrorInfo): Long {
+        val code = (loadErrorInfo.exception as? HttpDataSource.InvalidResponseCodeException)?.responseCode
+        return if (code != null && code in 400..499 && code != 408 && code != 429) C.TIME_UNSET
+        else super.getRetryDelayMsFor(loadErrorInfo)
+    }
+}
+
+/** the default backs off 0, 1, 2, 3, 4 and then 5 s a retry: fifteen are a minute */
+private const val RETRIES = 15
