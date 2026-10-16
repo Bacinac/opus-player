@@ -25,6 +25,13 @@ class CarLink(private val carContext: CarContext) {
     private var connection: ListenableFuture<MediaController>? = null
     private var registered = false
 
+    /** The id of what the session is playing, once a controller is connected;
+     *  read on the main thread the controller is confined to, so the screens
+     *  can mark the current item without forcing a connection of their own. */
+    val nowPlaying: String?
+        get() = connection?.takeIf { it.isDone }
+            ?.let { runCatching { it.get().currentMediaItem?.mediaId }.getOrNull() }
+
     private suspend fun controller(): MediaController {
         val future = connection ?: MediaController.Builder(
             carContext.applicationContext,

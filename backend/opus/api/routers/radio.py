@@ -39,7 +39,7 @@ def _card(s: RadioStation) -> dict:
         "kind": "station",
         "id": s.id,
         "title": s.name,
-        "subtitle": s.genre or s.country or "",
+        "subtitle": " · ".join(part for part in (s.genre, s.country) if part),
         "image": s.logo,
         "backdrop": None,
         "state": None,

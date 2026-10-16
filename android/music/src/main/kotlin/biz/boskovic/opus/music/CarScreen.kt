@@ -5,6 +5,7 @@ import androidx.annotation.OptIn
 import androidx.car.app.CarContext
 import androidx.car.app.CarToast
 import androidx.car.app.Screen
+import androidx.car.app.model.CarColor
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.GridItem
 import androidx.car.app.model.GridSection
@@ -45,6 +46,13 @@ abstract class CarScreen(carContext: CarContext, protected val link: CarLink) : 
     private val albumFallback by lazy {
         CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.ic_car_album)).build()
     }
+    // PRIMARY leaves the day/night choice to the host, so the mark on the item
+    // being played reads against both a light and a dark panel.
+    private val nowPlayingIcon by lazy {
+        CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.ic_car_playing))
+            .setTint(CarColor.PRIMARY)
+            .build()
+    }
 
     internal suspend fun prepare(block: suspend () -> List<Group>): Shelf = try {
         val groups = block()
@@ -74,7 +82,6 @@ abstract class CarScreen(carContext: CarContext, protected val link: CarLink) : 
 
     private suspend fun coversOf(groups: List<Group>): Map<Uri, CarIcon> =
         groups.flatMap { it.items }
-            .filter { it.griddable }
             .mapNotNull { it.mediaMetadata.artworkUri }
             .distinct()
             .mapNotNull { uri ->
@@ -99,7 +106,7 @@ abstract class CarScreen(carContext: CarContext, protected val link: CarLink) : 
             )
             if (rows.isNotEmpty()) add(
                 RowSection.Builder()
-                    .apply { rows.forEach { addItem(row(it)) } }
+                    .apply { rows.forEach { addItem(row(it, art)) } }
                     .apply { (if (grid.isEmpty()) group.title else null)?.let { setTitle(it) } }
                     .build(),
             )
@@ -112,11 +119,17 @@ abstract class CarScreen(carContext: CarContext, protected val link: CarLink) : 
             .apply { title?.let { setTitle(it) } }
             .build()
 
-    private fun row(item: MediaItem): Row {
+    private fun row(item: MediaItem, art: Map<Uri, CarIcon>): Row {
         val meta = item.mediaMetadata
         return Row.Builder()
             .setTitle(meta.title ?: item.mediaId)
             .apply { meta.subtitle?.let { addText(it) } }
+            .apply {
+                when {
+                    item.mediaId == link.nowPlaying -> setImage(nowPlayingIcon, Row.IMAGE_TYPE_ICON)
+                    else -> meta.artworkUri?.let { art[it] }?.let { setImage(it, Row.IMAGE_TYPE_LARGE) }
+                }
+            }
             .apply { if (meta.isBrowsable == true) setBrowsable(true) }
             .setOnClickListener { open(item) }
             .build()
@@ -162,6 +175,5 @@ abstract class CarScreen(carContext: CarContext, protected val link: CarLink) : 
     )
 
     private val MediaItem.griddable: Boolean
-        get() = mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_ALBUM ||
-            mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_RADIO_STATION
+        get() = mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_ALBUM
 }

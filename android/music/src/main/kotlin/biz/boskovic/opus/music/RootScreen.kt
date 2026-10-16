@@ -22,12 +22,28 @@ class RootScreen(carContext: CarContext, link: CarLink) : CarScreen(carContext, 
 
     private data class TabDef(val id: String, val title: Int, val icon: Int)
 
-    private val tabs = listOf(
+    // The tabs and the callback never change through the drive, so they are
+    // built once: a template rebuilt from identical parts stays a refresh the
+    // host can honour in place, rather than new content it scrolls back to the
+    // top of on every redraw.
+    private val tabBar = listOf(
         TabDef(MUSIC, R.string.car_tab_music, R.drawable.ic_car_music),
         TabDef(RADIO, R.string.car_tab_radio, R.drawable.ic_car_radio),
         TabDef(RECENT, R.string.car_tab_recent, R.drawable.ic_car_recent),
         TabDef(OFFLINE, R.string.car_tab_offline, R.drawable.ic_car_offline),
-    )
+    ).map { tab ->
+        Tab.Builder()
+            .setTitle(carContext.getString(tab.title))
+            .setIcon(CarIcon.Builder(IconCompat.createWithResource(carContext, tab.icon)).build())
+            .setContentId(tab.id)
+            .build()
+    }
+    private val onTab = object : TabTemplate.TabCallback {
+        override fun onTabSelected(tabContentId: String) {
+            active = tabContentId
+            invalidate()
+        }
+    }
     private val states = HashMap<String, Shelf>()
     private val started = HashSet<String>()
     private var active = MUSIC
@@ -41,22 +57,9 @@ class RootScreen(carContext: CarContext, link: CarLink) : CarScreen(carContext, 
                 if (active == tab) invalidate()
             }
         }
-        val builder = TabTemplate.Builder(object : TabTemplate.TabCallback {
-            override fun onTabSelected(tabContentId: String) {
-                active = tabContentId
-                invalidate()
-            }
-        })
+        val builder = TabTemplate.Builder(onTab)
         builder.setHeaderAction(Action.APP_ICON)
-        tabs.forEach { tab ->
-            builder.addTab(
-                Tab.Builder()
-                    .setTitle(carContext.getString(tab.title))
-                    .setIcon(CarIcon.Builder(IconCompat.createWithResource(carContext, tab.icon)).build())
-                    .setContentId(tab.id)
-                    .build(),
-            )
-        }
+        tabBar.forEach(builder::addTab)
         builder.setActiveTabContentId(active)
         builder.setTabContents(TabContents.Builder(sectioned(null, state)).build())
         return builder.build()
