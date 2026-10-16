@@ -57,4 +57,13 @@
     <string name="car_pair">Poveži telefon</string>
     <string name="update_ready">Nova verzija aplikacije OPUS Music spremna je za instalaciju.</string>
     <string name="search_failed">Glasovni zahtjev nije moguće izvršiti: OPUS Music se ne odaziva.</string>
+    <string name="car_tab_music">Glazba</string>
+    <string name="car_tab_radio">Radio</string>
+    <string name="car_tab_recent">Nedavno</string>
+    <string name="car_tab_offline">Offline</string>
+    <string name="car_section_recent">Nedavno</string>
+    <string name="car_section_favorites">Favoriti</string>
+    <string name="car_now_playing">Reprodukcija</string>
+    <string name="car_empty">Ovdje još nema ničega.</string>
+    <string name="car_playback_failed">Reprodukciju nije moguće pokrenuti.</string>
 </resources>

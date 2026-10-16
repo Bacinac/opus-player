@@ -16,5 +16,7 @@ dependencies {
     implementation(libs.media3.datasource)
     implementation(libs.media3.datasource.okhttp)
     implementation(libs.media3.database)
+    implementation(libs.androidx.car.app)
+    implementation(libs.androidx.media)
     implementation(libs.coroutines.guava)
 }

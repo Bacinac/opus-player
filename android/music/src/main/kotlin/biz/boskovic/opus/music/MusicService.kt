@@ -29,7 +29,9 @@ import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaConstants
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
+import androidx.media3.session.SessionResult
 import biz.boskovic.opus.core.R as CoreR
 import biz.boskovic.opus.core.Refused
 import biz.boskovic.opus.core.Updater
@@ -188,13 +190,33 @@ class MusicService : MediaLibraryService() {
     private inner class Tree : MediaLibrarySession.Callback {
         override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
             if (Controllers.admits(controller.packageName, controller.isPackageNameVerified, controller.isTrusted)) {
+                val commands = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS
+                    .buildUpon()
+                    .add(SessionCommand(CarLink.PLATFORM_TOKEN, Bundle.EMPTY))
+                    .build()
                 return MediaSession.ConnectionResult.accept(
-                    MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS,
+                    commands,
                     MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS,
                 )
             }
             Log.w(TAG, "refused a controller from ${controller.packageName}")
             return MediaSession.ConnectionResult.reject()
+        }
+
+        /** The car-app screens need this session's platform token to hand to the
+         *  Car App Library host; it is the one piece the MediaPlaybackTemplate
+         *  cannot discover on its own. */
+        override fun onCustomCommand(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            customCommand: SessionCommand,
+            args: Bundle,
+        ): ListenableFuture<SessionResult> {
+            if (customCommand.customAction == CarLink.PLATFORM_TOKEN) {
+                val extras = Bundle().apply { putParcelable(CarLink.KEY_TOKEN, session.platformToken) }
+                return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS, extras))
+            }
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
         }
 
         override fun onGetLibraryRoot(

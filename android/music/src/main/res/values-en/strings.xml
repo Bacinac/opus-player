@@ -53,4 +53,13 @@
     <string name="car_pair">Connect the phone</string>
     <string name="update_ready">A new version of OPUS Music is ready to install.</string>
     <string name="search_failed">The voice request could not be carried out: OPUS Music is not answering.</string>
+    <string name="car_tab_music">Music</string>
+    <string name="car_tab_radio">Radio</string>
+    <string name="car_tab_recent">Recent</string>
+    <string name="car_tab_offline">Offline</string>
+    <string name="car_section_recent">Recent</string>
+    <string name="car_section_favorites">Favorites</string>
+    <string name="car_now_playing">Now playing</string>
+    <string name="car_empty">Nothing here yet.</string>
+    <string name="car_playback_failed">Playback could not start.</string>
 </resources>
