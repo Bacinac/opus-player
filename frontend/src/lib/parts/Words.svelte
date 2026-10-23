@@ -1,9 +1,8 @@
 <script lang="ts">
 	// The words to what is playing, wherever they are asked for.
 	//
-	// They belonged to the record's own screen, which meant they could only be
-	// read while that screen was open. They are asked for from the bar now — the
-	// one thing that is on every screen — and drawn over whatever is underneath.
+	// They are read on the record's own screen, behind a tab beside its songs:
+	// a button in the bar made a third door to the same words.
 	//
 	// A line with a time on it is a place in the song: pressing it goes there.
 

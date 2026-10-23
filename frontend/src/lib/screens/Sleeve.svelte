@@ -221,7 +221,7 @@
 				{fidelity}
 				playing={queue.index}
 				{going}
-				onplay={(i) => queue.jump(i)}
+				onplay={(i, at) => (at !== undefined && i === queue.index ? seek(at) : queue.jump(i))}
 			/>
 		</div>
 		{/if}

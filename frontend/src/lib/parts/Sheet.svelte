@@ -455,7 +455,7 @@
 					artist={album.artist}
 					releaseId={album.id}
 					year={album.release_date?.slice(0, 4) ?? ''}
-					playing={queue.current?.release_id === album.id ? queue.index : -1}
+					playing={album.tracks.findIndex((one) => one.id === queue.current?.id)}
 					going={queue.playing}
 					onplay={(i, at) => queue.play(album!.tracks, i, at)}
 				/>

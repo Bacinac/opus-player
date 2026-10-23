@@ -69,11 +69,13 @@
 	});
 
 	// The words to a song, on the record's own screen rather than only over the
-	// bar: this one reads whichever song the remote is standing on, which is
-	// usually not the song that is playing.
+	// bar: a television reads whichever song the remote is standing on, which is
+	// usually not the song that is playing. A pointer stands on nothing between
+	// presses, so everywhere else the words follow the song that is on.
 	const reading = new LyricsState();
 	let showing = $state<'songs' | 'words'>('songs');
 	let atSong = $state(0);
+	const readingSong = $derived(!surface.isTv && playing >= 0 ? playing : atSong);
 
 	// the marks beside the songs are asked for as the record opens, because they
 	// are drawn before anything is pressed
@@ -81,11 +83,18 @@
 		void albumWords.ask(surface.isTv ? releaseId : null);
 	});
 
-	// and the words themselves only while somebody is reading them
+	// and the words themselves only while somebody is reading them — except off
+	// a television, where the tab is offered only to a song that has words, so
+	// they are asked for as the song comes on
 	$effect(() => {
-		if (showing !== 'words') return;
-		void reading.load(tracks[atSong]?.id ?? null);
+		if (surface.isTv && showing !== 'words') return;
+		void reading.load(tracks[readingSong]?.id ?? null);
 	});
+	const offered = $derived(
+		reading.timed || Boolean(reading.words?.plain) || reading.failed
+			|| (showing === 'words' && reading.loading)
+	);
+	const reads = $derived(showing === 'words' && offered);
 
 	// a record put away takes its reading with it. Only the record is watched:
 	// hanging this on what is playing would put the songs back every time the
@@ -98,7 +107,7 @@
 
 	// the line being sung, but only when the song being read is the song that is
 	// sounding — the words to the next track do not follow anybody's playback
-	const elapsed = $derived(playing === atSong ? queue.position : 0);
+	const elapsed = $derived(playing === readingSong ? queue.position : 0);
 
 	// the page that was there before this record went, and the ring with it
 	$effect(() => (surface.isTv ? focusWaiting('.panel .go') : undefined));
@@ -148,11 +157,6 @@
 			<span class="reading">{tracks[atSong]?.title ?? ''}</span>
 		{/snippet}
 	</Turntable>
-	<!-- a line of a song is a place in it: pressing one plays this song from
-	     there, whether or not it was the song that was on -->
-	{#snippet wordsOf()}
-		<Words {reading} {elapsed} seek={(to) => onplay(atSong, to)} />
-	{/snippet}
 {:else}
 <MediaHead
 	title={album}
@@ -162,6 +166,18 @@
 	square
 />
 
+<div class="pane">
+{#if offered}
+	<div class="tabs">
+		<Press tone="pill" on={!reads} onclick={() => (showing = 'songs')}>{t('music.songs')}</Press>
+		<Press tone="pill" on={reads} onclick={() => (showing = 'words')}>{t('sleeve.lyrics')}</Press>
+		{#if reads}<span class="reading">{tracks[readingSong]?.title ?? ''}</span>{/if}
+	</div>
+{/if}
+
+{#if reads}
+	<div class="reader">{@render wordsOf()}</div>
+{:else}
 <ol class="songs" bind:this={list}>
 	{#each tracks as song, i (song.id)}
 		<li>
@@ -187,8 +203,16 @@
 		</li>
 	{/each}
 </ol>
+{/if}
+</div>
 
 {/if}
+
+<!-- a line of a song is a place in it: pressing one plays this song from
+     there, whether or not it was the song that was on -->
+{#snippet wordsOf()}
+	<Words {reading} {elapsed} seek={(to) => onplay(readingSong, to)} />
+{/snippet}
 
 {#if !tracks.length}
 	<p class="quiet">{t('common.loading')}</p>
@@ -291,6 +315,29 @@
 	}
 	.quiet {
 		color: var(--muted);
+	}
+	/* the songs overflow into the page, which scrolls them with the record; the
+	   words scroll in their own box, because the line being sung is brought to
+	   the middle of it */
+	.pane {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		min-height: 0;
+	}
+	.tabs {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+	}
+	.reader {
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 auto;
+		min-height: 0;
+		max-height: 70vh;
 	}
 	/* which song is being read, beside the choice of what this side shows */
 	.reading {
