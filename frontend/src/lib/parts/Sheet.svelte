@@ -353,6 +353,14 @@
 		)
 	);
 
+	// A record opens where the artist's name was, at the top of the page; picked
+	// from the bottom of a long shelf, it opened out of sight and the press
+	// seemed to do nothing. A television shows it in place of the shelf instead.
+	let panel = $state<HTMLElement | null>(null);
+	$effect(() => {
+		if (album && !surface.isTv) panel?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+	});
+
 	// while a record is on this screen, putting it on does not open a second copy
 	$effect(() => {
 		sleeve.onScreen = album?.id ?? null;
@@ -401,7 +409,7 @@
 				<Fanart art={behind} wash={!card.backdrop} />
 			</div>
 		{/if}
-		<div class="panel" role="presentation" onclick={(e) => e.stopPropagation()}>
+		<div class="panel" role="presentation" bind:this={panel} onclick={(e) => e.stopPropagation()}>
 			{#snippet madeBy()}
 				<Made people={about?.directors ?? []} />
 			{/snippet}
@@ -637,6 +645,8 @@
 	}
 	.panel {
 		width: 100%;
+		/* brought into view below the frame's top bar, which stays over the page */
+		scroll-margin-top: var(--frame-top, 0px);
 	}
 	.tv .panel {
 		font-size: var(--fs-l);

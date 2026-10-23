@@ -84,11 +84,11 @@
 	});
 
 	// and the words themselves only while somebody is reading them — except off
-	// a television, where the tab is offered only to a song that has words, so
-	// they are asked for as the song comes on
+	// a television, where the tab is offered only to a playing song that has
+	// words, so they are asked for as the song comes on
 	$effect(() => {
-		if (surface.isTv && showing !== 'words') return;
-		void reading.load(tracks[readingSong]?.id ?? null);
+		if (!surface.isTv) void reading.load(playing >= 0 ? (tracks[playing]?.id ?? null) : null);
+		else if (showing === 'words') void reading.load(tracks[atSong]?.id ?? null);
 	});
 	const offered = $derived(
 		reading.timed || Boolean(reading.words?.plain) || reading.failed
