@@ -31,7 +31,7 @@ from sqlalchemy import select
 
 from opus import auth, dac, house, library
 from opus.api.routers.art import asked_for
-from opus.api.routers.play import stream_url
+from opus.api.routers.play import announcement_url, stream_url
 from opus.api.routers.radio import play_url
 from opus.api.routers.users import picked, profile_key, require_picked
 from opus.cards import artist_card, croatian, episode_card, movie_card, series_card
@@ -622,6 +622,30 @@ async def dac_play(body: DacPlay):
     try:
         await dac.play(_addresses(config, body.tracks),
                        max(0, min(body.start, len(body.tracks) - 1)))
+    except dac.DacError as exc:
+        raise HTTPException(502, str(exc)) from exc
+    return {"ok": True}
+
+
+# what a house sends to be spoken is a sentence, a few seconds of speech
+ANNOUNCEMENT_MAX = 4 << 20
+
+
+@router.post("/dac/announce")
+async def dac_announce(request: Request):
+    """The house's sound spoken over what the DAC plays, which then plays on.
+    The sound itself arrives, never an address: an address from a request is
+    not a sentence to hand an amplifier."""
+    if int(request.headers.get("content-length") or 0) > ANNOUNCEMENT_MAX:
+        raise HTTPException(413, "an announcement is a sentence, not a programme")
+    audio = await request.body()
+    if not audio:
+        raise HTTPException(400, "nothing to say")
+    if len(audio) > ANNOUNCEMENT_MAX:
+        raise HTTPException(413, "an announcement is a sentence, not a programme")
+    config = await current_runtime()
+    try:
+        await dac.announce(announcement_url(config, await dac.record(audio)))
     except dac.DacError as exc:
         raise HTTPException(502, str(exc)) from exc
     return {"ok": True}

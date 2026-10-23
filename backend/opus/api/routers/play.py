@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response, StreamingResponse
 from opus_core.responses import FileResponse
 
-from opus import auth, library, playback
+from opus import auth, dac, library, playback
 from opus.api.routers.users import require_picked
 from opus.models import RadioStation, User
 from opus.db import SessionLocal
@@ -194,6 +194,16 @@ def stream_url(config, track_id: int, codec: str | None, prefer: str = "stereo")
     return f"{base}{prefix}stream?ticket={ticket}&prefer={prefer}&fmt=.{suffix}"
 
 
+def announcement_url(config, number: int) -> str:
+    """Where the DAC fetches a sentence the house asked it to speak."""
+    base = (config.get("stream_base") or "").rstrip("/")
+    if not base:
+        raise HTTPException(503, "stream_base is not configured, and a renderer "
+                                 "cannot fetch from a relative path")
+    prefix = f"/api/play/announcement/{number}/"
+    return f"{base}{prefix}stream?ticket={auth.play_ticket(prefix)}"
+
+
 def _queued(config, t: dict, prefer: str) -> dict:
     return {
         "id": t["id"], "release_id": t.get("release_id"),
@@ -299,6 +309,14 @@ async def rebuilt(request: Request, command: list[str], mode: str, what: str,
     return StreamingResponse(
         rest(), media_type=media_type, headers={"Cache-Control": "no-store"}
     )
+
+
+@router.get("/play/announcement/{number}/stream")
+async def announcement(number: int):
+    audio = dac.recorded(number)
+    if audio is None:
+        raise HTTPException(404, "no such announcement")
+    return Response(audio, media_type="audio/flac", headers={"Cache-Control": "no-store"})
 
 
 @router.get("/play/{kind}/{item_id}/stream")
