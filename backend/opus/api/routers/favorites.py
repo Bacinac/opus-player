@@ -76,9 +76,9 @@ async def favorites(who: Person = Depends(person_of),
         return {"tracks": []}
     try:
         found = await library.get("/music/tracks", ids=",".join(map(str, ids)))
+        return {"tracks": in_saved_order(ids, found)}
     except library.LibraryError as exc:
         raise HTTPException(502, str(exc))
-    return {"tracks": in_saved_order(ids, found)}
 
 
 @router.put("/music/favorites/{track_id}", status_code=status.HTTP_201_CREATED)
