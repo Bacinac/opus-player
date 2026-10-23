@@ -199,7 +199,7 @@
 				songs={queue.tracks}
 				at={queue.index}
 				{going}
-				onpick={(i) => queue.jump(i)}
+				onpick={(i) => queue.play(queue.tracks, i)}
 				instead={pane === 'words' && worded ? words : undefined}
 			>
 				{#snippet tabs()}
@@ -221,7 +221,7 @@
 				{fidelity}
 				playing={queue.index}
 				{going}
-				onplay={(i, at) => (at !== undefined && i === queue.index ? seek(at) : queue.jump(i))}
+				onplay={(i, at) => (at !== undefined && i === queue.index ? seek(at) : queue.play(queue.tracks, i))}
 			/>
 		</div>
 		{/if}
