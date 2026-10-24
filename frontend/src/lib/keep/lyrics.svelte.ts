@@ -6,7 +6,7 @@
 // well — it is the same question every screen showing them would otherwise
 // answer for itself.
 
-import { request } from '$lib/kit';
+import { request } from '#lib/kit/index.js';
 
 export type Line = { at: number; text: string };
 

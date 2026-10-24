@@ -5,12 +5,12 @@
 // there stops handing it more.
 
 import type { ComponentProps } from 'svelte';
-import { t } from '$lib/i18n';
-import { json, request, toasts } from '$lib/kit';
-import { aboutOf } from '$lib/opus';
-import type PhotoViewer from '$lib/opus/PhotoViewer.svelte';
-import type { Box } from '$lib/keep/tvFilm.svelte';
-import { onBox } from '$lib/tv/bridge';
+import { t } from '#lib/i18n/index.js';
+import { json, request, toasts } from '#lib/kit/index.js';
+import { aboutOf } from '#lib/opus/index.js';
+import type PhotoViewer from '#lib/opus/PhotoViewer.svelte';
+import type { Box } from '#lib/keep/tvFilm.svelte.js';
+import { onBox } from '#lib/tv/bridge.js';
 
 export type Photo = ComponentProps<typeof PhotoViewer>['photo'];
 

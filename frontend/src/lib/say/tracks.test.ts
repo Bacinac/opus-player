@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { languageOf, offeredSubtitles, soundName, subtitleName } from './tracks';
-import type { PlanSubtitle } from '$lib/keep/types';
+import type { PlanSubtitle } from '#lib/keep/types.js';
 
 describe('soundName', () => {
 	test('says the language, the channels through the formatter, and the codec', () => {

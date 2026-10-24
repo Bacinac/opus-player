@@ -6,9 +6,9 @@
 	// The real override survives it: `?surface=tv` in the address, for the one
 	// case detection cannot see, which is a laptop plugged into a television.
 
-	import { surface, SURFACES, type Surface } from '$lib/keep/surface.svelte';
-	import { t, type MessageKey } from '$lib/i18n';
-	import Choose from '$lib/tvui/Choose.svelte';
+	import { surface, SURFACES, type Surface } from '#lib/keep/surface.svelte.js';
+	import { t, type MessageKey } from '#lib/i18n/index.js';
+	import Choose from '#lib/tvui/Choose.svelte';
 </script>
 
 <div class="picker" data-aside>

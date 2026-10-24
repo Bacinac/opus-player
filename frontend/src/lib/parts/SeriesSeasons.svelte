@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { formatNumber, t } from '$lib/i18n';
-	import Choose, { type Option } from '$lib/tvui/Choose.svelte';
-	import Episodes from '$lib/parts/Episodes.svelte';
-	import Press from '$lib/tvui/Press.svelte';
-	import { haveOf, seasonName } from '$lib/say/says';
-	import type { EpisodeEntry, SeasonView } from '$lib/keep/types';
+	import { formatNumber, t } from '#lib/i18n/index.js';
+	import Choose, { type Option } from '#lib/tvui/Choose.svelte';
+	import Episodes from '#lib/parts/Episodes.svelte';
+	import Press from '#lib/tvui/Press.svelte';
+	import { haveOf, seasonName } from '#lib/say/says.js';
+	import type { EpisodeEntry, SeasonView } from '#lib/keep/types.js';
 
 	let {
 		seasons,

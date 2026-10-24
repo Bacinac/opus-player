@@ -6,9 +6,9 @@
 	// arrows that walk a shelf walk them — which is what every set-top box does,
 	// Kodi included.
 
-	import { i18n, t } from '$lib/i18n';
-	import { toasts } from '$lib/kit';
-	import { onBox } from '$lib/tv/bridge';
+	import { i18n, t } from '#lib/i18n/index.js';
+	import { toasts } from '#lib/kit/index.js';
+	import { onBox } from '#lib/tv/bridge.js';
 
 	let { value, hint, onchange, onsubmit }: {
 		value: string;

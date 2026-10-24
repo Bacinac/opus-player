@@ -6,15 +6,15 @@
 	// Built for the hardest input in the house: four arrow keys and OK. Big
 	// targets, one row, nothing to type.
 
-	import { t } from '$lib/i18n';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { focusFirst } from '$lib/tv/spatial.svelte';
-	import type { Profile } from '$lib/keep/types';
-	import { COLOURS } from '$lib/tvui/colours';
-	import Portrait from '$lib/tvui/Portrait.svelte';
-	import Press from '$lib/tvui/Press.svelte';
-	import { json, request } from '$lib/kit';
-	import { me } from '$lib/opus';
+	import { t } from '#lib/i18n/index.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { focusFirst } from '#lib/tv/spatial.svelte.js';
+	import type { Profile } from '#lib/keep/types.js';
+	import { COLOURS } from '#lib/tvui/colours.js';
+	import Portrait from '#lib/tvui/Portrait.svelte';
+	import Press from '#lib/tvui/Press.svelte';
+	import { json, request } from '#lib/kit/index.js';
+	import { me } from '#lib/opus/index.js';
 
 	let { onpicked }: { onpicked: () => void } = $props();
 

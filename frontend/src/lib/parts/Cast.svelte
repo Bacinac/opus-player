@@ -2,13 +2,13 @@
 	// Who is in it, with faces, and each of them a way into the rest of their
 	// work. A film's screen and a series' show the same row.
 
-	import { art } from '$lib/ask/art';
+	import { art } from '#lib/ask/art.js';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import type { Person } from '$lib/keep/types';
-	import Portrait from '$lib/tvui/Portrait.svelte';
-	import { sectionOf } from '$lib/say/ways';
-	import { sideways } from '$lib/tvui/sideways';
+	import type { Person } from '#lib/keep/types.js';
+	import Portrait from '#lib/tvui/Portrait.svelte';
+	import { sectionOf } from '#lib/say/ways.js';
+	import { sideways } from '#lib/tvui/sideways.js';
 
 	let { people }: { people: Person[] } = $props();
 </script>

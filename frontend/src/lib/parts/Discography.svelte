@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
-	import { art } from '$lib/ask/art';
-	import { t } from '$lib/i18n';
-	import { Progress, request, withLang } from '$lib/kit';
-	import { wantRecord } from '$lib/ask/want';
-	import Kin from '$lib/parts/Kin.svelte';
-	import type { ArtistShelf, Card } from '$lib/keep/types';
+	import { art } from '#lib/ask/art.js';
+	import { t } from '#lib/i18n/index.js';
+	import { Progress, request, withLang } from '#lib/kit/index.js';
+	import { wantRecord } from '#lib/ask/want.js';
+	import Kin from '#lib/parts/Kin.svelte';
+	import type { ArtistShelf, Card } from '#lib/keep/types.js';
 
 	let {
 		shelf,

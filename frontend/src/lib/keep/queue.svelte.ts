@@ -5,7 +5,7 @@
 // something else. So the queue is module state and the bar that shows it lives
 // in the frame, not on the music page.
 
-import { forget, keep, recall } from '$lib/kit';
+import { forget, keep, recall } from '#lib/kit/index.js';
 
 /** Whether the television's own player is there to take a stream. It is the
     only place a surround edition can be heard: everywhere else the sound is

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Question } from '$lib/ask/guess';
+	import type { Question } from '#lib/ask/guess.js';
 
 	let { src, frame, marked }: { src: string; frame: Question['frame']; marked: boolean } = $props();
 

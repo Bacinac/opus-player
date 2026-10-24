@@ -3,16 +3,16 @@
 	// music page, because a record goes on and then you walk away from the page
 	// that started it.
 
-	import { cast } from '$lib/keep/cast.svelte';
-	import { json, request } from '$lib/kit';
-	import Outputs from '$lib/parts/Outputs.svelte';
-	import PlayerBar from '$lib/parts/PlayerBar.svelte';
-	import { hasEngine, queue } from '$lib/keep/queue.svelte';
-	import Sleeve from '$lib/screens/Sleeve.svelte';
-	import { sleeve } from '$lib/keep/sleeve.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { onBox } from '$lib/tv/bridge';
-	import { Crossfade } from '$lib/keep/crossfade';
+	import { cast } from '#lib/keep/cast.svelte.js';
+	import { json, request } from '#lib/kit/index.js';
+	import Outputs from '#lib/parts/Outputs.svelte';
+	import PlayerBar from '#lib/parts/PlayerBar.svelte';
+	import { hasEngine, queue } from '#lib/keep/queue.svelte.js';
+	import Sleeve from '#lib/screens/Sleeve.svelte';
+	import { sleeve } from '#lib/keep/sleeve.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { onBox } from '#lib/tv/bridge.js';
+	import { Crossfade } from '#lib/keep/crossfade.js';
 
 	/** Two elements, not one. A song used to end, and only THEN was the next
 	 *  address handed to the same element — so the record stopped dead, the

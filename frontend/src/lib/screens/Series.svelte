@@ -8,16 +8,16 @@
 	// now draw the same seasons and lines from the one set of words below; a
 	// sofa only gets them in a row it can walk with a remote.
 
-	import { art } from '$lib/ask/art';
+	import { art } from '#lib/ask/art.js';
 	import { goto } from '$app/navigation';
-	import { onBack } from '$lib/keep/back.svelte';
+	import { onBack } from '#lib/keep/back.svelte.js';
 	import {
 		Button,
 		Icon,
 		request,
 		Tag,
 		withLang
-	} from '$lib/kit';
+	} from '#lib/kit/index.js';
 	import {
 		EpisodeRow,
 		MediaHead,
@@ -25,19 +25,19 @@
 		SeriesPage,
 		StateMark,
 		Tally
-	} from '$lib/opus';
-	import Press from '$lib/tvui/Press.svelte';
-	import Split from '$lib/tvui/Split.svelte';
-	import Play from '$lib/screens/Play.svelte';
-	import { askEpisode, want } from '$lib/ask/want';
-	import Cast from '$lib/parts/Cast.svelte';
-	import Copy from '$lib/parts/Copy.svelte';
-	import Made from '$lib/parts/Made.svelte';
-	import { chipsOf } from '$lib/say/copy';
-	import { aboutWork } from '$lib/say/facts';
-	import { watched } from '$lib/keep/watched.svelte';
+	} from '#lib/opus/index.js';
+	import Press from '#lib/tvui/Press.svelte';
+	import Split from '#lib/tvui/Split.svelte';
+	import Play from '#lib/screens/Play.svelte';
+	import { askEpisode, want } from '#lib/ask/want.js';
+	import Cast from '#lib/parts/Cast.svelte';
+	import Copy from '#lib/parts/Copy.svelte';
+	import Made from '#lib/parts/Made.svelte';
+	import { chipsOf } from '#lib/say/copy.js';
+	import { aboutWork } from '#lib/say/facts.js';
+	import { watched } from '#lib/keep/watched.svelte.js';
 	import { page } from '$app/state';
-	import { aired, episodeLabel } from '$lib/say/episode';
+	import { aired, episodeLabel } from '#lib/say/episode.js';
 	import {
 		episodeName,
 		episodeTags,
@@ -46,13 +46,13 @@
 		seasonMark,
 		seasonName,
 		seasonViews
-	} from '$lib/say/says';
-	import { formatDate, formatNumber, t } from '$lib/i18n';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { hero } from '$lib/keep/hero.svelte';
-	import Info from '$lib/tv/Info.svelte';
-	import InfoPress from '$lib/tv/InfoPress.svelte';
-	import type { Card, EpisodeEntry, SeasonView, SeriesTree } from '$lib/keep/types';
+	} from '#lib/say/says.js';
+	import { formatDate, formatNumber, t } from '#lib/i18n/index.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { hero } from '#lib/keep/hero.svelte.js';
+	import Info from '#lib/tv/Info.svelte';
+	import InfoPress from '#lib/tv/InfoPress.svelte';
+	import type { Card, EpisodeEntry, SeasonView, SeriesTree } from '#lib/keep/types.js';
 
 	let { id }: { id: number } = $props();
 

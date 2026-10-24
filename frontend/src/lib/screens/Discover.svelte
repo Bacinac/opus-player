@@ -3,31 +3,31 @@
 	// card offers is to want it — after which it stops being this screen's
 	// business and becomes a download in the Library's queue.
 
-	import { art } from '$lib/ask/art';
-	import Row from '$lib/parts/Row.svelte';
-	import Grid from '$lib/parts/Grid.svelte';
-	import Play from '$lib/screens/Play.svelte';
-	import Sheet from '$lib/parts/Sheet.svelte';
-	import { Heading } from '$lib/kit';
-	import Keyboard from '$lib/parts/Keyboard.svelte';
-	import Who from '$lib/parts/Who.svelte';
-	import { hero } from '$lib/keep/hero.svelte';
-	import { onBack } from '$lib/keep/back.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { panel } from '$lib/keep/panel.svelte';
-	import { focusContent } from '$lib/tv/spatial.svelte';
-	import { forget, keep, recall, request } from '$lib/kit';
-	import { atItsArtist, opened } from '$lib/say/pick';
-	import { want } from '$lib/ask/want';
+	import { art } from '#lib/ask/art.js';
+	import Row from '#lib/parts/Row.svelte';
+	import Grid from '#lib/parts/Grid.svelte';
+	import Play from '#lib/screens/Play.svelte';
+	import Sheet from '#lib/parts/Sheet.svelte';
+	import { Heading } from '#lib/kit/index.js';
+	import Keyboard from '#lib/parts/Keyboard.svelte';
+	import Who from '#lib/parts/Who.svelte';
+	import { hero } from '#lib/keep/hero.svelte.js';
+	import { onBack } from '#lib/keep/back.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { panel } from '#lib/keep/panel.svelte.js';
+	import { focusContent } from '#lib/tv/spatial.svelte.js';
+	import { forget, keep, recall, request } from '#lib/kit/index.js';
+	import { atItsArtist, opened } from '#lib/say/pick.js';
+	import { want } from '#lib/ask/want.js';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { formatNumber, t } from '$lib/i18n';
-	import type { Card, Row as RowType, Somebody } from '$lib/keep/types';
-	import { winners } from '$lib/keep/awards';
-	import { STANCES, readStances, servicesOf, sift, writtenStances, type Stances } from '$lib/keep/streaming';
-	import { nav } from '$lib/tvui/nav.svelte';
-	import Portrait from '$lib/tvui/Portrait.svelte';
-	import Choose, { type Option } from '$lib/tvui/Choose.svelte';
+	import { formatNumber, t } from '#lib/i18n/index.js';
+	import type { Card, Row as RowType, Somebody } from '#lib/keep/types.js';
+	import { winners } from '#lib/keep/awards.js';
+	import { STANCES, readStances, servicesOf, sift, writtenStances, type Stances } from '#lib/keep/streaming.js';
+	import { nav } from '#lib/tvui/nav.svelte.js';
+	import Portrait from '#lib/tvui/Portrait.svelte';
+	import Choose, { type Option } from '#lib/tvui/Choose.svelte';
 
 	let { section = 'movies', find = 'trending' }: { section?: string; find?: string } =
 		$props();

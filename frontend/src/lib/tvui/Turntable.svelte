@@ -4,7 +4,7 @@
 	// putting it on does not change what the screen is.
 
 	import type { Snippet } from 'svelte';
-	import { art } from '$lib/ask/art';
+	import { art } from '#lib/ask/art.js';
 	import Songs from './Songs.svelte';
 
 	type Song = { id?: number; title: string; position: number; duration_s?: number | null };

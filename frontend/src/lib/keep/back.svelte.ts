@@ -6,7 +6,7 @@
 // Every part that can be on top says so here rather than each of them fighting
 // over window.opusBack, which is what the wrapper asks.
 
-import { dismissLayer } from '$lib/kit/layers';
+import { dismissLayer } from '#lib/kit/layers.js';
 
 /** Returns true when this step swallowed the press. */
 export type Step = () => boolean;

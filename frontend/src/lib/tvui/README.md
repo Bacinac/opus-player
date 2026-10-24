@@ -1,4 +1,4 @@
-# `$lib/tvui` — the ten-foot vocabulary
+# `#lib/tvui` — the ten-foot vocabulary
 
 Everything a television screen is made of, in one place, so that no two OPUS TV
 screens can disagree about what a pill, a button, a portrait, a grid or a focus
@@ -6,7 +6,7 @@ ring is.
 
 ## Why this is a directory and not a second submodule
 
-`$lib/opus` is a submodule (`Bacinac/opus-ui`) because three modules share it.
+`#lib/opus` is a submodule (`Bacinac/opus-ui`) because three modules share it.
 This is not shared with anybody:
 
 - A ten-foot button is not a desk button with more padding: it is a different
@@ -27,7 +27,7 @@ split` away — building it that way first would be paying for sharing that does
 not exist.
 
 What genuinely IS shared — the brand, the palette, i18n, the marks, the door —
-stays in `$lib/opus` and is imported from there.
+stays in `#lib/opus` and is imported from there.
 
 ## The boundary, which is checked rather than remembered
 

@@ -11,8 +11,8 @@
  * phone, from a reinstall, or from a person who picked the whole roll again
  * because that is what the iPhone picker makes easy. */
 
-import { TAG, b64, markOf, random, seal, sealPiece, sealedLength } from '$lib/ask/crypto';
-import { json } from '$lib/kit';
+import { TAG, b64, markOf, random, seal, sealPiece, sealedLength } from '#lib/ask/crypto.js';
+import { json } from '#lib/kit/index.js';
 import { answered, vault } from './vault.svelte';
 
 export type Stage = 'idle' | 'reading' | 'sending' | 'done' | 'failed';

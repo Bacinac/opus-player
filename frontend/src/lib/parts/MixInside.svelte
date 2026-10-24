@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
-	import { Heading, request } from '$lib/kit';
-	import Press from '$lib/tvui/Press.svelte';
-	import type { Card } from '$lib/keep/types';
+	import { t } from '#lib/i18n/index.js';
+	import { Heading, request } from '#lib/kit/index.js';
+	import Press from '#lib/tvui/Press.svelte';
+	import type { Card } from '#lib/keep/types.js';
 
 	let {
 		card,

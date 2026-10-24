@@ -3,9 +3,9 @@
 // rule lives in the shared layer and the keys are named after the thing, so a
 // screen asks for a count and gets a badge.
 
-import { plural } from '$lib/i18n';
-import type { TagTone } from '$lib/kit';
-import type { Kind } from '$lib/opus';
+import { plural } from '#lib/i18n/index.js';
+import type { TagTone } from '#lib/kit/index.js';
+import type { Kind } from '#lib/opus/index.js';
 
 export type Count = { text: string; tone?: TagTone; kind?: Kind; icon: string };
 

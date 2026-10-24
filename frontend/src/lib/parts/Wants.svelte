@@ -7,13 +7,13 @@
 	// admin keeps — because they are the same answers about the same thing,
 	// and a second copy of them is the copy that drifts.
 
-	import { t } from '$lib/i18n';
-	import Choose from '$lib/tvui/Choose.svelte';
-	import Rows from '$lib/tvui/Rows.svelte';
-	import { json, request } from '$lib/kit';
-	import { me } from '$lib/opus';
-	import { faces, type Face } from '$lib/ask/photos';
-	import type { Profile } from '$lib/keep/types';
+	import { t } from '#lib/i18n/index.js';
+	import Choose from '#lib/tvui/Choose.svelte';
+	import Rows from '#lib/tvui/Rows.svelte';
+	import { json, request } from '#lib/kit/index.js';
+	import { me } from '#lib/opus/index.js';
+	import { faces, type Face } from '#lib/ask/photos.js';
+	import type { Profile } from '#lib/keep/types.js';
 
 	let { who, onchanged }: { who: Profile; onchanged: () => void } = $props();
 

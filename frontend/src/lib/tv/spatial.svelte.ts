@@ -9,11 +9,11 @@
 // answered here: what is nearest in the direction asked for, measured on the
 // screen the person is actually looking at.
 
-import { surface } from '$lib/keep/surface.svelte';
-import { DIRECTIONS, PRESS, typing, type Direction } from '$lib/tvui/keys';
-import { nav } from '$lib/tvui/nav.svelte';
-import { showing } from '$lib/tvui/reach';
-import { hero } from '$lib/keep/hero.svelte';
+import { surface } from '#lib/keep/surface.svelte.js';
+import { DIRECTIONS, PRESS, typing, type Direction } from '#lib/tvui/keys.js';
+import { nav } from '#lib/tvui/nav.svelte.js';
+import { showing } from '#lib/tvui/reach.js';
+import { hero } from '#lib/keep/hero.svelte.js';
 
 // Anything the remote may land on. A negative tabindex means a thing is
 // reachable by name and not in the walk — the film's position bar says so about

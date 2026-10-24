@@ -2,9 +2,9 @@
 // its own engine and tells the house what it is doing; this follows that report,
 // so every page here can say what is on over there and still hold its keys.
 
-import { t } from '$lib/i18n';
-import { i18n, json, request, toasts } from '$lib/kit';
-import type { Card } from '$lib/keep/types';
+import { t } from '#lib/i18n/index.js';
+import { i18n, json, request, toasts } from '#lib/kit/index.js';
+import type { Card } from '#lib/keep/types.js';
 
 export type Box = { id: number; name: string; listening: boolean; house: boolean; wakes: boolean };
 

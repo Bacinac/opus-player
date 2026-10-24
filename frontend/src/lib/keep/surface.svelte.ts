@@ -5,7 +5,7 @@
 // laptop plugged into a television is a television, and says so by being told —
 // the override is a first-class answer, not a debug flag.
 
-import { forget, keep, recall } from '$lib/kit';
+import { forget, keep, recall } from '#lib/kit/index.js';
 
 export type Surface = 'tv' | 'desktop' | 'tablet' | 'mobile';
 

@@ -2,7 +2,7 @@
 // remains the source for the track cards themselves.  Kept once for the whole
 // browser so twelve rows of an album do not make twelve identical requests.
 
-import { request } from '$lib/kit';
+import { request } from '#lib/kit/index.js';
 import { watching } from './watching.svelte';
 
 type FavoriteList = { tracks: Array<{ id: number }> };

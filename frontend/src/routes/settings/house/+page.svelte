@@ -11,7 +11,7 @@
 	// with unusually many opinions.
 
 	import { goto } from '$app/navigation';
-	import { formatBytes, t, type MessageKey } from '$lib/i18n';
+	import { formatBytes, t, type MessageKey } from '#lib/i18n/index.js';
 	import {
 		ArmedButton,
 		Button,
@@ -23,16 +23,16 @@
 		SettingsDraft,
 		json,
 		request
-	} from '$lib/kit';
+	} from '#lib/kit/index.js';
 	import {
 		me,
 		Tokens
-	} from '$lib/opus';
-	import type { Profile, Volume } from '$lib/keep/types';
-	import { COLOURS } from '$lib/tvui/colours';
-	import Portrait from '$lib/tvui/Portrait.svelte';
-	import Wants from '$lib/parts/Wants.svelte';
-	import Wiring, { type Wired } from '$lib/parts/Wiring.svelte';
+	} from '#lib/opus/index.js';
+	import type { Profile, Volume } from '#lib/keep/types.js';
+	import { COLOURS } from '#lib/tvui/colours.js';
+	import Portrait from '#lib/tvui/Portrait.svelte';
+	import Wants from '#lib/parts/Wants.svelte';
+	import Wiring, { type Wired } from '#lib/parts/Wiring.svelte';
 
 	let people = $state<Profile[]>([]);
 	let adding = $state('');
@@ -113,7 +113,7 @@
 	// nobody, which is a no here as well.
 	$effect(() => {
 		if (me.open && !me.admin) {
-			goto('/settings', { replaceState: true });
+			goto('/settings', { replace: true });
 			return;
 		}
 		if (me.admin) load();

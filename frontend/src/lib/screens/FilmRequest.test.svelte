@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { film } from '$lib/keep/film.svelte';
+	import { film } from '#lib/keep/film.svelte.js';
 	import Play from './Play.svelte';
 </script>
 

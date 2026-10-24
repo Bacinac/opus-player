@@ -2,10 +2,10 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { flushSync, mount, unmount } from 'svelte';
 import FilmRequest from './FilmRequest.test.svelte';
-import { film } from '$lib/keep/film.svelte';
-import { surface } from '$lib/keep/surface.svelte';
-import { FilmEngine } from '$lib/tv/filmEngine.svelte';
-import type { Card, Plan } from '$lib/keep/types';
+import { film } from '#lib/keep/film.svelte.js';
+import { surface } from '#lib/keep/surface.svelte.js';
+import { FilmEngine } from '#lib/tv/filmEngine.svelte.js';
+import type { Card, Plan } from '#lib/keep/types.js';
 
 let host: ReturnType<typeof mount> | null = null;
 const reports: { kind: string; item_id: number; position_s: number }[] = [];

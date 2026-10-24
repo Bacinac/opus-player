@@ -3,8 +3,8 @@
 	// name, how long it runs, and a note in place of the number on the one that
 	// is sounding.
 
-	import { Icon } from '$lib/kit';
-	import { duration, t } from '$lib/i18n';
+	import { Icon } from '#lib/kit/index.js';
+	import { duration, t } from '#lib/i18n/index.js';
 
 	type Song = { id?: number; title: string; position: number; duration_s?: number | null };
 

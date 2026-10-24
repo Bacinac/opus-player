@@ -3,7 +3,7 @@
 // fetched. A genre either adds later has no key yet and shows under its English
 // name, which is a word a reader can still use — never a raw key.
 
-import { t } from '$lib/i18n';
+import { t } from '#lib/i18n/index.js';
 
 const slug = (name: string) => name.toLowerCase().replace(/[^a-z]/g, '');
 

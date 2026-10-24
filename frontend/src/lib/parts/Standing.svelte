@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { formatNumber, t } from '$lib/i18n';
-	import type { Standing } from '$lib/ask/guess';
-	import { count } from '$lib/say/count';
+	import { formatNumber, t } from '#lib/i18n/index.js';
+	import type { Standing } from '#lib/ask/guess.js';
+	import { count } from '#lib/say/count.js';
 
 	let { standing, mine, best = false }: { standing: Standing[]; mine: string; best?: boolean } = $props();
 </script>

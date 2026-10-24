@@ -3,11 +3,11 @@
 	// then on every photograph this phone moves to, until it is pressed again.
 
 	import { untrack } from 'svelte';
-	import { Button } from '$lib/kit';
-	import { t } from '$lib/i18n';
-	import Choose from '$lib/tvui/Choose.svelte';
-	import { televisions, type Box } from '$lib/keep/tvFilm.svelte';
-	import { tvPhoto, type Photo } from '$lib/keep/tvPhoto.svelte';
+	import { Button } from '#lib/kit/index.js';
+	import { t } from '#lib/i18n/index.js';
+	import Choose from '#lib/tvui/Choose.svelte';
+	import { televisions, type Box } from '#lib/keep/tvFilm.svelte.js';
+	import { tvPhoto, type Photo } from '#lib/keep/tvPhoto.svelte.js';
 
 	let { photo }: { photo: Photo } = $props();
 

@@ -2,10 +2,10 @@
 // at the top and on the screen the panel opens into — one place, because two
 // copies of it drifted the moment one of them was corrected.
 
-import { formatNumber, i18n, t } from '$lib/i18n';
-import { count } from '$lib/say/count';
-import { genreName } from '$lib/say/genre';
-import type { About, Card } from '$lib/keep/types';
+import { formatNumber, i18n, t } from '#lib/i18n/index.js';
+import { count } from '#lib/say/count.js';
+import { genreName } from '#lib/say/genre.js';
+import type { About, Card } from '#lib/keep/types.js';
 
 export function aboutArtist(c: Card): string {
 	const years =

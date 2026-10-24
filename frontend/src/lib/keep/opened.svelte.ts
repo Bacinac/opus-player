@@ -1,7 +1,7 @@
 // The ways into music that stand on what the installation added to the
 // Library, asked once somebody is in.
 
-import { request } from '$lib/kit';
+import { request } from '#lib/kit/index.js';
 
 class OpenedState {
 	music = $state<string[]>([]);

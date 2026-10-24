@@ -5,13 +5,13 @@
 	// differs is only what this module knows: what the file weighs, and that
 	// pressing it plays it.
 
-	import { Tag } from '$lib/kit';
-	import { EpisodeRow, StateMark } from '$lib/opus';
-	import { formatDate, t } from '$lib/i18n';
-	import { watched } from '$lib/keep/watched.svelte';
-	import { aired } from '$lib/say/episode';
-	import { episodeName, episodeTags } from '$lib/say/says';
-	import type { EpisodeEntry, SeasonView } from '$lib/keep/types';
+	import { Tag } from '#lib/kit/index.js';
+	import { EpisodeRow, StateMark } from '#lib/opus/index.js';
+	import { formatDate, t } from '#lib/i18n/index.js';
+	import { watched } from '#lib/keep/watched.svelte.js';
+	import { aired } from '#lib/say/episode.js';
+	import { episodeName, episodeTags } from '#lib/say/says.js';
+	import type { EpisodeEntry, SeasonView } from '#lib/keep/types.js';
 
 	let {
 		season,

@@ -1,5 +1,5 @@
 #!/bin/sh
-# The one rule $lib/tvui exists to enforce, checked rather than remembered: a
+# The one rule #lib/tvui exists to enforce, checked rather than remembered: a
 # screen may not draw a button, a pill, a portrait, a grid or a focus ring of its
 # own. Those come from the layer. See README.md beside this file.
 #
@@ -34,7 +34,7 @@ if [ "$count" -gt "$ALLOWED" ]; then
 	printf '%s\n' "$found" | sed 's/^/  /'
 	echo ""
 	echo "boundary: $count local draws, $ALLOWED allowed."
-	echo "A pill, a ring or a grid belongs in \$lib/tvui. See src/lib/tvui/README.md."
+	echo "A pill, a ring or a grid belongs in #lib/tvui. See src/lib/tvui/README.md."
 	exit 1
 fi
 

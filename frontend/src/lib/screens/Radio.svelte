@@ -1,10 +1,10 @@
 <script lang="ts">
-	import Grid from '$lib/parts/Grid.svelte';
-	import { queue } from '$lib/keep/queue.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { focusContent } from '$lib/tv/spatial.svelte';
-	import { request } from '$lib/kit';
-	import type { Card } from '$lib/keep/types';
+	import Grid from '#lib/parts/Grid.svelte';
+	import { queue } from '#lib/keep/queue.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { focusContent } from '#lib/tv/spatial.svelte.js';
+	import { request } from '#lib/kit/index.js';
+	import type { Card } from '#lib/keep/types.js';
 
 	// the stations, which are the one thing here with no file behind them. They
 	// are shown the way records are, because that is what they are to a person

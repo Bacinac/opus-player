@@ -3,37 +3,37 @@
 	// card is tapped, so a film does not open differently depending on which
 	// screen found it.
 
-	import { art, ground } from '$lib/ask/art';
-	import Fanart from '$lib/tv/Fanart.svelte';
-	import { formatNumber, formatTime, t } from '$lib/i18n';
-	import { request, withLang } from '$lib/kit';
-	import { MediaHead } from '$lib/opus';
-	import { episodeLabel } from '$lib/say/episode';
-	import { seasonViews } from '$lib/say/says';
-	import { aboutArtist, aboutWork, streamingOn } from '$lib/say/facts';
-	import { watched } from '$lib/keep/watched.svelte';
-	import Cast from '$lib/parts/Cast.svelte';
-	import Made from '$lib/parts/Made.svelte';
-	import Copy from '$lib/parts/Copy.svelte';
-	import Record from '$lib/parts/Record.svelte';
-	import Discography from '$lib/parts/Discography.svelte';
-	import MixInside from '$lib/parts/MixInside.svelte';
-	import SeriesSeasons from '$lib/parts/SeriesSeasons.svelte';
-	import { chipsOf } from '$lib/say/copy';
-	import { count } from '$lib/say/count';
+	import { art, ground } from '#lib/ask/art.js';
+	import Fanart from '#lib/tv/Fanart.svelte';
+	import { formatNumber, formatTime, t } from '#lib/i18n/index.js';
+	import { request, withLang } from '#lib/kit/index.js';
+	import { MediaHead } from '#lib/opus/index.js';
+	import { episodeLabel } from '#lib/say/episode.js';
+	import { seasonViews } from '#lib/say/says.js';
+	import { aboutArtist, aboutWork, streamingOn } from '#lib/say/facts.js';
+	import { watched } from '#lib/keep/watched.svelte.js';
+	import Cast from '#lib/parts/Cast.svelte';
+	import Made from '#lib/parts/Made.svelte';
+	import Copy from '#lib/parts/Copy.svelte';
+	import Record from '#lib/parts/Record.svelte';
+	import Discography from '#lib/parts/Discography.svelte';
+	import MixInside from '#lib/parts/MixInside.svelte';
+	import SeriesSeasons from '#lib/parts/SeriesSeasons.svelte';
+	import { chipsOf } from '#lib/say/copy.js';
+	import { count } from '#lib/say/count.js';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { hasEngine, queue } from '$lib/keep/queue.svelte';
-	import { onBack } from '$lib/keep/back.svelte';
-	import { sleeve } from '$lib/keep/sleeve.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { focusWaiting } from '$lib/tv/spatial.svelte';
-	import { nav } from '$lib/tvui/nav.svelte';
-	import Press from '$lib/tvui/Press.svelte';
-	import Shelf from '$lib/tvui/Shelf.svelte';
-	import Info from '$lib/tv/Info.svelte';
-	import InfoPress from '$lib/tv/InfoPress.svelte';
-	import { artist as putOnArtist } from '$lib/ask/puton';
+	import { hasEngine, queue } from '#lib/keep/queue.svelte.js';
+	import { onBack } from '#lib/keep/back.svelte.js';
+	import { sleeve } from '#lib/keep/sleeve.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { focusWaiting } from '#lib/tv/spatial.svelte.js';
+	import { nav } from '#lib/tvui/nav.svelte.js';
+	import Press from '#lib/tvui/Press.svelte';
+	import Shelf from '#lib/tvui/Shelf.svelte';
+	import Info from '#lib/tv/Info.svelte';
+	import InfoPress from '#lib/tv/InfoPress.svelte';
+	import { artist as putOnArtist } from '#lib/ask/puton.js';
 	import type {
 		About,
 		ArtistShelf,
@@ -43,7 +43,7 @@
 		SeasonOffer,
 		SeasonView,
 		SeriesTree
-	} from '$lib/keep/types';
+	} from '#lib/keep/types.js';
 
 	let {
 		card,

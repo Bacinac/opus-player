@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { aired, episodeLabel, episodeState, spoken, stateOf } from './episode';
-import type { Card, EpisodeEntry } from '$lib/keep/types';
+import type { Card, EpisodeEntry } from '#lib/keep/types.js';
 
 const episode = (over: Partial<EpisodeEntry>): EpisodeEntry =>
 	({ id: 1, number: 2, title: 'Pilot', state: 'complete', playable: true, air_date: '2011-04-17', ...over }) as EpisodeEntry;

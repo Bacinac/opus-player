@@ -15,10 +15,10 @@
 	// box's and not the install's: turning the receiver to the Shield while the
 	// terrace's box plays a film sends that film nowhere.
 
-	import { t } from '$lib/i18n';
-	import Choose from '$lib/tvui/Choose.svelte';
-	import Rows from '$lib/tvui/Rows.svelte';
-	import { json, request } from '$lib/kit';
+	import { t } from '#lib/i18n/index.js';
+	import Choose from '#lib/tvui/Choose.svelte';
+	import Rows from '#lib/tvui/Rows.svelte';
+	import { json, request } from '#lib/kit/index.js';
 
 	let {
 		sources,

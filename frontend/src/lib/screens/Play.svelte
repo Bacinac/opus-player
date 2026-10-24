@@ -8,26 +8,26 @@
 	// where the stream was started plus how far into it the element has got, and
 	// seeking restarts the stream at the new place.
 
-	import { art } from '$lib/ask/art';
-	import { t, formatNumber, formatTime, plural } from '$lib/i18n';
-	import Press from '$lib/tvui/Press.svelte';
-	import { episodeLabel } from '$lib/say/episode';
-	import Choose from '$lib/tvui/Choose.svelte';
-	import PlayerBar from '$lib/parts/PlayerBar.svelte';
-	import Captions from '$lib/parts/Captions.svelte';
-	import FilmInfo from '$lib/parts/FilmInfo.svelte';
-	import { Icon, json, request, toasts, withLang } from '$lib/kit';
-	import { onBox } from '$lib/tv/bridge';
-	import { FilmEngine } from '$lib/tv/filmEngine.svelte';
-	import { onBack } from '$lib/keep/back.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { asked, decodes, here } from '$lib/ask/ability';
-	import { hasEngine, queue } from '$lib/keep/queue.svelte';
-	import type { Card, Plan } from '$lib/keep/types';
-	import { film, type FilmOnTv } from '$lib/keep/film.svelte';
-	import { televisions, tvFilm, type Box } from '$lib/keep/tvFilm.svelte';
-	import { languageOf, offeredSubtitles, soundName, subtitleName } from '$lib/say/tracks';
-	import { FilmRemote } from '$lib/tv/filmRemote.svelte';
+	import { art } from '#lib/ask/art.js';
+	import { t, formatNumber, formatTime, plural } from '#lib/i18n/index.js';
+	import Press from '#lib/tvui/Press.svelte';
+	import { episodeLabel } from '#lib/say/episode.js';
+	import Choose from '#lib/tvui/Choose.svelte';
+	import PlayerBar from '#lib/parts/PlayerBar.svelte';
+	import Captions from '#lib/parts/Captions.svelte';
+	import FilmInfo from '#lib/parts/FilmInfo.svelte';
+	import { Icon, json, request, toasts, withLang } from '#lib/kit/index.js';
+	import { onBox } from '#lib/tv/bridge.js';
+	import { FilmEngine } from '#lib/tv/filmEngine.svelte.js';
+	import { onBack } from '#lib/keep/back.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { asked, decodes, here } from '#lib/ask/ability.js';
+	import { hasEngine, queue } from '#lib/keep/queue.svelte.js';
+	import type { Card, Plan } from '#lib/keep/types.js';
+	import { film, type FilmOnTv } from '#lib/keep/film.svelte.js';
+	import { televisions, tvFilm, type Box } from '#lib/keep/tvFilm.svelte.js';
+	import { languageOf, offeredSubtitles, soundName, subtitleName } from '#lib/say/tracks.js';
+	import { FilmRemote } from '#lib/tv/filmRemote.svelte.js';
 	import { untrack } from 'svelte';
 
 	let { card: requested, onclose }: { card: Card; onclose: () => void } = $props();

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { askedOf, episodeName, haveOf, namesOf, seasonLine, seasonName, seasonViews } from './says';
-import type { EpisodeEntry, SeriesTree } from '$lib/keep/types';
+import type { EpisodeEntry, SeriesTree } from '#lib/keep/types.js';
 
 const episode = (id: number, playable: boolean): EpisodeEntry =>
 	({ kind: 'episode', id, number: id, title: '', state: playable ? 'complete' : 'wanted', playable, resolution: null, air_date: null }) as EpisodeEntry;

@@ -3,12 +3,12 @@
 // down wherever the surface is not a television.
 
 import { page } from '$app/state';
-import { me } from '$lib/opus';
-import { goBack } from '$lib/keep/back.svelte';
-import { preview } from '$lib/keep/preview.svelte';
-import { surface } from '$lib/keep/surface.svelte';
-import { watching } from '$lib/keep/watching.svelte';
-import { nav } from '$lib/tvui/nav.svelte';
+import { me } from '#lib/opus/index.js';
+import { goBack } from '#lib/keep/back.svelte.js';
+import { preview } from '#lib/keep/preview.svelte.js';
+import { surface } from '#lib/keep/surface.svelte.js';
+import { watching } from '#lib/keep/watching.svelte.js';
+import { nav } from '#lib/tvui/nav.svelte.js';
 import { playKey } from './playkey';
 import { focusWaiting } from './spatial.svelte';
 

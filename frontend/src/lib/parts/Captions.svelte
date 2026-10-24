@@ -14,7 +14,7 @@
 	// italics in a subtitle say who is speaking from off-screen, and stripping
 	// the markup would throw that away.
 
-	import { captions } from '$lib/keep/captions.svelte';
+	import { captions } from '#lib/keep/captions.svelte.js';
 
 	let { video, track }: { video: HTMLVideoElement | null; track: TextTrack | null } = $props();
 

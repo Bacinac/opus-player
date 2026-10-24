@@ -4,9 +4,9 @@
 	// television. Linked here once; from then on what the player counts as heard
 	// or seen goes there too, and what could not go is said here.
 
-	import { ArmedButton, Button, Field, json, request, toasts } from '$lib/kit';
-	import { me } from '$lib/opus';
-	import { formatNumber, t } from '$lib/i18n';
+	import { ArmedButton, Button, Field, json, request, toasts } from '#lib/kit/index.js';
+	import { me } from '#lib/opus/index.js';
+	import { formatNumber, t } from '#lib/i18n/index.js';
 
 	type Service = {
 		service: 'listenbrainz' | 'simkl';

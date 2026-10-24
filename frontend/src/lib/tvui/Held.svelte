@@ -11,8 +11,8 @@
 	// One component, so a thing that takes the screen cannot take only part of it.
 
 	import type { Snippet } from 'svelte';
-	import { onBack } from '$lib/keep/back.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
+	import { onBack } from '#lib/keep/back.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
 
 	let {
 		onclose,

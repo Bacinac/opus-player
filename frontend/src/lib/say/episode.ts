@@ -2,9 +2,9 @@
 // name and describe the same episode, so they say it the same way or the product
 // speaks with two voices about one thing.
 
-import { t } from '$lib/i18n';
-import { episodeCode } from '$lib/opus';
-import type { Card, EpisodeEntry } from '$lib/keep/types';
+import { t } from '#lib/i18n/index.js';
+import { episodeCode } from '#lib/opus/index.js';
+import type { Card, EpisodeEntry } from '#lib/keep/types.js';
 
 const STATE_KEY = {
 	complete: 'state.complete',

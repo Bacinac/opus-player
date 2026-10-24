@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { b64, fromBytes, seal, sealPiece } from '$lib/ask/crypto';
+import { b64, fromBytes, seal, sealPiece } from '#lib/ask/crypto.js';
 import { vault, type Item } from './vault.svelte';
 
 describe('opening a vault file', () => {

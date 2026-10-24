@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { playKey } from './playkey';
-import { queue, type QueueTrack } from '$lib/keep/queue.svelte';
+import { queue, type QueueTrack } from '#lib/keep/queue.svelte.js';
 
 const track = (id: number): QueueTrack => ({
 	id,

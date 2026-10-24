@@ -12,11 +12,11 @@
 	// is the one thing that differs and is said by `away`.
 
 	import type { Snippet } from 'svelte';
-	import Transport from '$lib/parts/Transport.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { t } from '$lib/i18n';
-	import { Icon } from '$lib/kit';
-	import Press from '$lib/tvui/Press.svelte';
+	import Transport from '#lib/parts/Transport.svelte';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { t } from '#lib/i18n/index.js';
+	import { Icon } from '#lib/kit/index.js';
+	import Press from '#lib/tvui/Press.svelte';
 
 	let {
 		art = null,

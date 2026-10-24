@@ -3,9 +3,9 @@
 	// it is arranged. The arrangement sits beside the wall it rearranges, not in a
 	// menu: nobody finds a menu inside a menu from a sofa.
 
-	import { t } from '$lib/i18n';
-	import { ORDERS, natural, shelf, type Order } from '$lib/keep/shelf.svelte';
-	import Press from '$lib/tvui/Press.svelte';
+	import { t } from '#lib/i18n/index.js';
+	import { ORDERS, natural, shelf, type Order } from '#lib/keep/shelf.svelte.js';
+	import Press from '#lib/tvui/Press.svelte';
 
 	let { section }: { section: string } = $props();
 

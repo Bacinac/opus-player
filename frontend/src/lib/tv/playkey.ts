@@ -11,10 +11,10 @@
 // already acted on would be acted on twice, and while stopping twice is still
 // stopped, pausing twice is a key that does nothing at all.
 
-import { artist, record } from '$lib/ask/puton';
-import { cast } from '$lib/keep/cast.svelte';
-import { queue } from '$lib/keep/queue.svelte';
-import { onBox } from '$lib/tv/bridge';
+import { artist, record } from '#lib/ask/puton.js';
+import { cast } from '#lib/keep/cast.svelte.js';
+import { queue } from '#lib/keep/queue.svelte.js';
+import { onBox } from '#lib/tv/bridge.js';
 
 const ORDERS: Record<string, string> = {
 	MediaPlayPause: 'play_pause',

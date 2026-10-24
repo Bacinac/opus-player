@@ -1,14 +1,14 @@
 <script lang="ts">
-	import Choose from '$lib/tvui/Choose.svelte';
-	import Press from '$lib/tvui/Press.svelte';
-	import { Icon, Tag } from '$lib/kit';
+	import Choose from '#lib/tvui/Choose.svelte';
+	import Press from '#lib/tvui/Press.svelte';
+	import { Icon, Tag } from '#lib/kit/index.js';
 	// Where the sound comes out, and how loud — the same control wherever the
 	// record is shown, because a person who has moved from the bar to the full
 	// screen has not changed their mind about what a speaker button looks like.
 
-	import { formatNumber, t } from '$lib/i18n';
-	import { cast } from '$lib/keep/cast.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
+	import { formatNumber, t } from '#lib/i18n/index.js';
+	import { cast } from '#lib/keep/cast.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
 
 	let picking = $state(false);
 

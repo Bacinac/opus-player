@@ -3,27 +3,27 @@
 	// backend on the spot — the player keeps no catalogue, so nothing here can
 	// be out of date.
 
-	import Play from '$lib/screens/Play.svelte';
-	import Sheet from '$lib/parts/Sheet.svelte';
-	import Row from '$lib/parts/Row.svelte';
-	import Hero from '$lib/parts/Hero.svelte';
-	import { onBack } from '$lib/keep/back.svelte';
-	import { focusContent } from '$lib/tv/spatial.svelte';
-	import { request, withLang } from '$lib/kit';
-	import { me } from '$lib/opus';
-	import { carryOn } from '$lib/ask/puton';
-	import { preview } from '$lib/keep/preview.svelte';
-	import { shelves } from '$lib/keep/shelves.svelte';
-	import SurfacePicker from '$lib/parts/SurfacePicker.svelte';
+	import Play from '#lib/screens/Play.svelte';
+	import Sheet from '#lib/parts/Sheet.svelte';
+	import Row from '#lib/parts/Row.svelte';
+	import Hero from '#lib/parts/Hero.svelte';
+	import { onBack } from '#lib/keep/back.svelte.js';
+	import { focusContent } from '#lib/tv/spatial.svelte.js';
+	import { request, withLang } from '#lib/kit/index.js';
+	import { me } from '#lib/opus/index.js';
+	import { carryOn } from '#lib/ask/puton.js';
+	import { preview } from '#lib/keep/preview.svelte.js';
+	import { shelves } from '#lib/keep/shelves.svelte.js';
+	import SurfacePicker from '#lib/parts/SurfacePicker.svelte';
 	const devTools = import.meta.env.DEV;
-	import { opened, playsAtOnce } from '$lib/say/pick';
-	import { spoken } from '$lib/say/episode';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { panel } from '$lib/keep/panel.svelte';
-	import { i18n, t } from '$lib/i18n';
+	import { opened, playsAtOnce } from '#lib/say/pick.js';
+	import { spoken } from '#lib/say/episode.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { panel } from '#lib/keep/panel.svelte.js';
+	import { i18n, t } from '#lib/i18n/index.js';
 	import { goto } from '$app/navigation';
-	import { SHELVES } from '$lib/keep/shelf.svelte';
-	import type { Card, Row as RowType } from '$lib/keep/types';
+	import { SHELVES } from '#lib/keep/shelf.svelte.js';
+	import type { Card, Row as RowType } from '#lib/keep/types.js';
 
 	let rows = $state<RowType[]>([]);
 	let loaded = $state(false);
@@ -63,7 +63,7 @@
 	$effect(() => {
 		if (!surface.isTv) return;
 		const to = shelves.answered ? (SHELVES.find((s) => shelves.of(s).length) ?? 'movies') : '';
-		if (to) void goto(`/${to}`, { replaceState: true });
+		if (to) void goto(`/${to}`, { replace: true });
 	});
 
 	$effect(() => {

@@ -3,7 +3,7 @@
 	// in"; it does not answer who they are, and that is the first thing a person
 	// looking at the name wants.
 
-	import { surface } from '$lib/keep/surface.svelte';
+	import { surface } from '#lib/keep/surface.svelte.js';
 
 	let {
 		name,

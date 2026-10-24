@@ -6,11 +6,11 @@
 	// each surface and keeps the one rule that is a poster wall's own — the rest
 	// stepping back while something is being chosen.
 
-	import Poster from '$lib/parts/Poster.svelte';
-	import Wall from '$lib/tvui/Wall.svelte';
-	import { POSTER, DESK_POSTER, MOBILE_POSTER } from '$lib/tvui/cells';
-	import { surface } from '$lib/keep/surface.svelte';
-	import type { Card as CardType } from '$lib/keep/types';
+	import Poster from '#lib/parts/Poster.svelte';
+	import Wall from '#lib/tvui/Wall.svelte';
+	import { POSTER, DESK_POSTER, MOBILE_POSTER } from '#lib/tvui/cells.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import type { Card as CardType } from '#lib/keep/types.js';
 
 	let { cards, onpick }: { cards: CardType[]; onpick: (c: CardType) => void } = $props();
 

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
-	import { Icon } from '$lib/kit';
-	import Press from '$lib/tvui/Press.svelte';
+	import { t } from '#lib/i18n/index.js';
+	import { Icon } from '#lib/kit/index.js';
+	import Press from '#lib/tvui/Press.svelte';
 
 	let { onclick }: { onclick: () => void } = $props();
 </script>

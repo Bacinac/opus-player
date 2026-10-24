@@ -4,10 +4,10 @@
 	// either of them.
 
 	import { goto } from '$app/navigation';
-	import { Icon, Tag } from '$lib/kit';
-	import type { Chip } from '$lib/say/copy';
-	import Press from '$lib/tvui/Press.svelte';
-	import { sideways } from '$lib/tvui/sideways';
+	import { Icon, Tag } from '#lib/kit/index.js';
+	import type { Chip } from '#lib/say/copy.js';
+	import Press from '#lib/tvui/Press.svelte';
+	import { sideways } from '#lib/tvui/sideways.js';
 
 	let { chips }: { chips: Chip[] } = $props();
 </script>

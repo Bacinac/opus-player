@@ -3,9 +3,9 @@
 	// password, and each one taken back here without touching the others or the
 	// password. An admin sees every one; anybody else sees their own.
 
-	import { ArmedButton, request } from '$lib/kit';
-	import { me } from '$lib/opus';
-	import { formatDateTime, t } from '$lib/i18n';
+	import { ArmedButton, request } from '#lib/kit/index.js';
+	import { me } from '#lib/opus/index.js';
+	import { formatDateTime, t } from '#lib/i18n/index.js';
 
 	type Car = { id: number; person: string; created_at: string; last_seen_at: string | null };
 

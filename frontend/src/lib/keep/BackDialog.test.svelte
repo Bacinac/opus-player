@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Dialog from '$lib/kit/Dialog.svelte';
+	import Dialog from '#lib/kit/Dialog.svelte';
 	import { goBack, onBack } from './back.svelte';
 	let outer = $state(false);
 	let inner = $state(false);

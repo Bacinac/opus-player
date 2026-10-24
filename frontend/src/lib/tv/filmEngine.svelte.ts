@@ -1,8 +1,8 @@
-import { t } from '$lib/i18n';
-import { request, withLang } from '$lib/kit';
-import { asked, hears, here } from '$lib/ask/ability';
-import type { Card, EngineTrack, Plan } from '$lib/keep/types';
-import { onBox } from '$lib/tv/bridge';
+import { t } from '#lib/i18n/index.js';
+import { request, withLang } from '#lib/kit/index.js';
+import { asked, hears, here } from '#lib/ask/ability.js';
+import type { Card, EngineTrack, Plan } from '#lib/keep/types.js';
+import { onBox } from '#lib/tv/bridge.js';
 
 type Refused = { failed: (detail: string) => void };
 

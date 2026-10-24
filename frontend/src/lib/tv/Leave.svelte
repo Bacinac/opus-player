@@ -2,10 +2,10 @@
 	// The last rung: nothing left to close, and the only things back can still
 	// mean.
 	import { goto } from '$app/navigation';
-	import { Dialog } from '$lib/kit';
-	import { t } from '$lib/i18n';
-	import { watching } from '$lib/keep/watching.svelte';
-	import Press from '$lib/tvui/Press.svelte';
+	import { Dialog } from '#lib/kit/index.js';
+	import { t } from '#lib/i18n/index.js';
+	import { watching } from '#lib/keep/watching.svelte.js';
+	import Press from '#lib/tvui/Press.svelte';
 	import { onBox } from './bridge';
 	import { rung } from './rung.svelte';
 	import { focusFirst } from './spatial.svelte';

@@ -8,23 +8,23 @@
 	// one, and what is playing is said by the bar along the bottom — the thing
 	// that is on every screen anyway.
 
-	import { Icon } from '$lib/kit';
-	import { MediaHead } from '$lib/opus';
-	import { art } from '$lib/ask/art';
-	import { about } from '$lib/keep/about.svelte';
-	import { musicGenreName } from '$lib/say/genre';
-	import { favorites } from '$lib/keep/favorites.svelte';
-	import { watching } from '$lib/keep/watching.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { count } from '$lib/say/count';
-	import { duration, t } from '$lib/i18n';
-	import type { QueueTrack } from '$lib/keep/queue.svelte';
-	import Press from '$lib/tvui/Press.svelte';
-	import Turntable from '$lib/tvui/Turntable.svelte';
-	import Words from '$lib/parts/Words.svelte';
-	import { albumWords, LyricsState } from '$lib/keep/lyrics.svelte';
-	import { queue } from '$lib/keep/queue.svelte';
-	import { focusWaiting } from '$lib/tv/spatial.svelte';
+	import { Icon } from '#lib/kit/index.js';
+	import { MediaHead } from '#lib/opus/index.js';
+	import { art } from '#lib/ask/art.js';
+	import { about } from '#lib/keep/about.svelte.js';
+	import { musicGenreName } from '#lib/say/genre.js';
+	import { favorites } from '#lib/keep/favorites.svelte.js';
+	import { watching } from '#lib/keep/watching.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { count } from '#lib/say/count.js';
+	import { duration, t } from '#lib/i18n/index.js';
+	import type { QueueTrack } from '#lib/keep/queue.svelte.js';
+	import Press from '#lib/tvui/Press.svelte';
+	import Turntable from '#lib/tvui/Turntable.svelte';
+	import Words from '#lib/parts/Words.svelte';
+	import { albumWords, LyricsState } from '#lib/keep/lyrics.svelte.js';
+	import { queue } from '#lib/keep/queue.svelte.js';
+	import { focusWaiting } from '#lib/tv/spatial.svelte.js';
 
 	let {
 		tracks,

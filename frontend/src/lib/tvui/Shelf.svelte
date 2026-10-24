@@ -8,7 +8,7 @@
 	// as many as the screen holds and fades the side that has more; the ring
 	// carries past the edge, which is what `sideways` is marking.
 
-	import { art } from '$lib/ask/art';
+	import { art } from '#lib/ask/art.js';
 	import { sideways } from './sideways';
 	import { SLEEVE } from './cells';
 

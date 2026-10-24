@@ -5,7 +5,7 @@
 // because films and artists do not want the same one — a wall of faces is read
 // alphabetically and a wall of films is usually read by what turned up last.
 
-import { json, request } from '$lib/kit';
+import { json, request } from '#lib/kit/index.js';
 
 export const ORDERS = ['added', 'title', 'year'] as const;
 export type Order = (typeof ORDERS)[number];

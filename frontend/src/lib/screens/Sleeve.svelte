@@ -9,20 +9,20 @@
 	// transport in — two players for one record is how a pause stops agreeing
 	// with what is on the screen.
 
-	import { formatNumber, t } from '$lib/i18n';
-	import { art } from '$lib/ask/art';
-	import { cssUrl, Icon } from '$lib/kit';
-	import { cast } from '$lib/keep/cast.svelte';
-	import { onBack } from '$lib/keep/back.svelte';
-	import { focusContent, focusFirst } from '$lib/tv/spatial.svelte';
-	import { lyrics } from '$lib/keep/lyrics.svelte';
-	import Record from '$lib/parts/Record.svelte';
-	import Words from '$lib/parts/Words.svelte';
-	import Press from '$lib/tvui/Press.svelte';
-	import Turntable from '$lib/tvui/Turntable.svelte';
-	import { queue, type QueueTrack } from '$lib/keep/queue.svelte';
-	import { sleeve } from '$lib/keep/sleeve.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
+	import { formatNumber, t } from '#lib/i18n/index.js';
+	import { art } from '#lib/ask/art.js';
+	import { cssUrl, Icon } from '#lib/kit/index.js';
+	import { cast } from '#lib/keep/cast.svelte.js';
+	import { onBack } from '#lib/keep/back.svelte.js';
+	import { focusContent, focusFirst } from '#lib/tv/spatial.svelte.js';
+	import { lyrics } from '#lib/keep/lyrics.svelte.js';
+	import Record from '#lib/parts/Record.svelte';
+	import Words from '#lib/parts/Words.svelte';
+	import Press from '#lib/tvui/Press.svelte';
+	import Turntable from '#lib/tvui/Turntable.svelte';
+	import { queue, type QueueTrack } from '#lib/keep/queue.svelte.js';
+	import { sleeve } from '#lib/keep/sleeve.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
 
 	let {
 		elapsed = 0,

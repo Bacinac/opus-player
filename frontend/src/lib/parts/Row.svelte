@@ -10,15 +10,15 @@
 	// NUMBER and not only the track: a row is one line, and the extras must not
 	// wrap into a second.
 
-	import { Heading } from '$lib/kit';
-	import Poster from '$lib/parts/Poster.svelte';
-	import Wall from '$lib/tvui/Wall.svelte';
-	import { POSTER, DESK_POSTER, MOBILE_POSTER } from '$lib/tvui/cells';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { t, type MessageKey } from '$lib/i18n';
-	import type { Row } from '$lib/keep/types';
+	import { Heading } from '#lib/kit/index.js';
+	import Poster from '#lib/parts/Poster.svelte';
+	import Wall from '#lib/tvui/Wall.svelte';
+	import { POSTER, DESK_POSTER, MOBILE_POSTER } from '#lib/tvui/cells.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { t, type MessageKey } from '#lib/i18n/index.js';
+	import type { Row } from '#lib/keep/types.js';
 
-	let { row, onpick }: { row: Row; onpick: (c: import('$lib/keep/types').Card) => void } = $props();
+	let { row, onpick }: { row: Row; onpick: (c: import('#lib/keep/types.js').Card) => void } = $props();
 
 	const cell = $derived(surface.isTv ? POSTER : surface.isMobile ? MOBILE_POSTER : DESK_POSTER);
 </script>

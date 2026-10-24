@@ -6,10 +6,10 @@
 // question about none of them. One answer for all of them, and the home screen
 // says the same numbers the menu does.
 
-import { request } from '$lib/kit';
-import { count, fact } from '$lib/say/count';
-import type { Count } from '$lib/say/count';
-import { t } from '$lib/i18n';
+import { request } from '#lib/kit/index.js';
+import { count, fact } from '#lib/say/count.js';
+import type { Count } from '#lib/say/count.js';
+import { t } from '#lib/i18n/index.js';
 
 type Shelf = {
 	count: number;

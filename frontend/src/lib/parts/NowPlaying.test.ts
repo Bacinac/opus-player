@@ -2,9 +2,9 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { flushSync, mount, unmount } from 'svelte';
 import NowPlaying from './NowPlaying.svelte';
-import { cast } from '$lib/keep/cast.svelte';
-import { queue } from '$lib/keep/queue.svelte';
-import { surface } from '$lib/keep/surface.svelte';
+import { cast } from '#lib/keep/cast.svelte.js';
+import { queue } from '#lib/keep/queue.svelte.js';
+import { surface } from '#lib/keep/surface.svelte.js';
 
 let bar: ReturnType<typeof mount> | null = null;
 afterEach(async () => {

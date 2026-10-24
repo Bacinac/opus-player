@@ -4,12 +4,12 @@
 	// doing, until they are put away, back does, or they are left there long
 	// enough to have been forgotten.
 
-	import { placeholderOf } from '$lib/opus';
-	import PhotoViewer from '$lib/opus/PhotoViewer.svelte';
-	import { t } from '$lib/i18n';
-	import { recordingOf } from '$lib/ask/ability';
-	import { onBack } from '$lib/keep/back.svelte';
-	import { shown } from '$lib/keep/tvPhoto.svelte';
+	import { placeholderOf } from '#lib/opus/index.js';
+	import PhotoViewer from '#lib/opus/PhotoViewer.svelte';
+	import { t } from '#lib/i18n/index.js';
+	import { recordingOf } from '#lib/ask/ability.js';
+	import { onBack } from '#lib/keep/back.svelte.js';
+	import { shown } from '#lib/keep/tvPhoto.svelte.js';
 
 	// registered when a picture arrives, so it stands in front of every step the
 	// page under it already had

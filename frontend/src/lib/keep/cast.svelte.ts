@@ -3,18 +3,18 @@
 // more channels — and keeps the bar honest about a device it is not itself
 // driving, by asking after it on a slow heartbeat.
 
-import { t } from '$lib/i18n';
-import { forget, json, keep, recall, request, toasts, withLang } from '$lib/kit';
-import { hasEngine, queue, type QueueTrack } from '$lib/keep/queue.svelte';
-import { film } from '$lib/keep/film.svelte';
-import { shown, type Show } from '$lib/keep/tvPhoto.svelte';
+import { t } from '#lib/i18n/index.js';
+import { forget, json, keep, recall, request, toasts, withLang } from '#lib/kit/index.js';
+import { hasEngine, queue, type QueueTrack } from '#lib/keep/queue.svelte.js';
+import { film } from '#lib/keep/film.svelte.js';
+import { shown, type Show } from '#lib/keep/tvPhoto.svelte.js';
 import { goto } from '$app/navigation';
-import type { Card } from '$lib/keep/types';
-import { spoken } from '$lib/say/episode';
-import { sleeve } from '$lib/keep/sleeve.svelte';
-import { surface } from '$lib/keep/surface.svelte';
-import { onBox } from '$lib/tv/bridge';
-import { SKIP_S } from '$lib/tvui/keys';
+import type { Card } from '#lib/keep/types.js';
+import { spoken } from '#lib/say/episode.js';
+import { sleeve } from '#lib/keep/sleeve.svelte.js';
+import { surface } from '#lib/keep/surface.svelte.js';
+import { onBox } from '#lib/tv/bridge.js';
+import { SKIP_S } from '#lib/tvui/keys.js';
 
 export type OutputId = 'browser' | 'stereo' | 'multi';
 export type Output = { id: OutputId; entity?: string; name?: string };

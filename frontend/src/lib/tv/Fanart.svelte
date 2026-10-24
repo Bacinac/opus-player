@@ -6,7 +6,7 @@
 	// component with the other half copied, which is how two crops of one film
 	// end up with two different veils over them.
 
-	import { cssUrl } from '$lib/kit';
+	import { cssUrl } from '#lib/kit/index.js';
 
 	let { art, wash = false }: { art: string; wash?: boolean } = $props();
 </script>

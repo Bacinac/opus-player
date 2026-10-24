@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { formatNumber, t } from '$lib/i18n';
-	import type { Standing as Row } from '$lib/ask/guess';
-	import Press from '$lib/tvui/Press.svelte';
-	import Standing from '$lib/parts/Standing.svelte';
+	import { formatNumber, t } from '#lib/i18n/index.js';
+	import type { Standing as Row } from '#lib/ask/guess.js';
+	import Press from '#lib/tvui/Press.svelte';
+	import Standing from '#lib/parts/Standing.svelte';
 
 	let {
 		rights,

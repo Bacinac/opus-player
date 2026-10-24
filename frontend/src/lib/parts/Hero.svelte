@@ -15,21 +15,21 @@
 	// draws, lined up on the viewport, so the panel's edge is a change of
 	// brightness rather than a seam.
 
-	import { hero } from '$lib/keep/hero.svelte';
-	import { preview } from '$lib/keep/preview.svelte';
-	import { shelves } from '$lib/keep/shelves.svelte';
-	import { pageWord, pagesUnder } from '$lib/say/ways';
+	import { hero } from '#lib/keep/hero.svelte.js';
+	import { preview } from '#lib/keep/preview.svelte.js';
+	import { shelves } from '#lib/keep/shelves.svelte.js';
+	import { pageWord, pagesUnder } from '#lib/say/ways.js';
 	import { goto } from '$app/navigation';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { ground } from '$lib/ask/art';
-	import { tint } from '$lib/keep/tint';
-	import { genreName } from '$lib/say/genre';
-	import { Icon, PageHead, narrow } from '$lib/kit';
-	import { me } from '$lib/opus';
-	import { type Count } from '$lib/say/count';
-	import { aboutArtist, streamingOn } from '$lib/say/facts';
-	import { duration, formatNumber, t } from '$lib/i18n';
-	import Press from '$lib/tvui/Press.svelte';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { ground } from '#lib/ask/art.js';
+	import { tint } from '#lib/keep/tint.js';
+	import { genreName } from '#lib/say/genre.js';
+	import { Icon, PageHead, narrow } from '#lib/kit/index.js';
+	import { me } from '#lib/opus/index.js';
+	import { type Count } from '#lib/say/count.js';
+	import { aboutArtist, streamingOn } from '#lib/say/facts.js';
+	import { duration, formatNumber, t } from '#lib/i18n/index.js';
+	import Press from '#lib/tvui/Press.svelte';
 
 	/** what the panel says when nothing on the screen is being pointed at: the
 	    shelf you are standing at, and how much is on it. A panel that goes blank

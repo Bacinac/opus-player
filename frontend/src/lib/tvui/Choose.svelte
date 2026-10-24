@@ -29,8 +29,8 @@
 
 	import Held from './Held.svelte';
 	import Press from './Press.svelte';
-	import { t } from '$lib/i18n';
-	import { Icon } from '$lib/kit';
+	import { t } from '#lib/i18n/index.js';
+	import { Icon } from '#lib/kit/index.js';
 
 	let {
 		options,

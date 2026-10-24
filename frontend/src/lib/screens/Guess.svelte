@@ -14,23 +14,23 @@
 	// A game with a clock on it cannot also have a spinner.
 
 	import { onDestroy } from 'svelte';
-	import { formatNumber, t } from '$lib/i18n';
-	import { keep, recall } from '$lib/kit';
-	import { cropOf, previewOf } from '$lib/opus';
-	import * as guess from '$lib/ask/guess';
-	import * as sound from '$lib/ask/tick';
-	import { askedOf, photoSays } from '$lib/say/says';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { played } from '$lib/keep/played.svelte';
-	import { focusFirst } from '$lib/tv/spatial.svelte';
-	import { onBack } from '$lib/keep/back.svelte';
-	import { nav } from '$lib/tvui/nav.svelte';
-	import Answers from '$lib/tvui/Answers.svelte';
-	import Press from '$lib/tvui/Press.svelte';
-	import Clock from '$lib/parts/Clock.svelte';
-	import GuessIntro from '$lib/parts/GuessIntro.svelte';
-	import GuessOver from '$lib/parts/GuessOver.svelte';
-	import GuessPicture from '$lib/parts/GuessPicture.svelte';
+	import { formatNumber, t } from '#lib/i18n/index.js';
+	import { keep, recall } from '#lib/kit/index.js';
+	import { cropOf, previewOf } from '#lib/opus/index.js';
+	import * as guess from '#lib/ask/guess.js';
+	import * as sound from '#lib/ask/tick.js';
+	import { askedOf, photoSays } from '#lib/say/says.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { played } from '#lib/keep/played.svelte.js';
+	import { focusFirst } from '#lib/tv/spatial.svelte.js';
+	import { onBack } from '#lib/keep/back.svelte.js';
+	import { nav } from '#lib/tvui/nav.svelte.js';
+	import Answers from '#lib/tvui/Answers.svelte';
+	import Press from '#lib/tvui/Press.svelte';
+	import Clock from '#lib/parts/Clock.svelte';
+	import GuessIntro from '#lib/parts/GuessIntro.svelte';
+	import GuessOver from '#lib/parts/GuessOver.svelte';
+	import GuessPicture from '#lib/parts/GuessPicture.svelte';
 
 	// how long the reveal stands before the next question comes up on its own.
 	// Long enough to look at the photograph, short enough that nobody has to

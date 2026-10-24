@@ -2,9 +2,9 @@
 // the screen a person opens before deciding: they ask what it is, then whether
 // this is the good copy of it, and the billing after that.
 
-import { formatBytes } from '$lib/i18n';
-import type { About } from '$lib/keep/types';
-import { sectionOf } from '$lib/say/ways';
+import { formatBytes } from '#lib/i18n/index.js';
+import type { About } from '#lib/keep/types.js';
+import { sectionOf } from '#lib/say/ways.js';
 
 /** Two channels is stereo and six is 5.1 — the number of speakers is the thing
     people know. */

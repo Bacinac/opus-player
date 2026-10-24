@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
-	import type { Hardness, Standing as Row } from '$lib/ask/guess';
-	import Press from '$lib/tvui/Press.svelte';
-	import Standing from '$lib/parts/Standing.svelte';
+	import { t } from '#lib/i18n/index.js';
+	import type { Hardness, Standing as Row } from '#lib/ask/guess.js';
+	import Press from '#lib/tvui/Press.svelte';
+	import Standing from '#lib/parts/Standing.svelte';
 
 	let {
 		how,

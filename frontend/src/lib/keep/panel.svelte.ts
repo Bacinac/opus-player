@@ -11,7 +11,7 @@
 
 import type { Card } from './types';
 import { hero } from './hero.svelte';
-import { nav } from '$lib/tvui/nav.svelte';
+import { nav } from '#lib/tvui/nav.svelte.js';
 import { surface } from './surface.svelte';
 
 export function panel() {

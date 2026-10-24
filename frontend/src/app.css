@@ -5,8 +5,8 @@
 @import './lib/opus/tokens.css';
 @import './lib/kit/base.css';
 /* and what the ten-foot surface changes about all of it */
-@import '$lib/tv/tenfoot.css';
-@import '$lib/tvui/marks.css';
+@import '#lib/tv/tenfoot.css';
+@import '#lib/tvui/marks.css';
 
 /* A scrollbar is a thing you drag, and nothing on a television drags. It goes,
    and what says there is more is the row half in view below. The gliding is the

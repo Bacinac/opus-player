@@ -1,4 +1,4 @@
-import { opened } from '$lib/keep/opened.svelte';
+import { opened } from '#lib/keep/opened.svelte.js';
 
 // Where to find more of what a shelf holds.
 //
@@ -72,7 +72,7 @@ export function sectionOf(pathname: string): string {
 	return `/${pathname.split('/')[1] ?? ''}`;
 }
 
-export function pageOf(asked: URLSearchParams): string {
+export function pageOf(asked: Pick<URLSearchParams, 'get'>): string {
 	const find = asked.get('find');
 	if (find && [...Object.values(DISCOVER).flat(), 'search'].includes(find)) return 'discover';
 	if (find) return find;

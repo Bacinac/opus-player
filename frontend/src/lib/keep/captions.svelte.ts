@@ -11,7 +11,7 @@
 // or a wall seen from a sofa. Reading it off the element instead is what left
 // the browser drawing sixty-nine-pixel text into the black bar under a film.
 
-import { keep, recall } from '$lib/kit';
+import { keep, recall } from '#lib/kit/index.js';
 
 export type CaptionSize = 'small' | 'medium' | 'large' | 'huge';
 export type CaptionPlace = 'picture' | 'below';

@@ -11,20 +11,20 @@
 	// after.
 
 	import { thumbHashToDataURL } from 'thumbhash';
-	import { cssUrl, request } from '$lib/kit';
-	import { tileOf } from '$lib/opus';
-	import PhotoViewer from '$lib/opus/PhotoViewer.svelte';
-	import PhotoToTv from '$lib/parts/PhotoToTv.svelte';
-	import type { Photo } from '$lib/keep/tvPhoto.svelte';
-	import { askRecordings, recordingOf } from '$lib/ask/ability';
-	import { formatDate, formatNumber, t } from '$lib/i18n';
-	import { count } from '$lib/say/count';
-	import { namesOf } from '$lib/say/says';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { onBack } from '$lib/keep/back.svelte';
-	import { focusWaiting } from '$lib/tv/spatial.svelte';
-	import Wall from '$lib/tvui/Wall.svelte';
-	import { DESK_YEAR, YEAR } from '$lib/tvui/cells';
+	import { cssUrl, request } from '#lib/kit/index.js';
+	import { tileOf } from '#lib/opus/index.js';
+	import PhotoViewer from '#lib/opus/PhotoViewer.svelte';
+	import PhotoToTv from '#lib/parts/PhotoToTv.svelte';
+	import type { Photo } from '#lib/keep/tvPhoto.svelte.js';
+	import { askRecordings, recordingOf } from '#lib/ask/ability.js';
+	import { formatDate, formatNumber, t } from '#lib/i18n/index.js';
+	import { count } from '#lib/say/count.js';
+	import { namesOf } from '#lib/say/says.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { onBack } from '#lib/keep/back.svelte.js';
+	import { focusWaiting } from '#lib/tv/spatial.svelte.js';
+	import Wall from '#lib/tvui/Wall.svelte';
+	import { DESK_YEAR, YEAR } from '#lib/tvui/cells.js';
 
 	type Shot = {
 		id: string;

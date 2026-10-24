@@ -1,7 +1,7 @@
 // Where the other OPUS modules answer, for the shell's module switcher: this
 // build's own addresses, handed to the package that knows the modules.
 
-import { moduleName, modulesFor } from '$lib/opus';
+import { moduleName, modulesFor } from '#lib/opus/index.js';
 
 export const MODULE = moduleName('player');
 

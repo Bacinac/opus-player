@@ -6,7 +6,7 @@
 // its own screen and its own controls; this is how an order reaches them rather
 // than the queue, and how the house hears what the film is doing.
 
-import type { Card } from '$lib/keep/types';
+import type { Card } from '#lib/keep/types.js';
 
 export type FilmOnTv = {
 	kind: string;

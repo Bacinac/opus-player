@@ -4,10 +4,11 @@
 // above it, the shelf to the menu, and only the menu leaves.
 
 import { goto } from '$app/navigation';
-import { pageOf } from '$lib/say/ways';
+import type { ReadonlyURL } from '$app/state';
+import { pageOf } from '#lib/say/ways.js';
 
-const here = (url: URL) => url.pathname + url.search;
-const depth = (url: URL) => url.pathname.split('/').filter(Boolean).length;
+const here = (url: ReadonlyURL) => url.pathname + url.search;
+const depth = (url: ReadonlyURL) => url.pathname.split('/').filter(Boolean).length;
 const inMenu = () => Boolean(document.activeElement?.closest('nav.rail'));
 
 class Rung {
@@ -17,17 +18,17 @@ class Rung {
 
 	/** A question — everything one actor was in — is asked from a page, and the
 	 *  rung above it is that page, not the section it happens to be answered on. */
-	went(from: URL, to: URL) {
+	went(from: ReadonlyURL, to: ReadonlyURL) {
 		if (here(from) === here(to) || pageOf(to.searchParams) !== 'discover') return;
 		if (!this.#askedFrom.has(here(to))) this.#askedFrom.set(here(to), here(from));
 	}
 
-	asked(url: URL): boolean {
+	asked(url: ReadonlyURL): boolean {
 		return this.#askedFrom.has(here(url));
 	}
 
 	/** One rung up from `url`; true, because at the bottom it offers the way out. */
-	climb(url: URL): boolean {
+	climb(url: ReadonlyURL): boolean {
 		if (this.leaving) {
 			this.leaving = false;
 			return true;
@@ -35,13 +36,13 @@ class Rung {
 		const asked = this.#askedFrom.get(here(url));
 		if (asked) {
 			this.#askedFrom.delete(here(url));
-			goto(asked, { replaceState: true });
+			goto(asked, { replace: true });
 			return true;
 		}
 		// a page goes to its section's shelf, and where it lands is where it was
 		// left from
 		if (depth(url) > 1) {
-			goto(`/${url.pathname.split('/').filter(Boolean)[0]}`, { replaceState: true });
+			goto(`/${url.pathname.split('/').filter(Boolean)[0]}`, { replace: true });
 			return true;
 		}
 		// from a section's page the menu is the rung above it, and only from the
@@ -60,7 +61,7 @@ class Rung {
 	/** Whether a press would climb rather than open the way out. A section IS a
 	 *  first level: the menu is how you cross between them, and only something
 	 *  deeper has a shelf above it to return to. */
-	holds(url: URL): boolean {
+	holds(url: ReadonlyURL): boolean {
 		return this.leaving || !inMenu() || depth(url) > 1 || this.asked(url);
 	}
 }

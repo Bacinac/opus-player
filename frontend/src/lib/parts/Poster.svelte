@@ -4,14 +4,14 @@
 	// because a poster is a poster whether you are pointing at it or arrowing
 	// onto it from the one beside it.
 
-	import { surface } from '$lib/keep/surface.svelte';
-	import { hero } from '$lib/keep/hero.svelte';
-	import { preview } from '$lib/keep/preview.svelte';
-	import { art } from '$lib/ask/art';
-	import { Icon } from '$lib/kit';
-	import { StateMark, episodeCode, videoStateMark } from '$lib/opus';
-	import { formatNumber, t } from '$lib/i18n';
-	import type { Card } from '$lib/keep/types';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { hero } from '#lib/keep/hero.svelte.js';
+	import { preview } from '#lib/keep/preview.svelte.js';
+	import { art } from '#lib/ask/art.js';
+	import { Icon } from '#lib/kit/index.js';
+	import { StateMark, episodeCode, videoStateMark } from '#lib/opus/index.js';
+	import { formatNumber, t } from '#lib/i18n/index.js';
+	import type { Card } from '#lib/keep/types.js';
 
 	let { card, onpick }: { card: Card; onpick: (c: Card) => void } = $props();
 

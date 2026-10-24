@@ -1,5 +1,5 @@
-import { surface } from '$lib/keep/surface.svelte';
-import { SKIP_S } from '$lib/tvui/keys';
+import { surface } from '#lib/keep/surface.svelte.js';
+import { SKIP_S } from '#lib/tvui/keys.js';
 
 type Film = {
 	stage: () => HTMLElement | null;

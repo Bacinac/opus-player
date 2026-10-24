@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { at, draw, focused } from '$lib/tvui/testing';
+import { at, draw, focused } from '#lib/tvui/testing.js';
 
 const tv = vi.hoisted(() => ({
 	surface: { isTv: true },
 	page: { url: new URL('http://tv.test/music') }
 }));
 vi.mock('$app/state', () => ({ page: tv.page }));
-vi.mock('$lib/keep/surface.svelte', () => ({ surface: tv.surface }));
-vi.mock('$lib/keep/hero.svelte', () => ({ hero: { wake() {}, forget() {}, hush() {} } }));
+vi.mock('#lib/keep/surface.svelte.js', () => ({ surface: tv.surface }));
+vi.mock('#lib/keep/hero.svelte.js', () => ({ hero: { wake() {}, forget() {}, hush() {} } }));
 
 import { arrows } from './spatial.svelte';
 

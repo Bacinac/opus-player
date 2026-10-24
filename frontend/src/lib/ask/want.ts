@@ -2,11 +2,11 @@
 // Explore, where nothing is held yet, and from a shelf, where the series is held
 // and its episodes are not — the library takes both as the same request.
 
-import { request, toasts } from '$lib/kit';
-import { t } from '$lib/i18n';
-import { aired, episodeLabel } from '$lib/say/episode';
-import { formatDate } from '$lib/i18n';
-import type { Card, EpisodeEntry } from '$lib/keep/types';
+import { request, toasts } from '#lib/kit/index.js';
+import { t } from '#lib/i18n/index.js';
+import { aired, episodeLabel } from '#lib/say/episode.js';
+import { formatDate } from '#lib/i18n/index.js';
+import type { Card, EpisodeEntry } from '#lib/keep/types.js';
 
 /** One record of an artist the house follows. What it costs is one record,
  *  and the queue is where it can be taken back, so nothing asks first. */

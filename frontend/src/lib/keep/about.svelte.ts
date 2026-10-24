@@ -4,7 +4,7 @@
 // Wikipedia and nobody presses play to wait. One record at a time, because one
 // is playing at a time, and the same record is not asked about twice.
 
-import { request } from '$lib/kit';
+import { request } from '#lib/kit/index.js';
 
 export type Told = {
 	id: number;

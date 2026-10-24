@@ -1,4 +1,4 @@
-import type { QueueTrack } from '$lib/keep/queue.svelte';
+import type { QueueTrack } from '#lib/keep/queue.svelte.js';
 
 export type Card = {
 	kind: 'movie' | 'series' | 'episode' | 'artist' | 'music' | 'track' | 'station' | 'release';

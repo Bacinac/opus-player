@@ -4,7 +4,7 @@
 // cannot disagree about it.
 
 import { goto } from '$app/navigation';
-import type { Card } from '$lib/keep/types';
+import type { Card } from '#lib/keep/types.js';
 
 /** True when the card was taken somewhere, and the caller should not open the
     panel for it. */

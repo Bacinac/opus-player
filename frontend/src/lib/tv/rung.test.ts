@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { at, draw, focused } from '$lib/tvui/testing';
+import { at, draw, focused } from '#lib/tvui/testing.js';
 
 const goto = vi.hoisted(() => vi.fn());
 vi.mock('$app/navigation', () => ({ goto }));
@@ -25,7 +25,7 @@ beforeEach(() => {
 describe('back on a television', () => {
 	test('from a page is its section’s shelf', () => {
 		expect(rung.climb(url('/series/12/s/2'))).toBe(true);
-		expect(goto).toHaveBeenCalledWith('/series', { replaceState: true });
+		expect(goto).toHaveBeenCalledWith('/series', { replace: true });
 	});
 
 	test('from a question is the page it was asked from, once', () => {
@@ -33,7 +33,7 @@ describe('back on a television', () => {
 		rung.went(url('/movies/7'), asked);
 		expect(rung.asked(asked)).toBe(true);
 		rung.climb(asked);
-		expect(goto).toHaveBeenCalledWith('/movies/7', { replaceState: true });
+		expect(goto).toHaveBeenCalledWith('/movies/7', { replace: true });
 		expect(rung.asked(asked)).toBe(false);
 	});
 

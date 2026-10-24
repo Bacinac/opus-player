@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { art } from '$lib/ask/art';
-	import { t, formatNumber } from '$lib/i18n';
-	import { request } from '$lib/kit';
-	import { genreName } from '$lib/say/genre';
-	import type { Plan } from '$lib/keep/types';
-	import Portrait from '$lib/tvui/Portrait.svelte';
+	import { art } from '#lib/ask/art.js';
+	import { t, formatNumber } from '#lib/i18n/index.js';
+	import { request } from '#lib/kit/index.js';
+	import { genreName } from '#lib/say/genre.js';
+	import type { Plan } from '#lib/keep/types.js';
+	import Portrait from '#lib/tvui/Portrait.svelte';
 
 	let {
 		plan,

@@ -9,10 +9,10 @@
 	// would be done to the picture as well.
 
 	import { page } from '$app/state';
-	import { hero } from '$lib/keep/hero.svelte';
-	import { preview } from '$lib/keep/preview.svelte';
-	import { ground } from '$lib/ask/art';
-	import Fanart from '$lib/tv/Fanart.svelte';
+	import { hero } from '#lib/keep/hero.svelte.js';
+	import { preview } from '#lib/keep/preview.svelte.js';
+	import { ground } from '#lib/ask/art.js';
+	import Fanart from '#lib/tv/Fanart.svelte';
 
 	// Walking the menu, the ground is the SECTION'S — the shelf you are asking
 	// about, not the last poster the remote happened to touch on the one before.

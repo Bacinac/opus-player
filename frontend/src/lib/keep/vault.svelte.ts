@@ -23,9 +23,9 @@ import {
 	sealedLength,
 	unb64,
 	unseal
-} from '$lib/ask/crypto';
-import { t } from '$lib/i18n';
-import { TRANSFER_MS, bytes, json, request } from '$lib/kit';
+} from '#lib/ask/crypto.js';
+import { t } from '#lib/i18n/index.js';
+import { TRANSFER_MS, bytes, json, request } from '#lib/kit/index.js';
 
 /** What was asked, or an error saying why not: every step of the vault and of
  * the backup into it is taken inside a guard that shows the person what went

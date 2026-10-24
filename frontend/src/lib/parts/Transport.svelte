@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { duration } from '$lib/i18n';
+	import { duration } from '#lib/i18n/index.js';
 	// The controls, wherever something is playing.
 	//
 	// There were three of these — the bar along the bottom, the record full
@@ -10,9 +10,9 @@
 	// song is what each of them adds at the end, and that is what `extras` is.
 
 	import type { Snippet } from 'svelte';
-	import { t } from '$lib/i18n';
-	import { Icon } from '$lib/kit';
-	import Press from '$lib/tvui/Press.svelte';
+	import { t } from '#lib/i18n/index.js';
+	import { Icon } from '#lib/kit/index.js';
+	import Press from '#lib/tvui/Press.svelte';
 
 	let {
 		position,

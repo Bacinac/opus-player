@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { fromBytes, markKey, openPiece, unb64, unseal } from '$lib/ask/crypto';
+import { fromBytes, markKey, openPiece, unb64, unseal } from '#lib/ask/crypto.js';
 import { backup } from './backup.svelte';
 import { vault } from './vault.svelte';
 

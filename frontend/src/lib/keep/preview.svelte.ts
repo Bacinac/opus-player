@@ -5,7 +5,7 @@
 // it — while the shelf on the screen is still whatever was there before.
 // Landing on anything else is the question being dropped.
 
-import { settle } from '$lib/kit';
+import { settle } from '#lib/kit/index.js';
 
 class PreviewState {
 	section = $state<string | null>(null);

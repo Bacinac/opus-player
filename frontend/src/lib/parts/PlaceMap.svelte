@@ -12,10 +12,10 @@
 	// before any label is read.
 
 	import { onMount } from 'svelte';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { formatNumber, t } from '$lib/i18n';
-	import type { Where } from '$lib/ask/photos';
-	import Press from '$lib/tvui/Press.svelte';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { formatNumber, t } from '#lib/i18n/index.js';
+	import type { Where } from '#lib/ask/photos.js';
+	import Press from '#lib/tvui/Press.svelte';
 
 	let {
 		places,

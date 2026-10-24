@@ -13,7 +13,7 @@
  *
  * Cleared as it is read: these are the one copy of somebody's intent, and a
  * second visit to the photographs must not offer last week's again. */
-import { request } from '$lib/kit';
+import { request } from '#lib/kit/index.js';
 
 export async function shared(): Promise<File[]> {
 	if (!('caches' in globalThis)) return [];

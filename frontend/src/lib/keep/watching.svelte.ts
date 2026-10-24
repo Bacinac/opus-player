@@ -1,4 +1,4 @@
-import type { Profile } from '$lib/keep/types';
+import type { Profile } from '#lib/keep/types.js';
 
 /** Who is watching, as opposed to who signed in.
  *

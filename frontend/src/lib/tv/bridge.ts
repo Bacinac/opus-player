@@ -1,5 +1,5 @@
-import { t } from '$lib/i18n';
-import { toasts } from '$lib/kit';
+import { t } from '#lib/i18n/index.js';
+import { toasts } from '#lib/kit/index.js';
 
 type Box = NonNullable<Window['opusTv']>;
 

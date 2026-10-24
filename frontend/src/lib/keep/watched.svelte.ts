@@ -5,7 +5,7 @@
 // same series. Asked for a whole list at once, because a season is twenty-two
 // questions with one answer.
 
-import { json, request } from '$lib/kit';
+import { json, request } from '#lib/kit/index.js';
 
 class WatchedState {
 	private seen = $state(new Map<string, Set<number>>());

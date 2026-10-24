@@ -3,38 +3,38 @@
 	// across every kind; this is what you get when you have stopped browsing and
 	// gone looking for a film.
 
-	import { i18n, t } from '$lib/i18n';
-	import Hero from '$lib/parts/Hero.svelte';
-	import Discover from '$lib/screens/Discover.svelte';
-	import Radio from '$lib/screens/Radio.svelte';
+	import { i18n, t } from '#lib/i18n/index.js';
+	import Hero from '#lib/parts/Hero.svelte';
+	import Discover from '#lib/screens/Discover.svelte';
+	import Radio from '#lib/screens/Radio.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { hero } from '$lib/keep/hero.svelte';
-	import { onBack } from '$lib/keep/back.svelte';
-	import { focusContent } from '$lib/tv/spatial.svelte';
-	import Grid from '$lib/parts/Grid.svelte';
-	import { Heading, narrow } from '$lib/kit';
-	import Row from '$lib/parts/Row.svelte';
-	import { carryOn } from '$lib/ask/puton';
-	import { queue } from '$lib/keep/queue.svelte';
-	import { initialOf, Letters, lettersOf, request, withLang } from '$lib/kit';
-	import { me } from '$lib/opus';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { watching } from '$lib/keep/watching.svelte';
-	import { panel } from '$lib/keep/panel.svelte';
-	import { SHELVES, shelf } from '$lib/keep/shelf.svelte';
-	import WallHead from '$lib/tv/WallHead.svelte';
-	import Info from '$lib/tv/Info.svelte';
-	import Keyboard from '$lib/parts/Keyboard.svelte';
-	import { shelves } from '$lib/keep/shelves.svelte';
-	import { preview } from '$lib/keep/preview.svelte';
-	import { discoverOf, pageOf, pagesUnder } from '$lib/say/ways';
-	import Play from '$lib/screens/Play.svelte';
-	import Sheet from '$lib/parts/Sheet.svelte';
-	import { atItsArtist, opened, playsAtOnce } from '$lib/say/pick';
-	import { want } from '$lib/ask/want';
-	import type { Card, Row as RowType } from '$lib/keep/types';
-	import type { QueueTrack } from '$lib/keep/queue.svelte';
+	import { hero } from '#lib/keep/hero.svelte.js';
+	import { onBack } from '#lib/keep/back.svelte.js';
+	import { focusContent } from '#lib/tv/spatial.svelte.js';
+	import Grid from '#lib/parts/Grid.svelte';
+	import { Heading, narrow } from '#lib/kit/index.js';
+	import Row from '#lib/parts/Row.svelte';
+	import { carryOn } from '#lib/ask/puton.js';
+	import { queue } from '#lib/keep/queue.svelte.js';
+	import { initialOf, Letters, lettersOf, request, withLang } from '#lib/kit/index.js';
+	import { me } from '#lib/opus/index.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { watching } from '#lib/keep/watching.svelte.js';
+	import { panel } from '#lib/keep/panel.svelte.js';
+	import { SHELVES, shelf } from '#lib/keep/shelf.svelte.js';
+	import WallHead from '#lib/tv/WallHead.svelte';
+	import Info from '#lib/tv/Info.svelte';
+	import Keyboard from '#lib/parts/Keyboard.svelte';
+	import { shelves } from '#lib/keep/shelves.svelte.js';
+	import { preview } from '#lib/keep/preview.svelte.js';
+	import { discoverOf, pageOf, pagesUnder } from '#lib/say/ways.js';
+	import Play from '#lib/screens/Play.svelte';
+	import Sheet from '#lib/parts/Sheet.svelte';
+	import { atItsArtist, opened, playsAtOnce } from '#lib/say/pick.js';
+	import { want } from '#lib/ask/want.js';
+	import type { Card, Row as RowType } from '#lib/keep/types.js';
+	import type { QueueTrack } from '#lib/keep/queue.svelte.js';
 
 	let { section }: { section: string } = $props();
 
@@ -90,7 +90,7 @@
 			spelling = true;
 			return;
 		}
-		goto(`/${section}?find=${which === 'spell' ? 'search' : which}`, { keepFocus: false });
+		goto(`/${section}?find=${which === 'spell' ? 'search' : which}`);
 	}
 
 	function close() {
@@ -238,7 +238,7 @@
 		if (!asked || !loaded) return;
 		const [kind, id] = asked.split(':');
 		const card = cards.find((c) => c.kind === kind && String(c.id) === id);
-		void goto(page.url.pathname, { replaceState: true, keepFocus: true, noScroll: true });
+		void goto(page.url.pathname, { replace: true, reset: false });
 		if (card) choose(card);
 	});
 

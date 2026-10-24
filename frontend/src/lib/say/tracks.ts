@@ -1,5 +1,5 @@
-import { formatNumber, t } from '$lib/i18n';
-import type { PlanSubtitle } from '$lib/keep/types';
+import { formatNumber, t } from '#lib/i18n/index.js';
+import type { PlanSubtitle } from '#lib/keep/types.js';
 
 export function soundName(track: { lang: string; channels: number | null; codec: string }): string {
 	return [

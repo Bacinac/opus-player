@@ -6,7 +6,7 @@
  * cached would be a shelf that could be wrong about a photograph taken an hour
  * ago. */
 
-import { request } from '$lib/kit';
+import { request } from '#lib/kit/index.js';
 
 export type Face = {
 	id: number;

@@ -10,9 +10,9 @@
 // `ac3, eac3, dts, dca, truehd` minutes apart once the amplifier is moved onto
 // its input, so a table of what each box can do would be wrong half the day.
 
-import { playOf } from '$lib/opus/photos';
-import { hasEngine } from '$lib/keep/queue.svelte';
-import { onBox } from '$lib/tv/bridge';
+import { playOf } from '#lib/opus/photos.js';
+import { hasEngine } from '#lib/keep/queue.svelte.js';
+import { onBox } from '#lib/tv/bridge.js';
 
 export type Ability = {
 	/** what it can render — decoded here, or handed whole to an amplifier */

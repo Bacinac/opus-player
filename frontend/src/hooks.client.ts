@@ -1,5 +1,5 @@
-import type { HandleClientError } from '@sveltejs/kit';
-import { version } from '$app/environment';
+import type { HandleClientError } from '@sveltejs/kit/hooks';
+import { version } from '$app/env';
 
 // A television has no console anyone can read, so a page that breaks there is
 // said in the backend's log, beside the wrapper's own crashes.
@@ -26,9 +26,12 @@ function report(error: unknown, where: string, message = '') {
 	}).catch(() => {});
 }
 
-export const handleError: HandleClientError = ({ error, event, status, message }) => {
-	if (status === 404) return;
-	report(error, event.url.pathname, message);
+export const handleError: HandleClientError = ({ kind, error, event }) => {
+	if (kind === 'framework') {
+		if (error.status !== 404) report(error.message, event.url.pathname);
+		return;
+	}
+	report(error, event.url.pathname);
 };
 
 // what breaks in an effect, a timer or an order from the house never passes

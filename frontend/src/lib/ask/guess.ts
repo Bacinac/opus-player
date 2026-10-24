@@ -5,7 +5,7 @@
  * answer is marked over there, one question at a time, because the clock that
  * scores it is over there too. */
 
-import { request } from '$lib/kit';
+import { request } from '#lib/kit/index.js';
 
 export type Kind = 'who' | 'where' | 'when';
 

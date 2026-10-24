@@ -7,15 +7,15 @@
 	// cannot do the arithmetic at all. The last one is said plainly rather than
 	// discovered as a stack trace, because over plain http it is the truth.
 
-	import { ArmedButton, Button, Card, Dialog, Field, Icon, json, Progress, request } from '$lib/kit';
-	import { formatBytes, formatDate, formatNumber, t } from '$lib/i18n';
-	import { available, b64, recoveryCode } from '$lib/ask/crypto';
-	import { saveBlob } from '$lib/ask/save';
-	import { backup } from '$lib/keep/backup.svelte';
-	import { answered, vault, type Item } from '$lib/keep/vault.svelte';
-	import Wall from '$lib/tvui/Wall.svelte';
-	import { MOSAIC } from '$lib/tvui/cells';
-	import { watching } from '$lib/keep/watching.svelte';
+	import { ArmedButton, Button, Card, Dialog, Field, Icon, json, Progress, request } from '#lib/kit/index.js';
+	import { formatBytes, formatDate, formatNumber, t } from '#lib/i18n/index.js';
+	import { available, b64, recoveryCode } from '#lib/ask/crypto.js';
+	import { saveBlob } from '#lib/ask/save.js';
+	import { backup } from '#lib/keep/backup.svelte.js';
+	import { answered, vault, type Item } from '#lib/keep/vault.svelte.js';
+	import Wall from '#lib/tvui/Wall.svelte';
+	import { MOSAIC } from '#lib/tvui/cells.js';
+	import { watching } from '#lib/keep/watching.svelte.js';
 
 	let secret = $state('');
 	let code = $state('');

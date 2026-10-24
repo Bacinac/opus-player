@@ -16,11 +16,11 @@
 	// library, and a household that meets one and then the other should not feel
 	// it changed applications on the way.
 
-	import { formatNumber, t } from '$lib/i18n';
-	import { request } from '$lib/kit';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { focusFirst } from '$lib/tv/spatial.svelte';
-	import Press from '$lib/tvui/Press.svelte';
+	import { formatNumber, t } from '#lib/i18n/index.js';
+	import { request } from '#lib/kit/index.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { focusFirst } from '#lib/tv/spatial.svelte.js';
+	import Press from '#lib/tvui/Press.svelte';
 
 	let { onin }: { onin: () => void } = $props();
 

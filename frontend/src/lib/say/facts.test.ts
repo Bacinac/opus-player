@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { aboutArtist, aboutWork, streamingOn } from './facts';
-import type { About, Card } from '$lib/keep/types';
+import type { About, Card } from '#lib/keep/types.js';
 
 const card = (over: Partial<Card>): Card => ({ kind: 'artist', id: 1, title: 'Haustor', image: null, backdrop: null, state: null, overview: '', ...over }) as Card;
 

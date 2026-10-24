@@ -8,25 +8,25 @@
 	// installation is maintained rather than preferred. It is one page away, behind
 	// the only question this one does not ask: who keeps the place.
 
-	import { t } from '$lib/i18n';
-	import { Button, Heading, request, toasts } from '$lib/kit';
-	import { me, Preferences } from '$lib/opus';
+	import { t } from '#lib/i18n/index.js';
+	import { Button, Heading, request, toasts } from '#lib/kit/index.js';
+	import { me, Preferences } from '#lib/opus/index.js';
 	import {
 		captions,
 		CAPTION_SIZES,
 		CAPTION_PLACES,
 		CAPTION_BACKDROPS
-	} from '$lib/keep/captions.svelte';
-	import Vault from '$lib/screens/Vault.svelte';
-	import { forgetKeys } from '$lib/keep/vault.svelte';
+	} from '#lib/keep/captions.svelte.js';
+	import Vault from '#lib/screens/Vault.svelte';
+	import { forgetKeys } from '#lib/keep/vault.svelte.js';
 	import { goto } from '$app/navigation';
-	import { watching } from '$lib/keep/watching.svelte';
-	import { formatBytes } from '$lib/i18n';
-	import type { Profile } from '$lib/keep/types';
-	import { surface } from '$lib/keep/surface.svelte';
-	import Wants from '$lib/parts/Wants.svelte';
-	import Cars from '$lib/parts/Cars.svelte';
-	import History from '$lib/parts/History.svelte';
+	import { watching } from '#lib/keep/watching.svelte.js';
+	import { formatBytes } from '#lib/i18n/index.js';
+	import type { Profile } from '#lib/keep/types.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import Wants from '#lib/parts/Wants.svelte';
+	import Cars from '#lib/parts/Cars.svelte';
+	import History from '#lib/parts/History.svelte';
 
 	// What is on the shelf to install, or nothing when no app has been built for
 	// this install. The section is absent rather than empty in that case: an

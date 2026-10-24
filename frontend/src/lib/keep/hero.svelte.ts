@@ -6,7 +6,7 @@
 // turn is a strobe. Nothing is ever cleared on the way — the last thing
 // described stays until the next one settles, so the panel never blinks empty.
 
-import type { Card } from '$lib/keep/types';
+import type { Card } from '#lib/keep/types.js';
 
 const SETTLE_MS = 180;
 

@@ -3,12 +3,12 @@
 	// film's own keys, reaching over there, on every page until it ends. A
 	// photograph shown over there has one key, the one that puts it away.
 
-	import { art } from '$lib/ask/art';
-	import { formatDate, t } from '$lib/i18n';
-	import { tileOf } from '$lib/opus';
-	import PlayerBar from '$lib/parts/PlayerBar.svelte';
-	import { tvFilm } from '$lib/keep/tvFilm.svelte';
-	import { tvPhoto } from '$lib/keep/tvPhoto.svelte';
+	import { art } from '#lib/ask/art.js';
+	import { formatDate, t } from '#lib/i18n/index.js';
+	import { tileOf } from '#lib/opus/index.js';
+	import PlayerBar from '#lib/parts/PlayerBar.svelte';
+	import { tvFilm } from '#lib/keep/tvFilm.svelte.js';
+	import { tvPhoto } from '#lib/keep/tvPhoto.svelte.js';
 </script>
 
 {#if tvFilm.on}

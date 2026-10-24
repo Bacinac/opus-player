@@ -5,10 +5,10 @@
 
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { t } from '$lib/i18n';
-	import type { Named } from '$lib/keep/types';
-	import Press from '$lib/tvui/Press.svelte';
-	import { sectionOf } from '$lib/say/ways';
+	import { t } from '#lib/i18n/index.js';
+	import type { Named } from '#lib/keep/types.js';
+	import Press from '#lib/tvui/Press.svelte';
+	import { sectionOf } from '#lib/say/ways.js';
 
 	/** `said` false where the page names the row itself, beside it */
 	let { people, said = true }: { people: Named[]; said?: boolean } = $props();

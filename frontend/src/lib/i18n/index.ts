@@ -2,7 +2,7 @@
 
 import { hr } from './hr';
 import { en } from './en';
-import { registerModule, type Word } from '$lib/opus';
+import { registerModule, type Word } from '#lib/opus/index.js';
 
 // this module's own words, widened with the ones the shared package says on
 // its behalf — both halves stay checked, neither is written twice
@@ -19,5 +19,5 @@ export {
 	formatBytes,
 	formatRuntime,
 	plural
-} from '$lib/kit';
-export type { Locale } from '$lib/kit';
+} from '#lib/kit/index.js';
+export type { Locale } from '#lib/kit/index.js';

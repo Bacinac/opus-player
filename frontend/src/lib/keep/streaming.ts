@@ -1,7 +1,7 @@
 // Which subscription services a wall is narrowed to, and which it leaves out.
 
-import { art } from '$lib/ask/art';
-import type { Option } from '$lib/tvui/Choose.svelte';
+import { art } from '#lib/ask/art.js';
+import type { Option } from '#lib/tvui/Choose.svelte';
 import type { Card, Service } from './types';
 
 export const STANCES = 'opus.streaming.services';

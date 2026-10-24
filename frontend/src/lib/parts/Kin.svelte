@@ -3,8 +3,8 @@
 	// made of. A name here is somewhere to go and not a word, so pressing one
 	// stands this screen on that artist.
 
-	import type { Card } from '$lib/keep/types';
-	import Press from '$lib/tvui/Press.svelte';
+	import type { Card } from '#lib/keep/types.js';
+	import Press from '#lib/tvui/Press.svelte';
 
 	let {
 		label,

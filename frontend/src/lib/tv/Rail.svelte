@@ -14,13 +14,13 @@
 
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { hero } from '$lib/keep/hero.svelte';
-	import { preview } from '$lib/keep/preview.svelte';
-	import { Wordmark } from '$lib/opus';
-	import { focusContent } from '$lib/tv/spatial.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
-	import { t } from '$lib/i18n';
-	import { PAGES, pageOf, pageWord } from '$lib/say/ways';
+	import { hero } from '#lib/keep/hero.svelte.js';
+	import { preview } from '#lib/keep/preview.svelte.js';
+	import { Wordmark } from '#lib/opus/index.js';
+	import { focusContent } from '#lib/tv/spatial.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
+	import { t } from '#lib/i18n/index.js';
+	import { PAGES, pageOf, pageWord } from '#lib/say/ways.js';
 
 	let { nav }: {
 		nav: { href: string; label: string }[];
@@ -52,13 +52,13 @@
 	 *  another item in it. Arriving into the menu from the shelf, or being put
 	 *  here by a page that has just landed, must not navigate: that is a page
 	 *  change causing a focus change causing a page change, and it is how the
-	 *  address wandered off on its own. replaceState, because walking a menu is
-	 *  not five places you have been; keepFocus, because the ring belongs to the
+	 *  address wandered off on its own. replace, because walking a menu is
+	 *  not five places you have been; no reset, because the ring belongs to the
 	 *  menu until somebody presses. */
 	function walkTo(event: FocusEvent, href: string) {
 		const from = event.relatedTarget as HTMLElement | null;
 		if (surface.isTv && from?.closest('nav.rail') && page.url.pathname + page.url.search !== href) {
-			goto(href, { replaceState: true, keepFocus: true, noScroll: true });
+			goto(href, { replace: true, reset: false });
 		}
 	}
 

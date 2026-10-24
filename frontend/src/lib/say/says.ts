@@ -6,11 +6,11 @@
 // "wanted" while the other called it ignored, and how a name could differ
 // between two screens of the same player. Nothing is named anywhere else.
 
-import { formatDate, formatNumber, t } from '$lib/i18n';
-import { videoStateMark, type Count, type PageTag } from '$lib/opus';
-import { aired, episodeLabel, episodeState } from '$lib/say/episode';
-import { watched } from '$lib/keep/watched.svelte';
-import type { EpisodeEntry, SeasonView, SeriesTree } from '$lib/keep/types';
+import { formatDate, formatNumber, t } from '#lib/i18n/index.js';
+import { videoStateMark, type Count, type PageTag } from '#lib/opus/index.js';
+import { aired, episodeLabel, episodeState } from '#lib/say/episode.js';
+import { watched } from '#lib/keep/watched.svelte.js';
+import type { EpisodeEntry, SeasonView, SeriesTree } from '#lib/keep/types.js';
 
 /** The seasons of a series the house holds, as every list of them reads them. */
 export function seasonViews(tree: SeriesTree | null): SeasonView[] {

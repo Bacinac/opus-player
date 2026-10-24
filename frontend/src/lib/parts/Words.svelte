@@ -6,11 +6,11 @@
 	//
 	// A line with a time on it is a place in the song: pressing it goes there.
 
-	import { t } from '$lib/i18n';
-	import Press from '$lib/tvui/Press.svelte';
-	import { lyrics, type LyricsState } from '$lib/keep/lyrics.svelte';
-	import { cast } from '$lib/keep/cast.svelte';
-	import { surface } from '$lib/keep/surface.svelte';
+	import { t } from '#lib/i18n/index.js';
+	import Press from '#lib/tvui/Press.svelte';
+	import { lyrics, type LyricsState } from '#lib/keep/lyrics.svelte.js';
+	import { cast } from '#lib/keep/cast.svelte.js';
+	import { surface } from '#lib/keep/surface.svelte.js';
 
 	let {
 		elapsed = 0,

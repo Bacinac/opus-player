@@ -2,9 +2,9 @@
 // the place in a record somebody left. The same three sentences from a row, a
 // sleeve and the play key on the remote.
 
-import { request } from '$lib/kit';
-import { hasEngine, queue, type QueueTrack } from '$lib/keep/queue.svelte';
-import type { Card, ReleaseQueue } from '$lib/keep/types';
+import { request } from '#lib/kit/index.js';
+import { hasEngine, queue, type QueueTrack } from '#lib/keep/queue.svelte.js';
+import type { Card, ReleaseQueue } from '#lib/keep/types.js';
 
 // the edition this screen can actually play: only the box's own player hears
 // more than two channels

@@ -4,7 +4,7 @@
 	// keeps a name, one line and one thing to do; this is where the rest went.
 
 	import type { Snippet } from 'svelte';
-	import { onBack } from '$lib/keep/back.svelte';
+	import { onBack } from '#lib/keep/back.svelte.js';
 
 	let {
 		open = $bindable(false),
