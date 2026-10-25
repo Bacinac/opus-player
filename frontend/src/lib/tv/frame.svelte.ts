@@ -2,7 +2,8 @@
 // root layout while it initialises; everything here is an effect that stands
 // down wherever the surface is not a television.
 
-import { page } from '$app/state';
+import { goto } from '$app/navigation';
+import { navigating, page } from '$app/state';
 import { me } from '#lib/opus/index.js';
 import { goBack } from '#lib/keep/back.svelte.js';
 import { preview } from '#lib/keep/preview.svelte.js';
@@ -28,17 +29,25 @@ export function tvFrame() {
 	// The browser's own back is not asked: by the time it pops, the browser has
 	// spent a real entry, so the address moves while the screen does not — back
 	// on the records would leave the address saying home with the records still
-	// on it, and the menu underlining a page nobody is on. One entry is kept in
-	// hand and given back on every pop, and the ladder answers instead.
+	// on it, and the menu underlining a page nobody is on. So every page a
+	// television is on is held by a shallow entry of its own: a pop spends only
+	// that, and the ladder answers instead. Both wait for the router to settle:
+	// it hears the pop after this page does, and a hold begun during the climb's
+	// navigation would cut it short.
+	let spent = false;
 	$effect(() => {
 		if (!surface.isTv) return;
-		function onpop() {
-			goBack();
-			history.pushState(null, '');
-		}
-		history.pushState(null, '');
-		window.addEventListener('popstate', onpop);
-		return () => window.removeEventListener('popstate', onpop);
+		const pop = () => (spent = true);
+		window.addEventListener('popstate', pop);
+		return () => window.removeEventListener('popstate', pop);
+	});
+	$effect(() => {
+		if (!surface.isTv || page.state.held || navigating.type) return;
+		const climb = spent;
+		spent = false;
+		void goto(page.url.href, { shallow: true, state: { held: true } }).then(() => {
+			if (climb) goBack();
+		});
 	});
 
 	// where the remote starts on a new page: on what there is to watch. Left to

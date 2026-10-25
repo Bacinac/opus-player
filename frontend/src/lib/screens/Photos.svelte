@@ -226,8 +226,8 @@
 	}
 
 	onMount(arrive);
-	afterNavigate(({ from }) => {
-		if (from) arrive();
+	afterNavigate(({ from, shallow }) => {
+		if (from && !shallow) arrive();
 	});
 
 	function pick(k: Way) {

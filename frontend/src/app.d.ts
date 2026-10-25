@@ -1,5 +1,10 @@
 declare global {
-	namespace App {}
+	namespace App {
+		interface PageState {
+			/** the entry a television keeps over each page for a pop to spend */
+			held?: true;
+		}
+	}
 }
 
 export {};
