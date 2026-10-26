@@ -26,6 +26,7 @@ import time
 import opus_auth
 from fastapi import APIRouter, Depends, HTTPException, Request
 from opus_core import dida
+from opus_core.names import croatian
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
@@ -34,7 +35,7 @@ from opus.api.routers.art import asked_for
 from opus.api.routers.play import announcement_url, stream_url
 from opus.api.routers.radio import play_url
 from opus.api.routers.users import picked, profile_key, require_picked
-from opus.cards import artist_card, croatian, episode_card, movie_card, series_card
+from opus.cards import artist_card, episode_card, movie_card, series_card
 from opus.db import SessionLocal
 from opus.models import BoxPreference, RadioStation, User
 from opus.settings_store import current_runtime

@@ -10,12 +10,13 @@ from datetime import timedelta
 import opus_auth
 from fastapi import APIRouter, Depends, HTTPException, Request
 from opus_auth import GUEST
+from opus_core.names import croatian
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from opus import auth, library
 from opus.api.routers.users import orders_of, picked
-from opus.cards import (artist_card, croatian, episode_card, movie_card, release_card,
+from opus.cards import (artist_card, episode_card, movie_card, release_card,
                         series_card, track_card)
 from opus.db import get_session
 from opus.models import MusicPlay, Progress, RadioStation
