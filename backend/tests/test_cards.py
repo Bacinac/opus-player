@@ -30,3 +30,9 @@ def test_digits_that_are_not_ascii_do_not_break_the_shelf():
 
 def test_punctuation_before_letters_and_other_scripts_after():
     assert ordered("Ωmega", "Abba", "...And Justice") == ["...And Justice", "Abba", "Ωmega"]
+
+
+def test_the_english_article_is_not_what_a_name_files_under():
+    assert ordered("Dubioza Kolektiv", "The Doors", "Dalibor Brun", "Theodora", "the the") == [
+        "Dalibor Brun", "The Doors", "Dubioza Kolektiv", "the the", "Theodora"]
+    assert croatian("The Doors") == croatian("Doors")

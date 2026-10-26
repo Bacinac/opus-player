@@ -2,6 +2,7 @@
 order a shelf of them is read in. Built in one place because every router that
 hands out a card must hand out the same card."""
 
+import re
 import unicodedata
 
 
@@ -107,13 +108,15 @@ _DIGRAPHS = ("dž", "lj", "nj")
 _MARK = -2
 _DIGIT = -1
 _FOREIGN = len(_ALPHABET)
+_ARTICLE = re.compile(r"^the\s+", re.IGNORECASE)
 
 
 def croatian(text: str) -> list[tuple[int, str]]:
     """A sort key that reads the way the alphabet is recited, whoever is
-    looking: the three digraphs are single letters, and a number is compared as
-    a number, so 300 sorts before 1917."""
-    lowered = unicodedata.normalize("NFC", (text or "").casefold())
+    looking: the three digraphs are single letters, a number is compared as a
+    number, so 300 sorts before 1917, and the English article a name is written
+    with is not what it files under — The Doors stand under D."""
+    lowered = unicodedata.normalize("NFC", _ARTICLE.sub("", (text or "").strip()).casefold())
     key: list[tuple[int, str]] = []
     at = 0
     while at < len(lowered):
