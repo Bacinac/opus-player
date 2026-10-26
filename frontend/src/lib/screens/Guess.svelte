@@ -10,27 +10,24 @@
 	// answer arriving over there — a screen that timed itself would be timing
 	// the thing it is being marked on.
 	//
-	// Every picture of the round is fetched before the first question is asked.
-	// A game with a clock on it cannot also have a spinner.
+	// Played together, this screen either asks the room (GuessParty) or is one
+	// of the phones answering it (GuessJoined); alone, it does both halves.
 
 	import { onDestroy } from 'svelte';
 	import { formatNumber, t } from '#lib/i18n/index.js';
 	import { keep, recall } from '#lib/kit/index.js';
-	import { cropOf, previewOf } from '#lib/opus/index.js';
 	import * as guess from '#lib/ask/guess.js';
 	import * as sound from '#lib/ask/tick.js';
-	import { askedOf, photoSays } from '#lib/say/says.js';
 	import { surface } from '#lib/keep/surface.svelte.js';
 	import { played } from '#lib/keep/played.svelte.js';
 	import { focusFirst } from '#lib/tv/spatial.svelte.js';
 	import { onBack } from '#lib/keep/back.svelte.js';
 	import { nav } from '#lib/tvui/nav.svelte.js';
-	import Answers from '#lib/tvui/Answers.svelte';
-	import Press from '#lib/tvui/Press.svelte';
-	import Clock from '#lib/parts/Clock.svelte';
 	import GuessIntro from '#lib/parts/GuessIntro.svelte';
 	import GuessOver from '#lib/parts/GuessOver.svelte';
-	import GuessPicture from '#lib/parts/GuessPicture.svelte';
+	import GuessStage, { warm } from '#lib/parts/GuessStage.svelte';
+	import GuessParty from '#lib/parts/GuessParty.svelte';
+	import GuessJoined from '#lib/parts/GuessJoined.svelte';
 
 	// how long the reveal stands before the next question comes up on its own.
 	// Long enough to look at the photograph, short enough that nobody has to
@@ -39,8 +36,10 @@
 	// the last stretch of the clock, where a second is heard as well as seen
 	const AUDIBLE_S = 10;
 	const URGENT_S = 5;
+	// how often the intro looks for a party to join
+	const LOOK_MS = 3000;
 
-	let stage = $state<'ready' | 'asking' | 'revealed' | 'done'>('ready');
+	let stage = $state<'ready' | 'asking' | 'revealed' | 'done' | 'hosting' | 'joined'>('ready');
 	let playing = $state<guess.Round | null>(null);
 	let at = $state(0);
 	let chosen = $state<string | null>(null);
@@ -51,26 +50,13 @@
 	let standing = $state<guess.Standing[]>([]);
 	let mine = $state('');
 	let busy = $state(false);
+	let parties = $state<guess.OpenParty[]>([]);
+	// the party this screen hosts again after a reload, or has joined
+	let partyId = $state<number | null>(null);
 
 	const question = $derived(playing?.questions[at] ?? null);
 	const total = $derived(told.reduce((sum, one) => sum + one.points, 0));
 	const rights = $derived(told.filter((one) => one.right).length);
-
-	const picture = (photo: { id: string; turn: number }) => previewOf(photo.id, photo.turn);
-	const cropped = (face: number) => `${cropOf(face)}?size=big`;
-
-	/* What is on the stage. A question about who somebody is shows the FACE:
-	   the photograph around it answers the question by itself for anybody who
-	   recognises the room, the day, or who else is standing there. Once it has
-	   been answered the whole photograph comes up — which is what the face was
-	   cut out of, and the half of it that was being kept back. */
-	const showing = $derived.by(() => {
-		if (!question) return '';
-		if (question.kind === 'who' && question.face && stage === 'asking') {
-			return cropped(question.face);
-		}
-		return picture(question.photo);
-	});
 
 	let beat: ReturnType<typeof setInterval> | null = null;
 	let linger: ReturnType<typeof setTimeout> | null = null;
@@ -116,6 +102,19 @@
 		})();
 	});
 
+	/* A party somebody opened on another screen, looked for while this one is
+	   on the intro: that is where "join" is pressed, so that is where it has to
+	   be known about. */
+	$effect(() => {
+		if (stage !== 'ready') return;
+		const look = async () => {
+			parties = await guess.party.around();
+		};
+		void look();
+		const every = setInterval(look, LOOK_MS);
+		return () => clearInterval(every);
+	});
+
 	/** How hard the faces should be, remembered between rounds. Three stops and
 	 *  not a bar to drag: this is played from a sofa as well, and a remote
 	 *  cannot drag anything. */
@@ -148,13 +147,7 @@
 		const round = await guess.round(10, how);
 		busy = false;
 		if (!round) return;
-		// every picture, now, while the first question is still being asked for
-		// — and the face as well where one is asked about, because that is what
-		// goes up first and the photograph only follows the answer
-		for (const one of round.questions) {
-			new Image().src = picture(one.photo);
-			if (one.kind === 'who' && one.face) new Image().src = cropped(one.face);
-		}
+		warm(round.questions);
 		playing = round;
 		told = [];
 		at = 0;
@@ -179,7 +172,7 @@
 		ticked = Math.ceil(said.seconds);
 		stopBeat();
 		beat = setInterval(watch, 200);
-		if (surface.isTv) setTimeout(() => focusFirst('.answers button'), 60);
+		if (surface.isTv) setTimeout(() => focusFirst('.answers button, .pair button'), 60);
 	}
 
 	/** The clock, watched rather than counted down: a television that dropped
@@ -237,6 +230,17 @@
 		if (surface.isTv) setTimeout(() => focusFirst('.over button'), 60);
 	}
 
+	function together(resume: number | null = null) {
+		sound.muted(quiet);
+		partyId = resume;
+		stage = 'hosting';
+	}
+
+	function join(id: number) {
+		partyId = id;
+		stage = 'joined';
+	}
+
 	function leave() {
 		stopBeat();
 		stopLinger();
@@ -244,51 +248,34 @@
 		playing = null;
 		marked = null;
 		chosen = null;
+		partyId = null;
 	}
 
 	function hush() {
 		quiet = !quiet;
 		sound.muted(quiet);
 	}
-
-	/* What is left of the window under whatever head this surface draws above
-	   the game — measured, not guessed at with a viewport fraction. The round
-	   must not scroll: pressing an answer near the bottom of a page taller than
-	   the window scrolls it, and a question that has walked off the top is a
-	   question being answered from memory. */
-	let floor = $state<HTMLElement>();
-	let room = $state(0);
-	$effect(() => {
-		// re-read when the stage changes as well as when the window does: the
-		// section around the game leaves the screen for the length of a round,
-		// which moves the top of this by everything that was above it, and a
-		// height measured before it left is a height that no longer fits
-		void stage;
-		const measure = () => {
-			if (!floor) return;
-			// what the page puts BELOW this counts too. The frame ends its main
-			// with three rems of air, which is right under a shelf and is dead
-			// weight under a screen already sized to the window: the round would run
-			// off the bottom by exactly that much.
-			const below = floor.closest('main');
-			const air = below ? parseFloat(getComputedStyle(below).paddingBottom) || 0 : 0;
-			room = Math.max(300, window.innerHeight - floor.getBoundingClientRect().top - air - 14);
-		};
-		measure();
-		// after the frame the section unmounts in, or this measures the old top
-		const soon = requestAnimationFrame(measure);
-		window.addEventListener('resize', measure);
-		return () => {
-			cancelAnimationFrame(soon);
-			window.removeEventListener('resize', measure);
-		};
-	});
-
-	const options = $derived(question?.options ?? []);
 </script>
 
 {#if stage === 'ready'}
-	<GuessIntro {how} {quiet} {busy} {standing} {mine} onharden={harden} onhush={hush} onbegin={begin} />
+	<GuessIntro
+		{how}
+		{quiet}
+		{busy}
+		{standing}
+		{mine}
+		{parties}
+		onharden={harden}
+		onhush={hush}
+		onbegin={begin}
+		ontogether={() => together()}
+		onresume={(id) => together(id)}
+		onjoin={join}
+	/>
+{:else if stage === 'hosting'}
+	<GuessParty {how} resume={partyId} onleave={leave} />
+{:else if stage === 'joined' && partyId !== null}
+	<GuessJoined {partyId} onleave={leave} />
 {:else if stage === 'done'}
 	<GuessOver
 		{rights}
@@ -301,84 +288,34 @@
 		onleave={leave}
 	/>
 {:else if question}
-	<div class="round" bind:this={floor} style:height={room ? `${room}px` : undefined}>
-		<header>
-			<span class="asked">{askedOf(question.kind)}</span>
-			<span class="where">
-				{t('guess.of', { n: formatNumber(at + 1), total: formatNumber(playing?.questions.length ?? 0) })}
+	<GuessStage
+		{question}
+		{at}
+		count={playing?.questions.length ?? 0}
+		score={total}
+		{until}
+		seconds={playing?.seconds ?? 20}
+		revealed={stage === 'revealed'}
+		{chosen}
+		correct={marked?.correct ?? null}
+		facts={marked?.facts ?? null}
+		secondFacts={marked?.second_facts ?? null}
+		onpick={(key) => answer(key)}
+		onnext={onward}
+	>
+		{#snippet said()}
+			<span class="verdict" class:hit={marked?.right}>
+				{marked?.right
+					? t('guess.gained', { n: formatNumber(marked.points) })
+					: chosen
+						? t('guess.wrong')
+						: t('guess.timeUp')}
 			</span>
-			<span class="score">{formatNumber(total)}</span>
-			<Clock {until} seconds={playing?.seconds ?? 20} running={stage === 'asking'} />
-		</header>
-
-		<GuessPicture
-			src={showing}
-			frame={question.frame}
-			marked={question.kind === 'who' && stage === 'revealed'}
-		/>
-
-		<Answers
-			{options}
-			{chosen}
-			correct={marked?.correct ?? null}
-			revealed={stage === 'revealed'}
-			onpick={(key) => answer(key)}
-		/>
-
-		<!-- always there, empty while the question stands: a row that appears
-		     with the answer would move the answers under the hand reaching for
-		     them, and the clock is running -->
-		<div class="said">
-			{#if stage === 'revealed'}
-				<span class="verdict" class:hit={marked?.right}>
-					{marked?.right
-						? t('guess.gained', { n: formatNumber(marked.points) })
-						: chosen
-							? t('guess.wrong')
-							: t('guess.timeUp')}
-				</span>
-				{#if marked}<span class="truth">{photoSays(marked.facts)}</span>{/if}
-				<Press tone="plain" onclick={onward}>{t('guess.next')}</Press>
-			{/if}
-		</div>
-	</div>
+		{/snippet}
+	</GuessStage>
 {/if}
 
 <style>
-	.round {
-		display: flex;
-		flex-direction: column;
-		gap: 0.9rem;
-		height: 100%;
-		min-height: 0;
-	}
-	header {
-		display: flex;
-		align-items: center;
-		gap: 0.9rem;
-	}
-	.asked {
-		font-size: var(--fs-xl);
-		font-weight: 600;
-		flex: 1;
-	}
-	.where,
-	.score {
-		color: var(--muted);
-		font-variant-numeric: tabular-nums;
-	}
-	.score {
-		color: var(--text);
-		font-weight: 600;
-	}
-
-	.said {
-		display: flex;
-		align-items: center;
-		gap: 0.9rem;
-		flex-wrap: wrap;
-		min-height: 2.6rem;
-	}
 	.verdict {
 		font-weight: 600;
 		color: var(--danger);
@@ -386,53 +323,4 @@
 	.verdict.hit {
 		color: var(--ok);
 	}
-	.truth {
-		color: var(--muted);
-		flex: 1;
-	}
-
-	:global(html.tv) .asked {
-		font-size: var(--fs-2xl);
-	}
-
-	/* A television is wide, and the question was laid out down it: header over
-	   picture over four answers over a line of comment, each taking its height
-	   from the one above until the photograph — which is the whole question —
-	   had what was left, and the column still ran off the bottom.
-	
-	   Two columns instead. The picture takes the room a sixteen-by-nine screen
-	   actually has, and the answers stand beside it in one narrow rail rather
-	   than in a block under it.
-
-	   What the photograph turns out to have been is a sentence, and it gets the
-	   whole width to be one in: under the picture alone it was set in the same
-	   narrow column and broke into three lines while half the screen beside it
-	   stood empty. */
-	:global(html.tv) .round {
-		display: grid;
-		grid-template-columns: 1fr 30rem;
-		grid-template-rows: auto minmax(0, 1fr) auto;
-		grid-template-areas:
-			'head head'
-			'stage answers'
-			'said said';
-		column-gap: 2.5rem;
-		row-gap: 0.9rem;
-	}
-	:global(html.tv) .round > header {
-		grid-area: head;
-	}
-	:global(html.tv) .round > :global(.answers) {
-		grid-area: answers;
-		align-content: center;
-	}
-	:global(html.tv) .said {
-		grid-area: said;
-	}
-	:global(html.tv) .said {
-		font-size: var(--fs-xl);
-		min-height: 3.4rem;
-	}
-
-
 </style>

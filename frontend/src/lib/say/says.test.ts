@@ -55,7 +55,8 @@ describe('namesOf', () => {
 
 describe('askedOf', () => {
 	test('each kind of question has its own words', () => {
-		const said = new Set((['who', 'where', 'when'] as const).map(askedOf));
-		expect(said.size).toBe(3);
+		const kinds = ['who', 'where', 'when', 'missing', 'zoom', 'order', 'age'] as const;
+		const said = new Set(kinds.map((kind) => askedOf(kind, 'Ana')));
+		expect(said.size).toBe(kinds.length);
 	});
 });

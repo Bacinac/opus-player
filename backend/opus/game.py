@@ -3,7 +3,9 @@
 The library knows three things about a photograph that a person can be asked to
 remember: who is in it, where it was taken and when. This builds the questions
 from exactly those facts and nothing else, so a question is never asked of a
-picture whose answer nobody holds.
+picture whose answer nobody holds. The same three facts are asked four more
+ways: who is missing from a group, where a picture is while it is still only a
+detail, which of two was taken first, and how old somebody was in it.
 
 What makes it a game is the wrong answers. A toddler in 2003 offered against
 somebody born in 2011 is not a question, it is a spelling test — so the people
@@ -12,6 +14,7 @@ offered are often places in the same country. The right answer is drawn from
 the picture; the wrong ones are drawn from the archive around it."""
 
 import random
+from datetime import date
 
 from opus import library
 
@@ -25,10 +28,10 @@ SPEED = 100
 STREAK_STEP = 0.2
 STREAK_CAP = 2.0
 
-KINDS = ("who", "where", "when")
+KINDS = ("who", "where", "when", "missing", "zoom", "order", "age")
 OPTIONS = 4
 # how many photographs to draw for each question wanted, per kind
-SPARES = {"who": 6, "where": 3, "when": 3}
+SPARES = {"who": 6, "where": 3, "when": 3, "missing": 4, "zoom": 3, "order": 6, "age": 6}
 # how far from the truth a wrong year may be drawn. Wider than this and the
 # question answers itself from the clothes in the picture.
 YEAR_SPREAD = 6
@@ -45,6 +48,29 @@ KNOWN_PLACE = 8
 # pointing at anybody. Measured: at twelve per cent the pool is still 5,610
 # photographs, which is a family game several hundred times over.
 MIN_FACE = 0.12
+# and how wide a face in a group has to be to be the one taken out of it.
+# Narrower than a portrait's bar: faces in a group are smaller, and the one
+# missing is recognised from everything around the gap rather than from the
+# gap. The library draws groups by the same number.
+HIDEABLE = 0.08
+# The patch that covers a missing person, as multiples of the face box. Wider
+# than the face and much taller than it, because a face box stops at the brow
+# and the chin and the person is recognised from the hair above and the neck
+# below as surely as from the face. The clothes stay: that is remembering who
+# wore what, which is the game.
+COVER_WIDE = 1.8
+COVER_UP = 0.5
+COVER_DOWN = 0.7
+# how far in a picture starts when it is asked about as a detail
+ZOOM_FROM = 4.0
+# How far apart two photographs have to be to be asked which came first, in
+# days. Closer than a year and it is a coin; further than eight and the question
+# answers itself from the camera.
+ORDER_GAP = (365, 8 * 365)
+# no detector's bar on the face for an age question: how clearly the face was
+# found says nothing about how old it is
+EASIEST_FACE = 0.938
+OLDEST = 100
 
 
 def multiplier(streak: int) -> float:
@@ -68,6 +94,26 @@ def _pick(pool: list, n: int) -> list:
     return random.sample(pool, n) if len(pool) > n else list(pool)
 
 
+def _known(people: list[dict]) -> dict[int, dict]:
+    return {p["id"]: p for p in people if p["faces"] >= KNOWN_FACES}
+
+
+def _lived(who: dict, year: int) -> bool:
+    """Was being photographed the year this was taken."""
+    return (who["years"][0] is not None
+            and who["years"][0] <= year <= who["years"][1])
+
+
+def _names(wrong: list[dict], truth: dict) -> list[dict]:
+    """Names, and nothing else. A portrait beside each name is the answer twice:
+    the question is already a face, and matching a face to a face is not
+    remembering anybody."""
+    options = [{"key": f"p{p['id']}", "label": p["name"]} for p in wrong]
+    options.append({"key": f"p{truth['id']}", "label": truth["name"]})
+    random.shuffle(options)
+    return options
+
+
 def _who(photo: dict, people: list[dict]) -> dict | None:
     """Who is in this. One named face, so there is one right answer.
 
@@ -80,38 +126,27 @@ def _who(photo: dict, people: list[dict]) -> dict | None:
     truth = photo["people"][0]
     if (truth.get("box") or {}).get("w", 0) < MIN_FACE:
         return None
-    known = {p["id"]: p for p in people if p["faces"] >= KNOWN_FACES}
+    known = _known(people)
     if truth["id"] not in known:
         return None
     year = _year(photo["taken_at"])
 
-    def lived(who: dict) -> bool:
-        """Was being photographed the year this was taken."""
-        return (who["years"][0] is not None
-                and who["years"][0] <= year <= who["years"][1])
-
     # The people this face is actually NEAR, nearest first — the library says
     # who looks like whom, and three names picked at random are three names
-    # ruled out without looking at the picture.
+    # ruled out without looking at the face.
     alike = [known[one["id"]] for one in truth.get("like", [])
              if one["id"] in known and one["id"] != truth["id"]]
-    era = [p for p in alike if lived(p)]
+    era = [p for p in alike if _lived(p, year)]
     wrong = (era if len(era) >= OPTIONS - 1 else alike)[:OPTIONS - 1]
     if len(wrong) < OPTIONS - 1:
         # nobody near enough who is also known: fall back to whoever was being
         # photographed that year, which is the weaker question but a question
         others = [p for p in known.values()
                   if p["id"] != truth["id"] and p not in wrong]
-        wrong += _pick([p for p in others if lived(p)], OPTIONS - 1 - len(wrong))
+        wrong += _pick([p for p in others if _lived(p, year)], OPTIONS - 1 - len(wrong))
     if len(wrong) < OPTIONS - 1:
         return None
-    # Names, and nothing else. A portrait beside each name is the answer twice:
-    # the question is already a face, and matching a face to a face is not
-    # remembering anybody.
-    options = [{"key": f"p{p['id']}", "label": p["name"]} for p in wrong]
-    options.append({"key": f"p{truth['id']}", "label": truth["name"]})
-    random.shuffle(options)
-    return {"kind": "who", "answer": f"p{truth['id']}", "options": options,
+    return {"kind": "who", "answer": f"p{truth['id']}", "options": _names(wrong, truth),
             # the face is the question. The whole photograph would answer it
             # for anybody who recognises the room, the day or who else is in it.
             "face": truth.get("face"),
@@ -120,6 +155,54 @@ def _who(photo: dict, people: list[dict]) -> dict | None:
             # the piece you were looking at". The library works it out, being
             # the one that cuts it.
             "frame": truth.get("frame")}
+
+
+def _cover(box: dict) -> dict:
+    """The patch over a missing person, as fractions of the picture."""
+    wide = box["w"] * COVER_WIDE
+    left = box["x"] + box["w"] / 2 - wide / 2
+    top = box["y"] - box["h"] * COVER_UP
+    bottom = box["y"] + box["h"] * (1 + COVER_DOWN)
+    left, top = max(0.0, left), max(0.0, top)
+    right, bottom = min(1.0, left + wide), min(1.0, bottom)
+    return {"x": left, "y": top, "w": right - left, "h": bottom - top}
+
+
+def _missing(photo: dict, people: list[dict], company: list[dict]) -> dict | None:
+    """Who is missing from this group. One of them is covered, everybody else
+    stays — the opposite of "who": there the picture around the face was taken
+    away because it answered the question, here it IS the question.
+
+    The three offered against them are the people most often photographed with
+    the ones still in the picture, because that is who would plausibly have
+    been standing there. Three names from the rest of the archive are three
+    names nobody in this picture ever stood beside."""
+    known = _known(people)
+    year = _year(photo["taken_at"])
+    on = {p["id"] for p in photo["people"]}
+    takeable = [p for p in photo["people"]
+                if p["id"] in known and (p.get("box") or {}).get("w", 0) >= HIDEABLE]
+    if len(on) < 2 or not takeable:
+        return None
+    hidden = random.choice(takeable)
+    visible = on - {hidden["id"]}
+    weight: dict[int, int] = {}
+    for pair in company:
+        for near, far in ((pair["a"], pair["b"]), (pair["b"], pair["a"])):
+            if near in visible and far not in on:
+                weight[far] = weight.get(far, 0) + pair["together"]
+    usual = sorted((pid for pid in weight if pid in known and _lived(known[pid], year)),
+                   key=lambda pid: -weight[pid])
+    wrong = [known[pid] for pid in usual[:OPTIONS - 1]]
+    if len(wrong) < OPTIONS - 1:
+        others = [p for p in known.values()
+                  if p["id"] not in on and p not in wrong and _lived(p, year)]
+        wrong += _pick(others, OPTIONS - 1 - len(wrong))
+    if len(wrong) < OPTIONS - 1:
+        return None
+    return {"kind": "missing", "answer": f"p{hidden['id']}",
+            "options": _names(wrong, hidden),
+            "hide": _cover(hidden["box"]), "frame": hidden.get("frame")}
 
 
 def _where(photo: dict, places: list[dict]) -> dict | None:
@@ -149,6 +232,20 @@ def _where(photo: dict, places: list[dict]) -> dict | None:
     return {"kind": "where", "answer": f"l{here}", "options": options}
 
 
+def _zoom(photo: dict, places: list[dict]) -> dict | None:
+    """Where this was taken, asked of a detail that widens as the clock runs.
+    The same question as "where", priced differently: the earlier the answer,
+    the less of the picture it was given from. The detail starts somewhere in
+    the middle half, never a corner — a corner is sky."""
+    made = _where(photo, places)
+    if made is None:
+        return None
+    made["kind"] = "zoom"
+    made["zoom"] = {"x": round(random.uniform(0.3, 0.7), 3),
+                    "y": round(random.uniform(0.3, 0.7), 3), "scale": ZOOM_FROM}
+    return made
+
+
 def _when(photo: dict, years: list[int]) -> dict | None:
     """Which year. The wrong years are years the archive actually has: a year
     the house took no photographs in is a year nobody has to think about."""
@@ -164,6 +261,77 @@ def _when(photo: dict, years: list[int]) -> dict | None:
     return {"kind": "when", "answer": f"y{truth}", "options": options}
 
 
+def _days_apart(one: dict, other: dict) -> int:
+    return abs((date.fromisoformat(one["taken_at"][:10])
+                - date.fromisoformat(other["taken_at"][:10])).days)
+
+
+def _order(first: dict, second: dict) -> dict:
+    """Which of two was taken first. The two are lettered rather than named by
+    where they stand, because they stand side by side on a television and one
+    above the other in a hand."""
+    a, b = (first, second) if random.random() < 0.5 else (second, first)
+    earlier = "a" if a["taken_at"] <= b["taken_at"] else "b"
+    return {"kind": "order", "answer": earlier,
+            "options": [{"key": "a", "label": "A"}, {"key": "b", "label": "B"}],
+            "photo": _picture(a), "second": _picture(b),
+            "facts": _facts(a), "second_facts": _facts(b)}
+
+
+def _pairs(photos: list[dict], want: int, seen: set[str]) -> list[dict]:
+    """Pairs far enough apart to be a question and close enough to be one."""
+    pool = [p for p in photos if p["id"] not in seen]
+    random.shuffle(pool)
+    made: list[dict] = []
+    while len(made) < want and len(pool) >= 2:
+        first = pool.pop()
+        partner = next((p for p in pool
+                        if ORDER_GAP[0] <= _days_apart(first, p) <= ORDER_GAP[1]), None)
+        if partner is None:
+            continue
+        pool.remove(partner)
+        seen.update((first["id"], partner["id"]))
+        made.append(_order(first, partner))
+    return made
+
+
+def _age_at(born_on: str, taken_at: str) -> int:
+    born = date.fromisoformat(born_on)
+    taken = date.fromisoformat(taken_at[:10])
+    return taken.year - born.year - ((taken.month, taken.day) < (born.month, born.day))
+
+
+def _age(photo: dict, people: list[dict]) -> dict | None:
+    """How old somebody was in this. Asked with the whole photograph and the
+    face framed on it: the room and the others in it are what the age is
+    judged from, and the name is given — this is not "who".
+
+    The four ages step by one for a child, by two for a teenager and by three
+    for anybody older, because that is how finely anybody can tell. Where the
+    truth sits among the four moves, or the middle would always be the answer."""
+    if not photo["people"]:
+        return None
+    truth = photo["people"][0]
+    if not truth.get("born_on") or (truth.get("box") or {}).get("w", 0) < MIN_FACE:
+        return None
+    if truth["id"] not in _known(people):
+        return None
+    age = _age_at(truth["born_on"], photo["taken_at"])
+    if not 0 <= age <= OLDEST:
+        return None
+    step = 1 if age < 10 else 2 if age < 20 else 3
+    lowest = max(0, age - step * random.randint(0, OPTIONS - 1))
+    options = [{"key": f"a{lowest + step * i}", "label": str(lowest + step * i)}
+               for i in range(OPTIONS)]
+    return {"kind": "age", "answer": f"a{age}", "options": options,
+            "name": truth["name"], "frame": truth.get("frame")}
+
+
+def _picture(photo: dict) -> dict:
+    return {"id": photo["id"], "w": photo["w"], "h": photo["h"],
+            "hash": photo["hash"], "turn": photo["turn"]}
+
+
 def _facts(photo: dict) -> dict:
     """What the picture turns out to be, shown once it has been answered. All
     of it, not only the fact that was asked about — the photograph is the point
@@ -175,22 +343,31 @@ def _facts(photo: dict) -> dict:
     }
 
 
+# what each kind asks the library to draw
+KNOWS = {"who": "person", "where": "place", "when": "date", "missing": "group",
+         "zoom": "place", "order": "date", "age": "person"}
+
+
 async def build(count: int = 10, kinds: tuple[str, ...] = KINDS,
                 hard: float | None = None) -> list[dict]:
     """A round: `count` questions, drawn across the kinds asked for.
 
-    Everything is asked of the library up front — the two vocabularies once,
-    and one draw per kind — because a question built halfway through a round is
-    a pause in the middle of a game."""
+    Everything is asked of the library up front — the vocabularies once, and
+    one draw per kind — because a question built halfway through a round is a
+    pause in the middle of a game."""
     kinds = tuple(k for k in kinds if k in KINDS) or KINDS
-    people, places, buckets = await _vocabulary()
+    people, places, buckets, company = await _vocabulary("missing" in kinds)
     years = sorted({int(m["month"][:4]) for m in buckets["months"]})
 
-    wants = {k: 0 for k in kinds}
+    # Dealt round the kinds in a different order each time: ten questions over
+    # seven kinds leave three kinds with one more, and it must not always be
+    # the same three.
+    dealt = list(kinds)
+    random.shuffle(dealt)
+    wants = {k: 0 for k in dealt}
     for i in range(count):
-        wants[kinds[i % len(kinds)]] += 1
+        wants[dealt[i % len(dealt)]] += 1
 
-    knows = {"who": "person", "where": "place", "when": "date"}
     questions: list[dict] = []
     # photographs already used, and answers already asked for
     seen: set[str] = set()
@@ -206,21 +383,26 @@ async def build(count: int = 10, kinds: tuple[str, ...] = KINDS,
         # how clearly a face was detected is how hard it is to recognise, so
         # the difficulty is a question about faces and the other kinds do not
         # take it
-        extra = {"hard": hard} if kind == "who" and hard is not None else {}
-        drawn = await library.get("/photos/draw", knows=knows[kind],
+        extra = ({"hard": hard} if kind == "who" and hard is not None else
+                 {"hard": EASIEST_FACE} if kind == "age" else {})
+        drawn = await library.get("/photos/draw", knows=KNOWS[kind],
                                   count=want * SPARES[kind], **extra)
+        if kind == "order":
+            questions += _pairs(drawn["photos"], want, seen)
+            continue
         pool = []
         for photo in drawn["photos"]:
             if photo["id"] in seen:
                 continue
             made = (_who(photo, people) if kind == "who" else
+                    _missing(photo, people, company) if kind == "missing" else
                     _where(photo, places) if kind == "where" else
+                    _zoom(photo, places) if kind == "zoom" else
+                    _age(photo, people) if kind == "age" else
                     _when(photo, years))
             if made is None:
                 continue
-            seen.add(photo["id"])
-            made["photo"] = {"id": photo["id"], "w": photo["w"], "h": photo["h"],
-                             "hash": photo["hash"], "turn": photo["turn"]}
+            made["photo"] = _picture(photo)
             made["facts"] = _facts(photo)
             pool.append(made)
 
@@ -232,6 +414,9 @@ async def build(count: int = 10, kinds: tuple[str, ...] = KINDS,
         answers.update(one["answer"] for one in taken)
         if len(taken) < want:
             taken += [one for one in pool if one not in taken][:want - len(taken)]
+        # only what was taken is used up: two kinds draw from the same well,
+        # and the spares one of them threw back are the other's questions
+        seen.update(one["photo"]["id"] for one in taken)
         questions += taken
     random.shuffle(questions)
     for i, question in enumerate(questions):
@@ -239,14 +424,21 @@ async def build(count: int = 10, kinds: tuple[str, ...] = KINDS,
     return questions
 
 
-async def _vocabulary() -> tuple[list[dict], list[dict], dict]:
-    """Everybody the archive has named, everywhere it has been, and every month
-    it holds. The player keeps none of it: it is the library's answer to what
+async def _vocabulary(groups: bool) -> tuple[list[dict], list[dict], dict, list[dict]]:
+    """Everybody the archive has named, everywhere it has been, every month it
+    holds — and, when a group is going to be asked about, who is photographed
+    with whom. The player keeps none of it: it is the library's answer to what
     exists, and a copy here would be a copy that goes stale between rounds."""
     people = await library.get("/photos/people")
     places = await library.get("/photos/places")
     buckets = await library.get("/photos/timeline/buckets")
-    return people, places, buckets
+    company = await library.get("/photos/people/company") if groups else []
+    return people, places, buckets, company
+
+
+# what travels to the screen besides the picture and the options, where a
+# kind has it
+SHOWN = ("face", "frame", "hide", "zoom", "second", "name")
 
 
 def asked(question: dict) -> dict:
@@ -254,4 +446,4 @@ def asked(question: dict) -> dict:
     whose answers travel to the screen is a round played against the screen."""
     return {"n": question["n"], "kind": question["kind"],
             "photo": question["photo"], "options": question["options"],
-            "face": question.get("face"), "frame": question.get("frame")}
+            **{key: question[key] for key in SHOWN if question.get(key) is not None}}

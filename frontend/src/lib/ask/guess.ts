@@ -3,21 +3,27 @@
  * A round is built by the backend out of what the library knows, and it arrives
  * whole — every question and every option, but never which option is right. The
  * answer is marked over there, one question at a time, because the clock that
- * scores it is over there too. */
+ * scores it is over there too.
+ *
+ * Played together, the round is a party: one screen asks and holds the clock,
+ * everybody else answers on a phone of their own, and the screen reveals. */
 
 import { request } from '#lib/kit/index.js';
 
-export type Kind = 'who' | 'where' | 'when';
+export type Kind = 'who' | 'where' | 'when' | 'missing' | 'zoom' | 'order' | 'age';
 
 export type Option = {
 	key: string;
 	label: string;
 };
 
+export type Picture = { id: string; w: number; h: number; hash: string | null; turn: number };
+export type Rect = { x: number; y: number; w: number; h: number };
+
 export type Question = {
 	n: number;
 	kind: Kind;
-	photo: { id: string; w: number; h: number; hash: string | null; turn: number };
+	photo: Picture;
 	options: Option[];
 	/** the face being asked about, which is what a "who" question shows: the
 	 *  photograph around it would answer the question for anybody who
@@ -25,8 +31,18 @@ export type Question = {
 	face?: number | null;
 	/** the rectangle that face was cut out of, as fractions of the picture —
 	 *  drawn over the whole photograph once the question has been answered, so
-	 *  what is framed there is exactly the piece that was on the screen */
-	frame?: { x: number; y: number; w: number; h: number } | null;
+	 *  what is framed there is exactly the piece that was on the screen; for an
+	 *  age question, drawn while it is asked, since the name is given and the
+	 *  picture is whole */
+	frame?: Rect | null;
+	/** the patch over whoever is missing from a group, as fractions */
+	hide?: Rect | null;
+	/** where a detail starts, as fractions, and how far in */
+	zoom?: { x: number; y: number; scale: number } | null;
+	/** the other photograph, where two are asked about */
+	second?: Picture | null;
+	/** whose age is asked */
+	name?: string | null;
 };
 
 export type Facts = {
@@ -43,6 +59,7 @@ export type Marked = {
 	points: number;
 	correct: string;
 	facts: Facts;
+	second_facts?: Facts;
 	total: number;
 	streak: number;
 	done: boolean;
@@ -61,8 +78,47 @@ export type Standing = {
 	asked: number;
 };
 
-const json = (body: unknown): RequestInit => ({
-	method: 'POST',
+export type Someone = { key: string; name: string; colour: string };
+
+export type Player = Someone & {
+	total: number;
+	answered: boolean;
+	picked: string | null;
+	right: boolean | null;
+	points: number | null;
+};
+
+export type Party = {
+	id: number;
+	seconds: number;
+	count: number;
+	host: Someone | null;
+	mine: 'host' | 'player' | null;
+	me: string;
+	n: number | null;
+	/** what is left of the clock, by the server's reckoning */
+	left: number | null;
+	revealed: boolean;
+	done: boolean;
+	question: Question | null;
+	players: Player[];
+	correct?: string;
+	facts?: Facts;
+	second_facts?: Facts;
+	/** every question, handed to the host alone */
+	questions?: Question[];
+};
+
+export type OpenParty = {
+	id: number;
+	host: Someone | null;
+	players: number;
+	under_way: boolean;
+	mine: 'host' | 'player' | null;
+};
+
+const json = (body: unknown, method = 'POST'): RequestInit => ({
+	method,
 	headers: { 'content-type': 'application/json' },
 	body: JSON.stringify(body)
 });
@@ -92,3 +148,23 @@ export const scores = async (): Promise<{ standing: Standing[]; me: string }> =>
 		standing: [],
 		me: ''
 	};
+
+/* ---- together */
+
+export const party = {
+	open: (how: Hardness): Promise<Party | null> =>
+		request<Party>('/api/game/parties', json({ hard: HARDNESS[how] })),
+	around: async (): Promise<OpenParty[]> =>
+		(await request<OpenParty[]>('/api/game/parties')) ?? [],
+	state: (id: number): Promise<Party | null> => request<Party>(`/api/game/parties/${id}`),
+	join: (id: number): Promise<Party | null> =>
+		request<Party>(`/api/game/parties/${id}/join`, { method: 'POST' }),
+	ask: (id: number, n: number): Promise<Party | null> =>
+		request<Party>(`/api/game/parties/${id}/ask`, json({ n })),
+	reveal: (id: number): Promise<Party | null> =>
+		request<Party>(`/api/game/parties/${id}/reveal`, { method: 'POST' }),
+	answer: (id: number, n: number, key: string | null): Promise<{ answered: boolean } | null> =>
+		request<{ answered: boolean }>(`/api/game/parties/${id}/answer`, json({ n, key })),
+	close: (id: number): Promise<unknown> =>
+		request(`/api/game/parties/${id}`, { method: 'DELETE' })
+};

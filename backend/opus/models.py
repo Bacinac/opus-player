@@ -7,6 +7,7 @@ to, and the settings of this installation."""
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     Float,
     ForeignKey,
@@ -273,9 +274,16 @@ class GameRound(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    # the party this round was played in, where it was: its questions are the
+    # party's and its clock is the party's, and it goes when the party goes
+    party_id: Mapped[int | None] = mapped_column(
+        ForeignKey("game_parties.id", ondelete="CASCADE"), index=True)
     # the questions as built, answers and all. Never sent out whole: the
     # router hands over the half a player is allowed to see.
     questions: Mapped[list] = mapped_column(JSONB, default=list)
+    # how hard the faces were asked for, as the detector's bar they were drawn
+    # under; what the house actually plays at is read from here
+    hard: Mapped[float | None] = mapped_column(Float)
     # one entry per question answered: what was picked, whether it was right,
     # how long it took, what it was worth
     answers: Mapped[list] = mapped_column(JSONB, default=list)
@@ -287,6 +295,33 @@ class GameRound(Base):
     # would be reporting the number it is being scored on.
     asked_n: Mapped[int | None] = mapped_column(Integer)
     asked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class GameParty(Base):
+    """One round played on one screen by several people at once: the television
+    shows the photograph and the clock, everybody answers on their own phone.
+
+    The questions are built once and live here; each player's answers live in
+    a round of their own that points back here, so the house's standing counts
+    a party the way it counts any round. The clock is this row's, not the
+    rounds': one question is on the screen, and it was handed out once."""
+
+    __tablename__ = "game_parties"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    host_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    questions: Mapped[list] = mapped_column(JSONB, default=list)
+    seconds: Mapped[int] = mapped_column(Integer, default=20)
+    hard: Mapped[float | None] = mapped_column(Float)
+    asked_n: Mapped[int | None] = mapped_column(Integer)
+    asked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # whether the question on the screen has been marked: the phones are told
+    # the answer only once this says so
+    revealed: Mapped[bool] = mapped_column(Boolean, default=False)
     started_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

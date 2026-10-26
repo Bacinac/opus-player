@@ -108,8 +108,26 @@ export function episodeName(seasonNumber: number, e: EpisodeEntry): string {
 /** What a round of the guessing game asks, and what the answer turned out to
     be. The screen draws it; what it says is decided here, like everything else
     a screen says. */
-export function askedOf(kind: 'who' | 'where' | 'when'): string {
-	return kind === 'who' ? t('guess.who') : kind === 'where' ? t('guess.where') : t('guess.when');
+export function askedOf(
+	kind: 'who' | 'where' | 'when' | 'missing' | 'zoom' | 'order' | 'age',
+	name?: string | null
+): string {
+	switch (kind) {
+		case 'who':
+			return t('guess.who');
+		case 'where':
+			return t('guess.where');
+		case 'missing':
+			return t('guess.missing');
+		case 'zoom':
+			return t('guess.zoom');
+		case 'order':
+			return t('guess.order');
+		case 'age':
+			return t('guess.age', { name: name ?? '' });
+		default:
+			return t('guess.when');
+	}
 }
 
 /** The whole truth about a photograph, once it has been guessed at: where it

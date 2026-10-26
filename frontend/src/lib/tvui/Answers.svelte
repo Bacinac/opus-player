@@ -8,6 +8,8 @@
 </script>
 
 <script lang="ts">
+	import Who from '#lib/tvui/Who.svelte';
+
 	// Four answers, two by two.
 	//
 	// Two by two because that is what a D-pad is: up, down, left and right land
@@ -28,6 +30,7 @@
 		chosen = null,
 		correct = null,
 		revealed = false,
+		marks = {},
 		onpick
 	}: {
 		options: Answer[];
@@ -36,6 +39,8 @@
 		/** which one was right — only meaningful once revealed */
 		correct?: string | null;
 		revealed?: boolean;
+		/** who pressed which, where a room answered — shown once revealed */
+		marks?: Record<string, { key: string; name: string; colour: string }[]>;
 		onpick?: (key: string) => void;
 	} = $props();
 </script>
@@ -53,6 +58,13 @@
 				<span class="label">{option.label}</span>
 				{#if option.note}<span class="note">{option.note}</span>{/if}
 			</span>
+			{#if revealed && marks[option.key]?.length}
+				<span class="whose">
+					{#each marks[option.key] as who (who.key)}
+						<Who name={who.name} colour={who.colour} />
+					{/each}
+				</span>
+			{/if}
 		</button>
 	{/each}
 </div>
@@ -103,6 +115,13 @@
 	.note {
 		color: var(--muted);
 		font-size: 0.8em;
+	}
+	.whose {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		margin-left: auto;
+		justify-content: flex-end;
 	}
 
 	/* The marking. Green is the answer, red is what was pressed instead — and
