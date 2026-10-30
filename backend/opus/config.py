@@ -19,10 +19,6 @@ class Settings(BaseSettings):
     # asked of Library.
     library_url: str = Field(min_length=1)
     library_token: str = Field(min_length=1)
-    # where fetched artwork is kept, sized for the screen that asked, and how
-    # much of it; past that the pictures looked at longest ago go first
-    art_cache: str = "/art"
-    art_cache_bytes: int = Field(2 * 1024**3, gt=0)
 
 
 settings = Settings()

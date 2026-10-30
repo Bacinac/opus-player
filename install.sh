@@ -34,7 +34,7 @@ opus_generate POSTGRES_PASSWORD:24
 ROOT=$(pwd -P)
 HOST=$(opus_host_address)
 MEDIA_ROOT=${MEDIA_ROOT:-$ROOT/volumes}
-mkdir -p "$ROOT/volumes/postgres" "$ROOT/volumes/art" "$ROOT/volumes/dac"
+mkdir -p "$ROOT/volumes/postgres" "$ROOT/volumes/dac"
 for name in music movies television video photos; do
 	mkdir -p "$MEDIA_ROOT/$name"
 	if [[ "$name" == television ]]; then key=OPUS_TV_DEVICE

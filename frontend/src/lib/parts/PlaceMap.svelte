@@ -67,13 +67,9 @@
 				keyboard: false,
 				scrollWheelZoom: !surface.isTv
 			});
-			L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			L.tileLayer('/api/tiles/{z}/{x}/{y}.png', {
 				maxZoom: 18,
-				attribution: '© OpenStreetMap',
-				// the page's same-origin policy sends OSM no Referer at all, and OSM
-				// answers a tile asked for without one with a 403 picture; the origin
-				// alone is what its usage policy asks for
-				referrerPolicy: 'strict-origin-when-cross-origin'
+				attribution: '© OpenStreetMap'
 			}).addTo(map);
 
 			draw();

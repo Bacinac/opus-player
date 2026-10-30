@@ -67,13 +67,8 @@ SESSION_MAX_AGE = 3650 * 24 * 3600
 # what answers before anyone has proved anything: liveness, and the exchange
 # that proves it. Letting go of a session must not be able to fail because the
 # session is already gone.
-#
-# And the pictures. Every one of them is fetched from a public image service the
-# catalogue names, so there is nothing behind the route to protect — while a
-# credential in its address, which is the only way Android Auto can send one,
-# was a credential handed to every app that can read a browse tree.
 OPEN_PATHS = ("/api/ping", "/api/ready", "/api/auth/login", "/api/auth/session", "/api/auth/logout",
-              "/api/auth/passkey/options", "/api/auth/passkey/login", "/api/art")
+              "/api/auth/passkey/options", "/api/auth/passkey/login")
 
 # and the exchange a box goes through, which cannot ask for a credential it is
 # in the middle of being given. A prefix rather than a name because the second
@@ -84,7 +79,11 @@ OPEN_PATHS = ("/api/ping", "/api/ready", "/api/auth/login", "/api/auth/session",
 # a download that lands on a login page is not a download. Nothing is given away
 # — the APK is signed, carries no credential, and points at a server that asks
 # who you are before it says anything.
-OPEN_PREFIXES = ("/api/auth/pair", "/api/app/")
+#
+# And the catalogue's pictures, by number. A credential in their address, which
+# is the only way Android Auto can send one, was a credential handed to every
+# app that can read a browse tree.
+OPEN_PREFIXES = ("/api/auth/pair", "/api/app/", "/api/pictures/")
 
 
 # The player belongs to the household and almost all of it is theirs: the films,

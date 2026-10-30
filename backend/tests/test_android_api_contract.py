@@ -35,11 +35,11 @@ def test_released_music_app_can_browse_the_player_contract(house, monkeypatch):
 
     async def asked(path, **params):
         if path == "/music/artists":
-            return [{"id": 7, "name": "Haustor", "image_url": "https://cover/artist.jpg", "held": 1}]
+            return [{"id": 7, "name": "Haustor", "image_url": "/api/pictures/31", "held": 1}]
         if path == "/music/artists/7":
             return {"id": 7, "name": "Haustor", "releases": [{
                 "id": 11, "title": "Treći svijet", "record_title": None,
-                "release_date": "1984-01-01", "cover_url": "https://cover/release.jpg",
+                "release_date": "1984-01-01", "cover_url": "/api/pictures/32",
                 "files_linked": 6, "stands": True,
             }]}
         if path == "/music/releases/11/playback":
@@ -47,14 +47,14 @@ def test_released_music_app_can_browse_the_player_contract(house, monkeypatch):
             return {"tracks": [{
                 "id": 42, "title": "Radnička klasa odlazi u raj", "artist": "Haustor",
                 "album": "Treći svijet", "position": 1, "duration_s": 267,
-                "codec": "flac", "cover_url": "https://cover/release.jpg",
+                "codec": "flac", "cover_url": "/api/pictures/32",
             }]}
         if path == "/music/search/library":
             assert params == {"q": "radnička"}
             return [{
                 "id": 42, "title": "Radnička klasa odlazi u raj", "artist": "Haustor",
                 "album": "Treći svijet", "position": 1, "duration_s": 267,
-                "codec": "flac", "cover_url": "https://cover/release.jpg",
+                "codec": "flac", "cover_url": "/api/pictures/32",
             }]
         raise AssertionError(f"unexpected Library request: {path} {params}")
 
@@ -64,7 +64,7 @@ def test_released_music_app_can_browse_the_player_contract(house, monkeypatch):
     artists = get("/api/library/music?order=title")
     assert artists.status_code == 200
     assert artists.json() == [{
-        "kind": "artist", "id": 7, "title": "Haustor", "image": "https://cover/artist.jpg",
+        "kind": "artist", "id": 7, "title": "Haustor", "image": "/api/pictures/31",
         "held": 1,
         "subtitle": None, "year": None, "backdrop": None, "state": None,
         "person": True, "overview": "", "end_year": None, "country": None, "country_hr": None,
@@ -75,7 +75,7 @@ def test_released_music_app_can_browse_the_player_contract(house, monkeypatch):
     assert records.status_code == 200
     assert records.json()["releases"] == [{
         "id": 11, "title": "Treći svijet", "year": "1984",
-        "cover": "https://cover/release.jpg", "tracks": 6,
+        "cover": "/api/pictures/32", "tracks": 6,
     }]
 
     tracks = get("/api/library/release/11")
@@ -83,7 +83,7 @@ def test_released_music_app_can_browse_the_player_contract(house, monkeypatch):
     assert tracks.json()["tracks"] == [{
         "id": 42, "title": "Radnička klasa odlazi u raj", "artist": "Haustor",
         "album": "Treći svijet", "position": 1, "duration_s": 267,
-        "codec": "flac", "cover_url": "https://cover/release.jpg",
+        "codec": "flac", "cover_url": "/api/pictures/32",
     }]
 
     search = get("/api/library/search?q=radni%C4%8Dka")

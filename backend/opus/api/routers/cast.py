@@ -30,14 +30,14 @@ from opus_core.names import croatian
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
-from opus import auth, dac, house, library
-from opus.api.routers.art import asked_for
-from opus.api.routers.play import announcement_url, stream_url
+from opus import auth, dac, house, library, stations
+from opus.api.routers import pictures
+from opus.api.routers.play import announcement_url, picture_url, stream_url
 from opus.api.routers.radio import play_url
 from opus.api.routers.users import picked, profile_key, require_picked
 from opus.cards import artist_card, episode_card, movie_card, series_card
 from opus.db import SessionLocal
-from opus.models import BoxPreference, RadioStation, User
+from opus.models import BoxPreference, User
 from opus.settings_store import current_runtime
 
 log = logging.getLogger(__name__)
@@ -284,22 +284,21 @@ class CastTrack(BaseModel):
 
 
 async def _vetted(tracks: list[CastTrack]) -> None:
-    """Only what this player hands out itself reaches a device in the house: a
-    song of the library's by its id, a station this player lists, and a picture
-    its picture route would fetch. An address from a request is not a sentence
-    to hand an amplifier or a television."""
-    listed: set[str] | None = None
+    """Only what the library names reaches a device in the house: a song by its
+    id, a station on its list, and a picture by its number. An address from a
+    request is not a sentence to hand an amplifier or a television."""
     for t in tracks:
         if t.url is not None:
+            try:
+                listed = await stations.by_address(t.url)
+            except library.LibraryError as exc:
+                raise HTTPException(502, str(exc)) from exc
             if listed is None:
-                async with SessionLocal() as session:
-                    listed = set((await session.execute(select(RadioStation.url))).scalars())
-            if t.url not in listed:
-                raise HTTPException(400, "not a station this player lists")
+                raise HTTPException(400, "not a station the library lists")
         elif t.id <= 0:
             raise HTTPException(400, "not a song of the library's")
-        if t.cover_url and await asked_for(t.cover_url) is None:
-            raise HTTPException(400, "not a picture the catalogue uses")
+        if t.cover_url and not pictures.ours(t.cover_url):
+            raise HTTPException(400, "not a picture the library names")
 
 
 def _addresses(config, tracks: list[CastTrack]) -> list[str]:
@@ -310,13 +309,8 @@ def _addresses(config, tracks: list[CastTrack]) -> list[str]:
     return [t.url or stream_url(config, t.id, t.codec, prefer="dsd") for t in tracks]
 
 
-def _art(t: CastTrack) -> str:
-    # a renderer fetches a picture by address; a relative one is nothing to it
-    return t.cover_url if (t.cover_url or "").startswith("http") else ""
-
-
-def _station(t: CastTrack) -> dict:
-    return {"uri": t.url, "title": t.title, "art": _art(t)}
+def _station(config, t: CastTrack) -> dict:
+    return {"uri": t.url, "title": t.title, "art": picture_url(config, t.cover_url)}
 
 
 def _told(tracks: list[CastTrack]) -> list[dict]:
@@ -416,9 +410,9 @@ async def play(body: PlayBody, who: User = Depends(require_picked)):
             # track, and the surface hands it the next when this one is done
             t = body.tracks[start]
             await house.command(config, entity, "media_transport", "play_media",
-                               _station(t) if t.url
+                               _station(config, t) if t.url
                                else {"uri": stream_url(config, t.id, t.codec),
-                                     "title": t.title, "art": _art(t)})
+                                     "title": t.title, "art": picture_url(config, t.cover_url)})
     except (dida.DidaError, dac.DacError) as exc:
         raise HTTPException(502, str(exc))
     # The device plays; the television shows. A record on the DAC still has a
@@ -571,8 +565,9 @@ async def state(output: str):
         "volume": vol.get("volume"),
         "mute": vol.get("mute"),
         # a station has a picture too, and a screen following the house needs
-        # something to show that is not the last record it happened to hold
-        "cover_url": values.get("media_art") or None,
+        # something to show that is not the last record it happened to hold;
+        # only one the library named, which the device was handed whole
+        "cover_url": pictures.named_by(values.get("media_art")),
     }
 
 
@@ -591,7 +586,7 @@ async def dac_now():
         now = await dac.now()
     except dac.DacError as exc:
         raise HTTPException(502, str(exc)) from exc
-    return {"name": _dac_name(config), **now}
+    return {"name": _dac_name(config), **now, "cover_url": picture_url(config, now["cover_url"]) or None}
 
 
 class DacControl(BaseModel):
@@ -791,7 +786,8 @@ async def tv_now(box: int | None = None):
     """What the television is doing, for a caller that is not one of our screens.
     `listening` is whether the player is open on it at all; a television that is
     not asking for its mail cannot be told anything."""
-    channel = _house(await current_runtime(), box)
+    config = await current_runtime()
+    channel = _house(config, box)
     listening = channel is not None and channel.listening
     said = _fresh(channel)
     told = said if said.get("kind") != "none" else {}
@@ -808,7 +804,7 @@ async def tv_now(box: int | None = None):
         "title": told.get("title") or "",
         "artist": told.get("artist") or "",
         "album": told.get("album") or "",
-        "cover_url": told.get("cover_url"),
+        "cover_url": picture_url(config, told.get("cover_url")) or None,
         "position": told.get("position"),
         "duration": told.get("duration"),
         "index": told.get("index"),
@@ -1038,11 +1034,9 @@ async def _shelf(key: str, lang: str) -> list[dict]:
     if key == "music":
         return [artist_card(a) for a in await library.get("/music/artists")]
     if key == "radio":
-        async with SessionLocal() as session:
-            rows = (await session.execute(select(RadioStation))).scalars().all()
-        return [{"kind": "station", "id": s.id, "title": s.name,
-                 "subtitle": s.genre or s.country or "", "image": s.logo, "url": s.url}
-                for s in rows]
+        return [{"kind": "station", "id": s["id"], "title": s["name"],
+                 "subtitle": s["genre"] or s["country"] or "", "image": s["logo"], "url": s["url"]}
+                for s in await stations.listed()]
     raise HTTPException(404, "nothing to open in that place")
 
 
@@ -1118,13 +1112,15 @@ async def tv_open(body: TvOpen, request: Request):
     elif body.kind == "artist":
         tv.post(order={"go": f"/music?open=artist:{body.id}"})
     elif body.kind == "station":
-        async with SessionLocal() as session:
-            station = await session.get(RadioStation, body.id)
+        try:
+            station = await stations.by_id(body.id)
+        except library.LibraryError as exc:
+            raise HTTPException(502, str(exc)) from exc
         if station is None:
             raise HTTPException(404, "no such station")
-        await _play_on_tv(config, tv, [CastTrack(id=-station.id, title=station.name,
-                                                 artist=station.genre or "", cover_url=station.logo,
-                                                 url=station.url)], 0)
+        await _play_on_tv(config, tv, [CastTrack(id=-station["id"], title=station["name"],
+                                                 artist=station["genre"] or "", cover_url=station["logo"],
+                                                 url=station["url"])], 0)
     else:
         raise HTTPException(400, "that cannot be opened on the television")
     return {"ok": True}

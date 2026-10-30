@@ -7,10 +7,6 @@ cd "$(dirname "$0")/.."
 OPUS_MODULE=opus-player
 OPUS_SERVICES=(backend frontend)
 OPUS_HEALTH_PORTS=(8098)
-# every picture, not only the directories: a cache hit refreshes its recency
-# with utime so the size sweep knows what was used, and that fails with EACCES
-# on a file the app does not own
-OPUS_VOLUME_OWNER=(opus_player_backend all /art)
 # android/ stays behind apart from the built app: the media host builds no APK,
 # and the signing keystore lives in there
 OPUS_SHIP_APART=(android)

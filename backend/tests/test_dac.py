@@ -1,5 +1,4 @@
 import asyncio
-from types import SimpleNamespace
 
 import pytest
 
@@ -137,12 +136,12 @@ def test_a_station_is_named_by_the_list_and_its_song_by_the_station(monkeypatch)
 
     async def station(address):
         assert address == STATION
-        return SimpleNamespace(id=3, name="Yammat FM", genre="Alternative", logo="https://logo")
+        return {"id": 3, "name": "Yammat FM", "genre": "Alternative", "logo": "/api/pictures/4"}
 
     monkeypatch.setattr(dac, "_station", station)
     said = talking_to(fake, monkeypatch, dac.now)
     assert (said["kind"], said["station_id"]) == ("station", 3)
-    assert (said["title"], said["artist"], said["cover_url"]) == ("Placebo - Shout", "Yammat FM", "https://logo")
+    assert (said["title"], said["artist"], said["cover_url"]) == ("Placebo - Shout", "Yammat FM", "/api/pictures/4")
     assert said["crossfade"] == 3
 
 

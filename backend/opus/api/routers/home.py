@@ -14,12 +14,12 @@ from opus_core.names import croatian
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from opus import auth, library
+from opus import auth, library, stations
 from opus.api.routers.users import orders_of, picked
 from opus.cards import (artist_card, episode_card, movie_card, release_card,
                         series_card, track_card)
 from opus.db import get_session
-from opus.models import MusicPlay, Progress, RadioStation
+from opus.models import MusicPlay, Progress
 
 router = APIRouter()
 
@@ -510,8 +510,7 @@ async def section(section: str, request: Request, order: str = "", lang: str = "
 
 
 @router.get("/shelves")
-async def shelves(request: Request, lang: str = "en",
-                  session: AsyncSession = Depends(get_session)):
+async def shelves(request: Request, lang: str = "en"):
     """How much is on each shelf, and nothing else — the one place the player
     counts what the house holds, for the home screen and for the panel that
     answers the moment the remote passes a section in the menu.
@@ -520,7 +519,7 @@ async def shelves(request: Request, lang: str = "en",
     places the family has photographed is the album talking."""
     found = await auth.person(request.cookies.get(opus_auth.SESSION_COOKIE), auth.bearer_of(request))
     album = found is None or found.role != GUEST
-    movies, series, shelf, *photos = await _all(
+    movies, series, shelf, radio, *photos = await _all(
         (library.get("/video/movies", lang=lang), []),
         (library.get("/video/series", lang=lang), []),
         # what is ON the music shelf, which the artist listing cannot say: its
@@ -528,6 +527,7 @@ async def shelves(request: Request, lang: str = "en",
         # not, and summing it reported twenty thousand albums for a shelf of
         # three and a half
         (library.get("/music/library/stats"), {}),
+        (stations.listed(), []),
         *([(library.get("/photos/timeline/buckets"), {}),
            (library.get("/photos/people"), []),
            (library.get("/photos/places"), [])] if album else []),
@@ -544,15 +544,9 @@ async def shelves(request: Request, lang: str = "en",
         years = sorted({t.get(key) for t in things if t.get(key)})
         return [years[0], years[-1]] if len(years) > 1 and years[0] != years[-1] else None
 
-    # the one shelf the player holds itself: a station is a name and somebody
-    # else's stream, so there is nothing to ask the library about
-    stations, countries = (await session.execute(
-        select(func.count(RadioStation.id),
-               func.count(func.distinct(RadioStation.country)))
-    )).one()
-
     counted = {
-        "radio": {"count": stations, "countries": countries, "span": None},
+        "radio": {"count": len(radio), "countries": len({s["country"] for s in radio if s["country"]}),
+                  "span": None},
         "movies": {"count": len(playable),
                    "hours": round(sum(m.get("runtime_min") or 0 for m in playable) / 60),
                    "span": span(playable)},

@@ -78,9 +78,6 @@ services:
       - video:/video:ro
       - music:/music:ro
       - photos:/photos:ro
-      # artwork fetched once at the size a screen draws it, so the box never
-      # goes back to the CDN for a face it has already shown
-      - ./volumes/art:/art
     depends_on:
       postgres:
         condition: service_healthy

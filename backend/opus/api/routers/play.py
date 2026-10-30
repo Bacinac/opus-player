@@ -13,10 +13,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response, StreamingResponse
 from opus_core.responses import FileResponse
 
-from opus import auth, dac, library, playback
+from opus import auth, dac, library, playback, stations
+from opus.api.routers import pictures
 from opus.api.routers.users import require_picked
-from opus.models import RadioStation, User
-from opus.db import SessionLocal
+from opus.models import User
 from opus.settings_store import current_runtime
 
 router = APIRouter()
@@ -184,10 +184,7 @@ def stream_url(config, track_id: int, codec: str | None, prefer: str = "stereo")
     the DAC, which plays it natively, never for a renderer that cannot. A track
     with no such edition gets back whatever it does hold, same as `prefer`
     everywhere else in this player."""
-    base = (config.get("stream_base") or "").rstrip("/")
-    if not base:
-        raise HTTPException(503, "stream_base is not configured, and a renderer "
-                                 "cannot fetch from a relative path")
+    base = _base(config)
     prefix = f"/api/play/track/{track_id}/"
     ticket = auth.play_ticket(prefix)
     suffix = (codec or "").strip(".").lower() or "flac"
@@ -196,19 +193,35 @@ def stream_url(config, track_id: int, codec: str | None, prefer: str = "stereo")
 
 def announcement_url(config, number: int) -> str:
     """Where the DAC fetches a sentence the house asked it to speak."""
+    prefix = f"/api/play/announcement/{number}/"
+    return f"{_base(config)}{prefix}stream?ticket={auth.play_ticket(prefix)}"
+
+
+# a now-playing screen on a receiver or in the house's own pages
+HOUSE_EDGE = 640
+
+
+def picture_url(config, address: str | None) -> str:
+    """Where a renderer or the house fetches a picture the Library named, or
+    nothing for no picture."""
+    if not pictures.ours(address):
+        return ""
+    return f"{_base(config)}{address}?w={HOUSE_EDGE}"
+
+
+def _base(config) -> str:
     base = (config.get("stream_base") or "").rstrip("/")
     if not base:
         raise HTTPException(503, "stream_base is not configured, and a renderer "
                                  "cannot fetch from a relative path")
-    prefix = f"/api/play/announcement/{number}/"
-    return f"{base}{prefix}stream?ticket={auth.play_ticket(prefix)}"
+    return base
 
 
 def _queued(config, t: dict, prefer: str) -> dict:
     return {
         "id": t["id"], "release_id": t.get("release_id"),
         "title": t.get("title") or "", "artist": t.get("artist") or "",
-        "album": t.get("album") or "", "art": t.get("cover_url") or "",
+        "album": t.get("album") or "", "art": picture_url(config, t.get("cover_url")),
         "duration_s": t.get("duration_s"), "codec": t.get("codec"),
         "channels": t.get("channels"), "live": False,
         "uri": stream_url(config, t["id"], t.get("codec"), prefer=prefer),
@@ -226,18 +239,20 @@ async def queue(kind: str, id: int, prefer: str = "stereo"):
     the sentence and nothing else: what to play, in what order, from where.
     The ticket on every address is twelve hours, and a station carries the
     address somebody else keeps alive, exactly as the cast does."""
-    async with SessionLocal() as session:
-        config = await current_runtime()
-        if kind == "station":
-            found = await session.get(RadioStation, id)
-            if found is None:
-                raise HTTPException(404, "no such station")
-            return {"kind": kind, "id": id, "title": found.name, "tracks": [{
-                "id": -found.id, "release_id": None, "title": found.name,
-                "artist": found.genre or "", "album": "", "art": found.logo or "",
-                "duration_s": None, "codec": None, "channels": None,
-                "live": True, "uri": found.url,
-            }]}
+    config = await current_runtime()
+    if kind == "station":
+        try:
+            found = await stations.by_id(id)
+        except library.LibraryError as exc:
+            raise HTTPException(502, str(exc))
+        if found is None:
+            raise HTTPException(404, "no such station")
+        return {"kind": kind, "id": id, "title": found["name"], "tracks": [{
+            "id": -found["id"], "release_id": None, "title": found["name"],
+            "artist": found["genre"] or "", "album": "", "art": picture_url(config, found["logo"]),
+            "duration_s": None, "codec": None, "channels": None,
+            "live": True, "uri": found["url"],
+        }]}
     if kind == "release":
         try:
             record = await library.get(f"/music/releases/{id}/playback",
@@ -247,7 +262,7 @@ async def queue(kind: str, id: int, prefer: str = "stereo"):
         except library.LibraryError as exc:
             raise HTTPException(502, str(exc))
         return {"kind": kind, "id": id, "title": record.get("title") or "",
-                "artist": record.get("artist") or "", "art": record.get("cover_url") or "",
+                "artist": record.get("artist") or "", "art": picture_url(config, record.get("cover_url")),
                 "tracks": [_queued(config, t, prefer) for t in record.get("tracks") or []]}
     if kind == "track":
         try:
@@ -257,7 +272,7 @@ async def queue(kind: str, id: int, prefer: str = "stereo"):
         except library.LibraryError as exc:
             raise HTTPException(502, str(exc))
         return {"kind": kind, "id": id, "title": song.get("title") or "",
-                "artist": song.get("artist") or "", "art": song.get("cover_url") or "",
+                "artist": song.get("artist") or "", "art": picture_url(config, song.get("cover_url")),
                 "tracks": [_queued(config, song, prefer)]}
     raise HTTPException(404, "nothing of that kind can be queued")
 

@@ -7,7 +7,6 @@ import asyncio
 import os
 import socket
 import struct
-from types import SimpleNamespace
 
 import pytest
 
@@ -57,7 +56,7 @@ def test_real_mpd_recovers_a_stalled_http_stream(monkeypatch, failure):
         m.probed[url] = {"codec": "pcm_s16le", "sample_rate_hz": 44100}
 
         async def station(address):
-            return SimpleNamespace(id=1) if address == url else None
+            return {"id": 1} if address == url else None
 
         monkeypatch.setattr(dac, "ADDRESS", (os.environ["OPUS_TEST_MPD"], 6600))
         monkeypatch.setattr(dac, "_station", station)

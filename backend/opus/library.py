@@ -31,7 +31,7 @@ class Invalid(LibraryError):
     the asker's mistake, not a library that is down, and it is said as one."""
 
 
-def _refusal(path: str, resp: httpx.Response) -> str:
+def refusal(path: str, resp: httpx.Response) -> str:
     try:
         said = resp.json()
     except ValueError:
@@ -45,13 +45,13 @@ def _refusal(path: str, resp: httpx.Response) -> str:
 
 def _raise_for(path: str, resp: httpx.Response) -> None:
     if resp.status_code == 404:
-        raise NotInLibrary(_refusal(path, resp))
+        raise NotInLibrary(refusal(path, resp))
     if resp.status_code == 409:
-        raise AlreadyThere(_refusal(path, resp))
+        raise AlreadyThere(refusal(path, resp))
     if resp.status_code == 422:
-        raise Invalid(_refusal(path, resp))
+        raise Invalid(refusal(path, resp))
     if resp.is_error:
-        raise LibraryError(_refusal(path, resp))
+        raise LibraryError(refusal(path, resp))
 
 
 # One connection per timeout, kept open. Every screen here is several questions

@@ -113,7 +113,7 @@ internal class Pairing(
         const val PLAIN = "token"
         const val REFUSED = "refused"
         val PAUSES = longArrayOf(100, 400, 0)
-        val OPEN = setOf("/api/ping", "/api/art")
-        val OPEN_UNDER = listOf("/api/auth/", "/api/app/")
+        val OPEN = setOf("/api/ping")
+        val OPEN_UNDER = listOf("/api/auth/", "/api/app/", "/api/pictures/")
     }
 }

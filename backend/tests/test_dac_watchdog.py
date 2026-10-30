@@ -1,5 +1,4 @@
 """A radio may claim play while elapsed/audio output stop moving."""
-from types import SimpleNamespace
 
 import pytest
 
@@ -17,7 +16,7 @@ def rig(monkeypatch):
     commands = []
 
     async def station(url):
-        return SimpleNamespace(id=1, name="Test radio", genre="", logo=None) if url == STATION else None
+        return {"id": 1, "name": "Test radio", "genre": "", "logo": None} if url == STATION else None
 
     async def exchange(*args):
         if args[0][0] == "playlistid":

@@ -22,7 +22,8 @@ def allowed(path, **given):
 @pytest.mark.parametrize(("path", "given", "expected"), [
     ("/api/ping", {}, True),
     ("/api/ready", {}, True),
-    ("/api/art", {}, True),
+    ("/api/pictures/12", {}, True),
+    ("/api/tiles/3/4/2.png", {}, False),
     ("/api/auth/pair/12", {}, True),
     ("/api/app/opus.apk", {}, True),
     ("/api/app/opus-tv.apk", {}, True),

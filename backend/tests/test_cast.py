@@ -10,7 +10,7 @@ from opus.api.routers.cast import CastTrack
 from opus.models import BoxPreference
 
 STATION = "http://live.radio101.hr:9531/"
-LOGO = "http://cdn-profiles.tunein.com/s8910/images/logoq.jpg"
+LOGO = "/api/pictures/7"
 
 
 class Config:
@@ -85,39 +85,26 @@ def test_only_a_box_that_was_let_in_has_a_mailbox(monkeypatch, boxes):
 
 @pytest.fixture
 def listed(monkeypatch):
-    class Rows:
-        def scalars(self):
-            return [STATION]
+    async def by_address(url):
+        return {"id": 2, "url": STATION} if url == STATION else None
 
-    class Session:
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *exc):
-            return False
-
-        async def execute(self, query):
-            return Rows()
-
-    async def asked_for(url):
-        return url if url in (LOGO, "https://image.tmdb.org/t/p/w342/a.jpg") else None
-
-    monkeypatch.setattr(cast, "SessionLocal", Session)
-    monkeypatch.setattr(cast, "asked_for", asked_for)
+    monkeypatch.setattr(cast.stations, "by_address", by_address)
 
 
 @pytest.mark.parametrize("track", [
-    CastTrack(id=11731, title="A song", cover_url="https://image.tmdb.org/t/p/w342/a.jpg"),
+    CastTrack(id=11731, title="A song", cover_url="/api/pictures/12"),
     CastTrack(id=-2, title="Radio 101", url=STATION, cover_url=LOGO),
     CastTrack(id=5, cover_url=None),
 ])
-def test_what_the_player_hands_out_may_be_cast(listed, track):
+def test_what_the_library_names_may_be_cast(listed, track):
     run(cast._vetted([track]))
 
 
 @pytest.mark.parametrize("track", [
     CastTrack(id=-1, url="http://192.168.1.12:8123/api/services/lock/open"),
     CastTrack(id=5, cover_url="http://attacker.example/pixel.gif"),
+    CastTrack(id=5, cover_url="https://image.tmdb.org/t/p/w342/a.jpg"),
+    CastTrack(id=5, cover_url="/api/pictures/12/../../tv/control"),
     CastTrack(id=-1, title="no id and no station"),
     CastTrack(id=-2, url=STATION, cover_url="file:///etc/passwd"),
 ])
@@ -125,6 +112,14 @@ def test_anything_else_is_refused(listed, track):
     with pytest.raises(HTTPException) as refused:
         run(cast._vetted([CastTrack(id=1), track]))
     assert refused.value.status_code == 400
+
+
+def test_a_renderer_is_handed_the_whole_address_of_a_picture():
+    config = Config(stream_base="http://media:8098/")
+    t = CastTrack(id=-2, title="Radio 101", url=STATION, cover_url=LOGO)
+    assert cast._station(config, t) == {
+        "uri": STATION, "title": "Radio 101", "art": "http://media:8098/api/pictures/7?w=640"}
+    assert cast._station(config, CastTrack(id=-2, url=STATION))["art"] == ""
 
 
 def test_the_dac_asks_the_library_for_the_dsd_edition_of_each_track():

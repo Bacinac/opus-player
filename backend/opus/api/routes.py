@@ -4,8 +4,8 @@ catalogue."""
 from fastapi import APIRouter
 from opus_core import plugins, revision
 
-from opus.api.routers import (app, art, cast, explore, favorites, game, history, home,
-                              launcher, listening, photos, play, progress, radio,
+from opus.api.routers import (app, cast, explore, favorites, game, history, home,
+                              launcher, listening, photos, pictures, play, progress, radio,
                               system, users)
 from opus.plugins import PLUGINS
 
@@ -23,7 +23,7 @@ router.include_router(listening.router)
 router.include_router(history.router)
 router.include_router(users.router)
 router.include_router(explore.router)
-router.include_router(art.router)
+router.include_router(pictures.router)
 router.include_router(radio.router)
 router.include_router(game.router)
 router.include_router(photos.router)

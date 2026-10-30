@@ -42,8 +42,8 @@ and Downloads, and a playback server with Player.
 - **The house answers to DIDA.** The receiver, its inputs, zones and volume
   belong to the house's automation, and Player's every command to them goes
   through DIDA. The DAC on Player's own host is the exception.
-- **Plugins add, the core stays whole.** An installation can add picture
-  sources and ways into music as plugins. A plugin that is named and cannot be
+- **Plugins add, the core stays whole.** An installation can add ways into
+  music as plugins. A plugin that is named and cannot be
   loaded stops the start.
 
 ## Components
@@ -69,7 +69,9 @@ flowchart LR
   api -- house devices --> dida[DIDA]
 ```
 
-A screen asks Player what there is, and Player asks Library. When a screen
+A screen asks Player what there is, and Player asks Library — the pictures,
+radio stations and map tiles included, which Player passes through on the
+Library's own addresses. When a screen
 asks to play a file, Player looks at the file and at what the device reports
 it can decode, and answers with a plan: direct, remux (for example MKV into
 fragmented MP4 for a browser) or transcode on the GPU. The television app
@@ -82,7 +84,7 @@ picks up where the last one stopped.
 
 | Store | Holds |
 |---|---|
-| Postgres | Where each person stopped, users and their preferences, music favourites and plays, radio stations, rounds of the photo game, car-app tokens, settings |
+| Postgres | Where each person stopped, users and their preferences, music favourites and plays, rounds of the photo game, car-app tokens, settings |
 | Media folders | `music`, `movies`, `television`, `video`, `photos`, the same content as on the storage server, mounted read-only |
 
 Schema changes are Alembic migrations, applied when the backend starts.
@@ -118,8 +120,8 @@ settings.
 
 - **A plugin:** a directory under the path `OPUS_PLUGINS` names, with an
   `opus-plugin.toml` that points the `opus-player` module at the object it
-  hands Player (see `backend/opus/plugins.py`): picture hosts, ways into music
-  and the words for both.
+  hands Player (see `backend/opus/plugins.py`): ways into music and the words
+  for them.
 - **A surface or a way of playing:** the plan in `backend/opus/playback.py`
   and the matching surface in the frontend.
 

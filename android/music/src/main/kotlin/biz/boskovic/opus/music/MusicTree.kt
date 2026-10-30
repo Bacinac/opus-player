@@ -317,8 +317,8 @@ object MusicTree {
     }
 
     private fun art(url: String): Uri? {
-        if (url.isEmpty() || url == "null") return null
-        return Opus.url("/api/art?u=${Uri.encode(url)}&w=640").toUri()
+        if (!url.startsWith("/")) return null
+        return Opus.url("$url?w=640").toUri()
     }
 
     private fun folder(

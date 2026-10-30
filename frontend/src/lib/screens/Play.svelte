@@ -8,7 +8,7 @@
 	// where the stream was started plus how far into it the element has got, and
 	// seeking restarts the stream at the new place.
 
-	import { art } from '#lib/ask/art.js';
+	import { art, artAbroad } from '#lib/ask/art.js';
 	import { t, formatNumber, formatTime, plural } from '#lib/i18n/index.js';
 	import Press from '#lib/tvui/Press.svelte';
 	import { episodeLabel } from '#lib/say/episode.js';
@@ -197,7 +197,7 @@
 		// the box has one engine and a film is about to take it: a record left
 		// running would be released under the bar that still says it is playing
 		queue.clear();
-		onBox((box) => box.describe?.(card.title, String(card.subtitle ?? ''), '', card.image ?? ''));
+		onBox((box) => box.describe?.(card.title, String(card.subtitle ?? ''), '', artAbroad(card.image, 640)));
 		if (engine.start(taken.plan, at)) engine.on = true;
 	}
 

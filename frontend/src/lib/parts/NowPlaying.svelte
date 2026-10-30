@@ -12,6 +12,7 @@
 	import { sleeve } from '#lib/keep/sleeve.svelte.js';
 	import { surface } from '#lib/keep/surface.svelte.js';
 	import { onBox } from '#lib/tv/bridge.js';
+	import { artAbroad } from '#lib/ask/art.js';
 	import { Crossfade } from '#lib/keep/crossfade.js';
 
 	/** Two elements, not one. A song used to end, and only THEN was the next
@@ -182,7 +183,7 @@
 		const at = queue.startAt;
 		queue.startAt = 0;
 		elapsed = at;
-		onBox((box) => box.describe?.(song.title, song.artist, song.album, song.cover_url ?? ''));
+		onBox((box) => box.describe?.(song.title, song.artist, song.album, artAbroad(song.cover_url, 640)));
 		// a station's bytes are not ours, and the engine opens nothing that is not
 		// this origin's: every station goes through the relay, https or not
 		if (song.url) {

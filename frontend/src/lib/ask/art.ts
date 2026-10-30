@@ -1,20 +1,23 @@
 // A cover at the size it is about to be drawn.
 //
-// Not the catalogue's own address. What it stores is where the picture came
-// from — an artist's face is a thousand pixels square on Deezer's CDN, which is
-// a hundred and thirty kilobytes for a face a shelf draws at three hundred, and
-// that CDN dates its answers in the past so the browser fetches the lot again
-// every time the shelf is opened. The player keeps them instead, sized, on the
-// same network as the screen.
+// Every picture in the catalogue is the Library's, at /api/pictures/{id}, and
+// the player answers on the same address; the screen only says how wide it
+// draws it. What the player serves itself, the photographs, is its own address
+// already. Anything else is somebody else's server, which no screen asks.
+
+const PICTURE = /^\/api\/pictures\/\d+$/;
 
 export function art(url: string | null | undefined, edge: number): string {
 	if (!url) return '';
-	// What this player serves itself is not proxied. The proxy exists to size and
-	// keep pictures that live on somebody else's CDN, and it refuses any host
-	// that is not one of those — which is how the photographs' own section had no
-	// ground behind it at all: every request for one answered 400.
-	if (url.startsWith('/')) return url;
-	return `/api/art?w=${edge}&u=${encodeURIComponent(url)}`;
+	if (PICTURE.test(url)) return `${url}?w=${edge}`;
+	return url.startsWith('/') ? url : '';
+}
+
+/** A picture as something outside this page fetches it — the television's own
+ *  engine, which has no origin to resolve an address against. */
+export function artAbroad(url: string | null | undefined, edge: number): string {
+	const here = art(url, edge);
+	return here ? new URL(here, location.origin).href : '';
 }
 
 /** The picture to lie behind a screen that is about one thing: its own wide

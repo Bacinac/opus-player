@@ -177,7 +177,7 @@ class PairingTest {
     @Test
     fun `an open route answering does not lift a refusal`() {
         pairing.answered("/api/library/music", carried = true, code = 401)
-        pairing.answered("/api/art", carried = true, code = 200)
+        pairing.answered("/api/pictures/12", carried = true, code = 200)
         pairing.answered("/api/ping", carried = true, code = 200)
         pairing.answered("/api/app/music.json", carried = true, code = 200)
         assertTrue(pairing.refused())
@@ -187,7 +187,7 @@ class PairingTest {
     fun `only a request that carried the bearer behind the door says anything`() {
         pairing.answered("/api/app/music.json", carried = true, code = 401)
         pairing.answered("/api/auth/car-token", carried = true, code = 403)
-        pairing.answered("/api/art", carried = true, code = 403)
+        pairing.answered("/api/pictures/12", carried = true, code = 403)
         pairing.answered("/api/library/music", carried = false, code = 401)
         pairing.answered("/api/library/music", carried = true, code = 500)
         pairing.answered("/api/library/artist/9", carried = true, code = 404)

@@ -1,11 +1,8 @@
 """Stations, which are the one thing to listen to that has no file.
 
-Everything else the player puts on is a row in the library and a file on a
-disk; a station is a name and a stream somebody else is keeping alive. That is
-the only difference, and it is not a reason for radio to live outside the
-player: what exists to listen to is the player's business, and the list moved
-here from the house's automation, where it had ended up because that was what
-could play it.
+The list is the Library's, like everything else that exists to be listened to.
+What stays here is the one thing a list cannot do: carry a stream somebody else
+keeps alive to a screen that may not open it for itself.
 """
 
 import asyncio
@@ -14,15 +11,19 @@ import socket
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from opus.db import SessionLocal, get_session
-from opus.models import RadioStation
+from opus import library, stations
 
 router = APIRouter()
+
+
+async def _asked(found):
+    try:
+        return await found
+    except library.LibraryError as exc:
+        raise HTTPException(502, str(exc)) from exc
 
 
 def play_url(url: str) -> str:
@@ -34,39 +35,35 @@ def play_url(url: str) -> str:
     return f"/api/radio/stream?{urlencode({'u': url})}"
 
 
-def _card(s: RadioStation) -> dict:
+def _card(s: dict) -> dict:
     return {
         "kind": "station",
-        "id": s.id,
-        "title": s.name,
-        "subtitle": " · ".join(part for part in (s.genre, s.country) if part),
-        "image": s.logo,
+        "id": s["id"],
+        "title": s["name"],
+        "subtitle": " · ".join(part for part in (s["genre"], s["country"]) if part),
+        "image": s["logo"],
         "backdrop": None,
         "state": None,
         "overview": "",
-        "url": s.url,
-        "play_url": play_url(s.url),
+        "url": s["url"],
+        "play_url": play_url(s["url"]),
         # a station's picture is its logo, which is square the way a sleeve is
         "square": True,
     }
 
 
 @router.get("/radio/stations")
-async def stations(session: AsyncSession = Depends(get_session)):
-    """Every station, in the order they are kept. Not one profile's: the list
-    is the house's, and the house's automation asks for it with no profile
-    picked."""
-    rows = (await session.execute(
-        select(RadioStation).order_by(RadioStation.sort_order, RadioStation.id)
-    )).scalars().all()
-    return {"stations": [_card(s) for s in rows]}
+async def every_station():
+    """Every station. Not one profile's: the list is the house's, and the
+    house's automation asks for it with no profile picked."""
+    return {"stations": [_card(s) for s in await _asked(stations.listed())]}
 
 
 @router.get("/radio/stations/{station_id}")
-async def station(station_id: int, session: AsyncSession = Depends(get_session)):
+async def station(station_id: int):
     """One station, as the list draws it. The car asks for it by the id it
     remembered when it comes back up in the middle of playing one."""
-    found = await session.get(RadioStation, station_id)
+    found = await _asked(stations.by_id(station_id))
     if found is None:
         raise HTTPException(404, "no such station")
     return _card(found)
@@ -80,20 +77,16 @@ async def stream(u: str = Query(...)):
     open them from a page that is, and an Android app refuses cleartext
     altogether. The bytes come through here instead.
 
-    Only a station this player itself lists — a route that fetches what it is
-    told is an open proxy — and a redirect is followed only to a public
+    Only a station the Library lists — a route that fetches what it is told is
+    an open proxy — and a redirect is followed only to a public
     address, so a listed station cannot hand the relay a machine in the house."""
-    async with SessionLocal() as session:
-        known = (await session.execute(
-            select(RadioStation.url).where(RadioStation.url == u)
-        )).scalar_one_or_none()
-    if known is None:
-        raise HTTPException(400, "not a station this player lists")
+    if await _asked(stations.by_address(u)) is None:
+        raise HTTPException(400, "not a station the library lists")
 
-    listed = httpx.URL(known)
+    asked = httpx.URL(u)
 
     async def public(request: httpx.Request) -> None:
-        if request.url == listed:
+        if request.url == asked:
             return
         if request.url.scheme not in ("http", "https") or request.url.userinfo:
             raise httpx.ConnectError(f"the station redirected to {request.url.scheme}://{request.url.host}",
@@ -110,7 +103,7 @@ async def stream(u: str = Query(...)):
     client = httpx.AsyncClient(timeout=httpx.Timeout(15, read=None), follow_redirects=True,
                                max_redirects=3, event_hooks={"request": [public]})
     try:
-        upstream = await client.send(client.build_request("GET", known), stream=True)
+        upstream = await client.send(client.build_request("GET", u), stream=True)
     except httpx.HTTPError as exc:
         await client.aclose()
         raise HTTPException(502, f"the station could not be reached: {exc}") from exc

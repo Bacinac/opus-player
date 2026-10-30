@@ -238,25 +238,6 @@ class HistorySend(Base):
     )
 
 
-class RadioStation(Base):
-    """A station, which is a thing to listen to and not a device.
-
-    The list lived in the house's automation until 2026-08-23, where it had
-    ended up because that was what could play it. What exists to listen to is
-    the player's business — the same business as the records and the films —
-    so it lives here now."""
-
-    __tablename__ = "radio_stations"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(200))
-    genre: Mapped[str] = mapped_column(String(200), default="")
-    url: Mapped[str] = mapped_column(Text)
-    logo: Mapped[str | None] = mapped_column(Text)
-    country: Mapped[str] = mapped_column(String(8), default="")
-    sort_order: Mapped[int] = mapped_column(Integer, default=0)
-
-
 class GameRound(Base):
     """A round of the guessing game: ten photographs, and what was answered.
 

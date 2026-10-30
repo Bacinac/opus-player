@@ -2,7 +2,7 @@
 
 MPD holds the queue and nothing here keeps a copy of it: what is on is read
 back from MPD whenever it is asked, and a song is named by the Library the way
-every screen of this player names one. A station is named by this player's own
+every screen of this player names one. A station is named by the Library's
 list, and the song on it by what the station says it is playing.
 
 MPD's protocol is a line out and lines back until OK, so it is spoken here
@@ -18,11 +18,7 @@ import time
 from dataclasses import dataclass, field
 from urllib.parse import parse_qs, urlsplit
 
-from sqlalchemy import select
-
-from opus import library, playback
-from opus.db import SessionLocal
-from opus.models import RadioStation
+from opus import library, playback, stations
 
 log = logging.getLogger(__name__)
 
@@ -297,10 +293,13 @@ async def _song(track_id: int, prefer: str) -> dict:
     return song
 
 
-async def _station(address: str) -> RadioStation | None:
-    async with SessionLocal() as session:
-        return (await session.execute(
-            select(RadioStation).where(RadioStation.url == address))).scalars().first()
+async def _station(address: str) -> dict | None:
+    try:
+        return await stations.by_address(address)
+    except library.LibraryError as exc:
+        # what plays keeps playing; only its name is missing
+        log.warning("station %s is not named: %s", address, exc)
+        return None
 
 
 def _number(value: str | None, kind=float):
@@ -386,10 +385,10 @@ async def _track_said(said: dict, current: dict, address: str, track_id: int) ->
             "sample_rate_hz": song.get("sample_rate_hz"), "bit_depth": song.get("bit_depth")}
 
 
-def _station_said(said: dict, current: dict, station: RadioStation, stream) -> dict:
+def _station_said(said: dict, current: dict, station: dict, stream) -> dict:
     playing = current.get("Title") or ""
-    return {**said, "kind": "station", "station_id": station.id,
+    return {**said, "kind": "station", "station_id": station["id"],
             "stream": stream,
-            "title": playing or station.name,
-            "artist": station.name if playing else station.genre or "",
-            "cover_url": station.logo}
+            "title": playing or station["name"],
+            "artist": station["name"] if playing else station["genre"] or "",
+            "cover_url": station["logo"]}
