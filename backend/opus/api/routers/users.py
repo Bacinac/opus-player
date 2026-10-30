@@ -76,9 +76,9 @@ def checked_orders(given: str) -> str:
     return json.dumps(said, separators=(",", ":"))
 
 
-# whoever the profile is, the household, or one person by the id the library
-# knows them by
-SCREENSAVER = r"^(|household|[1-9][0-9]{0,9}(,[1-9][0-9]{0,9})*)$"
+# whoever the profile is, the household, the cameras, or people by the id the
+# library knows them by
+SCREENSAVER = r"^(|household|cameras|[1-9][0-9]{0,9}(,[1-9][0-9]{0,9})*)$"
 
 
 class NewUser(BaseModel):

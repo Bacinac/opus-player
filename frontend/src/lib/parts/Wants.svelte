@@ -1,7 +1,7 @@
 <script lang="ts">
 	// The answers a profile gives about what it wants to hear and to read, in
 	// order — the second is what a film with no Croatian sound comes up in — and
-	// whose photographs a box's screensaver shows while it is picked there.
+	// what a box's screensaver shows while it is picked there.
 	//
 	// Drawn wherever a profile is — the person's own settings, and the roster an
 	// admin keeps — because they are the same answers about the same thing,
@@ -54,7 +54,9 @@
 
 	// whoever the profile is stands first, and is what an untouched profile
 	// shows; one the library has no face for starts at the family. Several
-	// people may share the screen; the family stands alone, being all of them
+	// people may share the screen; the family stands alone, being all of them,
+	// and so do the cameras, being no photograph at all
+	const ALONE = ['household', 'cameras'];
 	const own = $derived(family.find((p) => p.account === who.key));
 	const called = (p: Face) => p.given_name || p.name;
 	const screensavers = $derived([
@@ -62,7 +64,8 @@
 			key: String(p.id),
 			label: called(p)
 		})),
-		{ key: 'household', label: t('profiles.household') }
+		{ key: 'household', label: t('profiles.household') },
+		{ key: 'cameras', label: t('profiles.cameras') }
 	]);
 	const screensaver = $derived.by(() => {
 		const said = who.screensaver ?? '';
@@ -71,8 +74,8 @@
 	});
 
 	function showing(key: string): string {
-		if (key === 'household') return 'household';
-		const people = screensaver.filter((k) => k !== 'household');
+		if (ALONE.includes(key)) return key;
+		const people = screensaver.filter((k) => !ALONE.includes(k));
 		const now = people.includes(key) ? people.filter((k) => k !== key) : [...people, key];
 		return now.length === 1 && own && now[0] === String(own.id) ? '' : now.join(',');
 	}

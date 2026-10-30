@@ -344,6 +344,7 @@ export const hr = {
 	'profiles.asFound': 'Kako je u datoteci',
 	'profiles.screensaver': 'Čuvar zaslona',
 	'profiles.household': 'Obitelj',
+	'profiles.cameras': 'Kamere',
 	'profiles.name': 'Ime',
 	'profiles.switch': 'Promijeni profil',
 	'profiles.remove': 'Ukloni',

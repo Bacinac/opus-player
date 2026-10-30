@@ -165,12 +165,15 @@ async def years(whose: Whose = Depends(), each: int = Query(12, ge=1, le=100)):
 
 @router.get("/photos/screensaver")
 async def screensaver(request: Request, session: AsyncSession = Depends(get_session)):
-    """Whose photographs a box's screensaver shows while a profile is picked
-    on it, as the narrowing the library's day takes. A profile left as it came
-    is whoever it is — the face the roster's account points at — and one the
-    library has no face for is the household, as a box with nobody picked is."""
+    """What a box's screensaver shows while a profile is picked on it: the
+    camera wall, or whose photographs, as the narrowing the library's day takes.
+    A profile left as it came is whoever it is — the face the roster's account
+    points at — and one the library has no face for is the household, as a box
+    with nobody picked is."""
     who = await picked(request, session)
     chosen = who.screensaver if who else ""
+    if chosen == "cameras":
+        return {"cameras": True}
     if chosen == "household":
         return {"household": True}
     if chosen:

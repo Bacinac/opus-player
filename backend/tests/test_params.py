@@ -161,11 +161,12 @@ def test_a_screensaver_shows_whoever_the_profile_is_unless_it_chose_somebody(mon
 
     answers = []
     for who in (None, profile("nika"), profile("kata"), profile(None),
-                profile("nika", "3"), profile("nika", "3,5"), profile("nika", "household")):
+                profile("nika", "3"), profile("nika", "3,5"), profile("nika", "household"),
+                profile("nika", "cameras")):
         picked_now["who"] = who
         answers.append(run(photos.screensaver(None, None)))
     # a box with nobody picked, somebody with no face in the library and a
     # profile off the roster all get the household, as the living room always did
     assert answers == [{"household": True}, {"person": [5]}, {"household": True},
                        {"household": True}, {"person": [3]}, {"person": [3, 5]},
-                       {"household": True}]
+                       {"household": True}, {"cameras": True}]

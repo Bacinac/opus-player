@@ -30,11 +30,11 @@ def test_shelf_orders_are_validated_not_cut(patch):
 
 
 def test_a_screensaver_is_people_the_library_knows_or_one_of_its_words():
-    for said in ("", "household", "7", "1234567890", "87,51,50"):
+    for said in ("", "household", "cameras", "7", "1234567890", "87,51,50"):
         assert UserPatch(screensaver=said).screensaver == said
     assert UserPatch(screensaver="87,51,87").screensaver == "87,51"
     for wrong in ("0", "07", "family", "everybody", "7; drop", "12345678901", "-3",
-                  "7,", ",7", "7,household", "7,,8"):
+                  "7,", ",7", "7,household", "7,,8", "cameras,7", "household,cameras"):
         with pytest.raises(ValidationError):
             UserPatch(screensaver=wrong)
 

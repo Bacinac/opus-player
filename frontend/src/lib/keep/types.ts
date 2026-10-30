@@ -121,8 +121,8 @@ export type Profile = {
 	roster?: boolean;
 	audio_languages?: string;
 	subtitle_languages?: string;
-	/** whose photographs a box's screensaver shows while this profile is
-	 *  picked: '' whoever the profile is, 'household', or a person's id */
+	/** what a box's screensaver shows while this profile is picked: '' whoever
+	 *  the profile is, 'household', people's ids, or 'cameras' for the wall */
 	screensaver?: string;
 };
 

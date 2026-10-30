@@ -344,6 +344,7 @@ export const en = {
 	'profiles.asFound': 'As the file has it',
 	'profiles.screensaver': 'Screensaver',
 	'profiles.household': 'The family',
+	'profiles.cameras': 'The cameras',
 	'profiles.name': 'Name',
 	'profiles.switch': 'Switch profile',
 	'profiles.remove': 'Remove',

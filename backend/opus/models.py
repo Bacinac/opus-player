@@ -76,10 +76,11 @@ class User(Base):
     # viewer owns the order they want to walk past it in — and films and artists
     # do not want the same one
     shelf_orders: Mapped[str] = mapped_column(String(200), default="{}")
-    # whose photographs a box's screensaver brings up while this profile is
-    # picked on it, in the library's own words: the ids of the people there,
-    # in the order chosen, or "household". Empty is whoever the profile is, and
-    # the household for a profile the library has no face for
+    # what a box's screensaver brings up while this profile is picked on it:
+    # "cameras" for the camera wall, or whose photographs in the library's own
+    # words: the ids of the people there, in the order chosen, or "household".
+    # Empty is whoever the profile is, and the household for a profile the
+    # library has no face for
     screensaver: Mapped[str] = mapped_column(String(160), default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

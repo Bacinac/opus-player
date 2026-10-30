@@ -80,7 +80,7 @@
   }
   async function theDay() {
     const chosen = await ask('/api/photos/screensaver');
-    const whose = new URLSearchParams(chosen.household ? { household: 'true' } : {});
+    const whose = new URLSearchParams(chosen.person ? {} : { household: 'true' });
     for (const person of chosen.person || []) whose.append('person', person);
     const day = await ask('/api/photos/onthisday?least=' + ENOUGH + '&' + whose);
     const found = byYear(day.years);
