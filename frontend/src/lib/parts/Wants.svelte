@@ -110,16 +110,14 @@
 			</div>
 		{/each}
 	{/each}
-	{#if family.length}
-		<div class="row">
-			<span class="what">{t('profiles.screensaver')}</span>
-			<Choose
-				said=""
-				many
-				chosen={screensaver}
-				options={screensavers}
-				onpick={(key) => set('screensaver', showing(key))}
-			/>
-		</div>
-	{/if}
+	<div class="row">
+		<span class="what">{t('profiles.screensaver')}</span>
+		<Choose
+			said=""
+			many
+			chosen={screensaver}
+			options={screensavers}
+			onpick={(key) => set('screensaver', showing(key))}
+		/>
+	</div>
 </Rows>
