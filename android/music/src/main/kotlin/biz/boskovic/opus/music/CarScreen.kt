@@ -1,6 +1,8 @@
 package biz.boskovic.opus.music
 
+import android.graphics.Bitmap
 import android.net.Uri
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.car.app.CarContext
 import androidx.car.app.CarToast
@@ -15,16 +17,24 @@ import androidx.car.app.model.RowSection
 import androidx.car.app.model.Section
 import androidx.car.app.model.SectionedItemTemplate
 import androidx.core.graphics.drawable.IconCompat
+import androidx.core.graphics.scale
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSourceBitmapLoader
+import biz.boskovic.opus.core.CrashReporter
 import biz.boskovic.opus.core.Refused
 import java.io.IOException
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import org.json.JSONException
+
+private const val COVER_PX = 480
 
 /** A titled band of shelf items; records and stations fall into a cover grid,
  *  everything else into a list, split within the band by what each item is. */
@@ -80,15 +90,42 @@ abstract class CarScreen(carContext: CarContext, protected val link: CarLink) : 
         return builder.build()
     }
 
-    private suspend fun coversOf(groups: List<Group>): Map<Uri, CarIcon> =
-        groups.flatMap { it.items }
-            .mapNotNull { it.mediaMetadata.artworkUri }
-            .distinct()
-            .mapNotNull { uri ->
-                runCatching { CarIcon.Builder(IconCompat.createWithBitmap(bitmaps.loadBitmap(uri).await())).build() }
-                    .getOrNull()?.let { uri to it }
-            }
-            .toMap()
+    private suspend fun coversOf(groups: List<Group>): Map<Uri, CarIcon> {
+        val uris = groups.flatMap { it.items }.mapNotNull { it.mediaMetadata.artworkUri }.distinct()
+        val loaded = coroutineScope {
+            uris.map { uri ->
+                async {
+                    try {
+                        val bitmap = bitmaps.loadBitmap(uri).await()
+                        uri to Result.success(CarIcon.Builder(IconCompat.createWithBitmap(fitted(bitmap))).build())
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
+                        uri to Result.failure(error)
+                    }
+                }
+            }.awaitAll()
+        }
+        val failed = loaded.filter { it.second.isFailure }
+        if (failed.isNotEmpty()) {
+            val (uri, result) = failed.first()
+            CrashReporter.report(
+                carContext,
+                Car.client(carContext),
+                "car covers: ${failed.size} of ${uris.size} failed; first $uri\n" +
+                    Log.getStackTraceString(result.exceptionOrNull())
+            )
+        }
+        return loaded.mapNotNull { (uri, result) -> result.getOrNull()?.let { uri to it } }.toMap()
+    }
+
+    // the host refuses an image bigger than a grid cell has any use for
+    private fun fitted(bitmap: Bitmap): Bitmap {
+        val longest = maxOf(bitmap.width, bitmap.height)
+        if (longest <= COVER_PX) return bitmap
+        val scale = COVER_PX.toFloat() / longest
+        return bitmap.scale((bitmap.width * scale).toInt(), (bitmap.height * scale).toInt())
+    }
 
     private fun sections(groups: List<Group>, art: Map<Uri, CarIcon>): List<Section<*>> = groups.flatMap { group ->
         if (group.items.isEmpty()) {

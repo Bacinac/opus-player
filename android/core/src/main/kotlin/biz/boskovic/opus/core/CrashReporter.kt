@@ -40,6 +40,31 @@ object CrashReporter {
         File(context.filesDir, FILE).writeText(body.toString())
     }
 
+    /** A fault the app survives still has to be heard of: sent now, not kept. */
+    fun report(context: Context, client: OkHttpClient, what: String) {
+        val app = context.applicationContext
+        Thread {
+            val body = JSONObject()
+                .put("app", app.packageName)
+                .put("version", Opus.versionName(app))
+                .put("thread", Thread.currentThread().name)
+                .put("stack", what.take(8000))
+                .put("occurred_at_ms", System.currentTimeMillis())
+                .put("device", "${Build.MANUFACTURER} ${Build.MODEL} / Android ${Build.VERSION.RELEASE}")
+            val request = Request.Builder()
+                .url(Opus.url("/api/app/crash-report"))
+                .post(body.toString().toRequestBody("application/json; charset=utf-8".toMediaType()))
+                .build()
+            try {
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) Log.w(TAG, "report refused: HTTP ${response.code}")
+                }
+            } catch (failure: java.io.IOException) {
+                Log.w(TAG, "report not sent", failure)
+            }
+        }.start()
+    }
+
     /** A 401 keeps the file for a start that has a credential; any other 4xx is
      *  a report the server will never take, so it is dropped. */
     fun flush(context: Context, client: OkHttpClient) {
