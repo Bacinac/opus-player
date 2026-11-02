@@ -111,6 +111,14 @@ cd opus-player
 read-only; OPUS does not mount remote filesystems itself. The interface is on
 port `5283`. The Android apps are served from Player's settings once it runs.
 
+A finished first install sends one anonymous request to GitHub for a one-byte
+file of the release, so its download count says how many installs completed;
+nothing about the machine is sent or kept. `OPUS_NO_PING=1 ./install.sh` skips it.
+
+Questions and help with any OPUS module go to
+[Discussions](https://github.com/Bacinac/opus-library/discussions); bugs to the
+module's Issues.
+
 ## Upgrade
 
 ```bash

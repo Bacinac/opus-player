@@ -64,3 +64,4 @@ opus_wait http://127.0.0.1:5283/ 60 "Player UI"
 echo "OPUS Player is ready: http://$HOST:5283"
 echo "OPUS TV APK: http://$HOST:8098/api/app/opus-tv.apk"
 echo "OPUS Music APK: http://$HOST:8098/api/app/opus-music.apk"
+opus_install_ping player
