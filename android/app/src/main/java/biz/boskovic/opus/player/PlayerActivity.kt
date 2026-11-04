@@ -634,7 +634,6 @@ class PlayerActivity : ComponentActivity() {
         super.onResume()
         setTurnScreenOn(false)
         again()
-        if (!engine.busy()) SoundCheck.warm(this)
         lifecycleScope.launch { offerUpdate() }
     }
 

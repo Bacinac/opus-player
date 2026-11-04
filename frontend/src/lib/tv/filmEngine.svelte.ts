@@ -45,20 +45,15 @@ export class FilmEngine {
 
 	async plan(card: Card, audio: number, refused: Refused): Promise<{ plan: Plan; audio: number } | null> {
 		const base = `/api/play/${card.kind}/${card.id}`;
-		const place = here();
 		const [pass, native] = await Promise.all([
 			request<{ prefix: string; ticket: string }>(`${base}/ticket`, {}, refused),
-			request<Plan>(withLang(`${base}/plan?${asked(place, { native: true, canDecode: true })}`), {}, refused)
+			request<Plan>(withLang(`${base}/plan?${asked(here(), { native: true, canDecode: true })}`), {}, refused)
 		]);
 		if (!pass || !native) return null;
 		this.#prefix = pass.prefix;
 		this.#pass = `ticket=${encodeURIComponent(pass.ticket)}`;
-		const wanted = native.audio.find((a) => a.index === audio) ?? native.audio[0];
-		// the same language in a format the box plays beats rebuilding the one
-		// asked for: a TrueHD film usually carries an AC3 track beside it
-		const track = wanted && !hears(place, wanted.codec, wanted.channels ?? 0)
-			? (native.audio.find((a) => a.lang === wanted.lang && hears(place, a.codec, a.channels ?? 0)) ?? wanted)
-			: wanted;
+		const place = here();
+		const track = native.audio.find((a) => a.index === audio) ?? native.audio[0];
 		const video = onBox((box) => box.canVideo(
 			native.source.video_codec ?? '', native.source.width ?? 0, native.source.height ?? 0
 		), this.#failed);
