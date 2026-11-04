@@ -163,7 +163,10 @@ def decide(media: dict, *, can_decode: bool, max_height: int | None,
     # question below is a browser's question; asking them of a native TV engine
     # would have the server rebuild a file the box in front of it opens for
     # nothing.
-    if native and can_decode and not rebuild_audio:
+    if native and can_decode:
+        if rebuild_audio:
+            return Plan("remux", "the engine on this box plays the picture as it is; only the sound is rebuilt",
+                        width, height, codec)
         return Plan("direct", "the engine on this box opens the file as it is",
                     width, height, codec)
 

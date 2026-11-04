@@ -14,6 +14,8 @@ FILM = {"video_codec": "hevc", "width": 3840, "height": 2160, "container": "mkv"
 @pytest.mark.parametrize(("media", "asked", "mode", "size"), [
     (FILM, {"can_decode": True, "max_height": 1080, "native": True}, "direct", (3840, 2160)),
     (FILM, {"can_decode": False, "max_height": 1080, "native": True}, "transcode", (1920, 1080)),
+    (FILM, {"can_decode": True, "max_height": 1080, "max_width": 1920, "native": True, "rebuild_audio": True},
+     "remux", (3840, 2160)),
     (FILM, {"can_decode": True, "max_height": 1080, "max_width": 1920}, "transcode", (1920, 1080)),
     (FILM, {"can_decode": True, "max_height": 2160}, "remux", (3840, 2160)),
     ({**FILM, "container": "mp4"}, {"can_decode": True, "max_height": 2160}, "direct", (3840, 2160)),
