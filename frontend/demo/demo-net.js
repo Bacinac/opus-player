@@ -268,7 +268,7 @@
 			if (method === 'PUT') settings = settings.map((s) => body[s.key] === undefined || s.secret ? s : { ...s, value: String(body[s.key]) });
 			return answer(clone(settings));
 		}
-		if (path === '/api/app/apk.json') return answer({ versionName: '0.1.444', bytes: 2442628 });
+		if (path === '/api/app/apk.json') return answer({ versionCode: 10000065, versionName: 'v1.0.65', bytes: 2693951 });
 		if (path === '/api/app/music.json') return answer({ versionName: '0.1.448', bytes: 2298392 });
 		if (path === '/api/play/stats') return answer({ transcodes: [], limit: 2, gpu: 'Intel Arc A380', load: [0.4, 0.3, 0.3], cores: 8 });
 		if (/^\/api\/play\//.test(path) && path.endsWith('/ticket')) return answer({ prefix: path.slice(0, -'ticket'.length), ticket: 'demo' });

@@ -18,6 +18,7 @@
 	import { tvFrame } from '#lib/tv/frame.svelte.js';
 	import { opened } from '#lib/keep/opened.svelte.js';
 	import Leave from '#lib/tv/Leave.svelte';
+	import OldApp from '#lib/tv/OldApp.svelte';
 	import { rung } from '#lib/tv/rung.svelte.js';
 	import Ground from '#lib/tv/Ground.svelte';
 	import Rail from '#lib/tv/Rail.svelte';
@@ -282,6 +283,7 @@
 				{/key}
 			{/if}
 			{#if rung.leaving}<Leave />{/if}
+			{#if surface.isTv}<OldApp />{/if}
 			<NowPlaying />
 			{#if surface.isTv}<SentPhoto />{/if}
 			<!-- one bar along the bottom at a time: a record put on here is the

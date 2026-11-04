@@ -163,6 +163,17 @@ describe('something standing over the screen', () => {
 		press('ArrowRight');
 		expect(focused()?.id).toBe('back');
 	});
+
+	test('OK on what it covered goes in too, and presses nothing', () => {
+		shelf(OVER);
+		const covered = vi.fn();
+		at('#films').addEventListener('click', covered);
+		at('#films').focus();
+		expect(press('Enter').defaultPrevented).toBe(true);
+		lift('Enter');
+		expect(covered).not.toHaveBeenCalled();
+		expect(focused()?.id).toBe('back');
+	});
 });
 
 describe('held', () => {

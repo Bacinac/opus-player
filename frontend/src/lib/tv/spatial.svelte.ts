@@ -754,6 +754,13 @@ export function arrows() {
 				}
 				return;
 			}
+			// the same as an arrow: what opened over the screen takes the press,
+			// not what it covers
+			if (confined() && !candidates().includes(active)) {
+				if (!held && move('down')) held = true;
+				event.preventDefault();
+				return;
+			}
 			if (typing(active) || active.dataset.ok !== undefined) return;
 			if (active.tagName === 'BUTTON' || active.tagName === 'A') {
 				// The remote repeats OK while it is held, and not every repeat says
