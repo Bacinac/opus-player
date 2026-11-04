@@ -224,6 +224,19 @@ describe('where nothing holds the remote', () => {
 		expect(event.defaultPrevented).toBe(false);
 	});
 
+	test('a screen outside the frame is found again, and OK is what finds it', () => {
+		draw(`<div class="pick"><div class="faces"><button id="only" data-box="400 200 120 160"></button></div></div>`);
+		const pressed = vi.fn();
+		at('#only').addEventListener('click', pressed);
+		press('Enter');
+		expect(focused()?.id).toBe('only');
+		press('Enter', 100);
+		expect(pressed).not.toHaveBeenCalled();
+		lift('Enter');
+		press('Enter');
+		expect(pressed).toHaveBeenCalledOnce();
+	});
+
 	test('off the television the arrows are the browser’s', () => {
 		tv.surface.isTv = false;
 		shelf();
@@ -256,5 +269,40 @@ describe('OK', () => {
 		const event = press('Enter');
 		expect(pressed).not.toHaveBeenCalled();
 		expect(event.defaultPrevented).toBe(false);
+	});
+});
+
+describe('the notice of a newer build', () => {
+	const NOTICE = (y: number) =>
+		`<div class="bar" role="status"><button id="reload" data-box="400 ${y} 80 30"></button></div>`;
+
+	test('up off the top reaches it, and down comes back', () => {
+		shelf('', NOTICE(10));
+		at('#a2').focus();
+		press('ArrowUp');
+		expect(focused()?.id).toBe('reload');
+		press('ArrowDown');
+		expect(focused()?.id).toBe('a2');
+	});
+
+	test('the sections reach it too', () => {
+		shelf('', NOTICE(10));
+		at('#films').focus();
+		press('ArrowUp');
+		expect(focused()?.id).toBe('reload');
+	});
+
+	test('it is not a row of the screen it stands over', () => {
+		shelf('', NOTICE(260));
+		at('#b2').focus();
+		press('ArrowUp');
+		expect(focused()?.id).toBe('a2');
+	});
+
+	test('it is not the transport', () => {
+		shelf('', BAR + NOTICE(10));
+		at('#b2').focus();
+		press('ArrowDown');
+		expect(focused()?.id).toBe('prev');
 	});
 });

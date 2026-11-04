@@ -35,6 +35,9 @@ const FOCUSABLE = [
    to press. */
 const CARD = `main .card:is(${FOCUSABLE})`;
 
+/* The line across the top that says a newer build is there. */
+const NOTICE = '[role="status"]';
+
 /** What the screen looked like when this press arrived.
  *
  *  Every move reads the box of every focusable there is — three hundred of them
@@ -106,8 +109,11 @@ function zoneOf(el: Element | null): Zone {
  *  in the navigation, because the navigation is what happens to be over there.
  *  The way into the sections is the way it has always been: left off the
  *  left-hand edge of the shelf itself. */
-function sideOf(el: Element | null): 'rail' | 'bar' | 'content' {
+function sideOf(el: Element | null): 'rail' | 'bar' | 'notice' | 'content' {
 	if (el?.closest('nav.rail')) return 'rail';
+	// the kit's line about a newer build is a .bar as well, and read as the
+	// transport its key could never be reached
+	if (el?.closest(NOTICE)) return 'notice';
 	if (el?.closest('.bar')) return 'bar';
 	return 'content';
 }
@@ -131,7 +137,7 @@ function rowsIn(zone: Zone): Row[] {
 	const had = measured?.rows[zone];
 	if (had) return had;
 	const placed = candidates()
-		.filter((el) => zoneOf(el) === zone && sideOf(el) !== 'bar')
+		.filter((el) => zoneOf(el) === zone && sideOf(el) !== 'bar' && sideOf(el) !== 'notice')
 		.map((el) => ({ el, box: el.getBoundingClientRect() }))
 		.sort((a, b) => a.box.top + a.box.height / 2 - (b.box.top + b.box.height / 2));
 
@@ -197,8 +203,13 @@ function barKeys(): HTMLElement[] {
 		.sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
 }
 
-/** Where the remote was before it went down to the bar, so that coming back up
- *  is coming back rather than starting again. */
+/** The key on the notice of a newer build, while there is one. */
+function noticeKey(): HTMLElement | null {
+	return candidates().find((el) => sideOf(el) === 'notice') ?? null;
+}
+
+/** Where the remote was before it went down to the bar or up to the notice, so
+ *  that coming back is coming back rather than starting again. */
 let leftBehind: HTMLElement | null = null;
 
 /** Two presses further apart than this are two presses, not a hold. A remote
@@ -348,23 +359,33 @@ function slide(target: HTMLElement) {
 	else if (box.left < seen.left) row.scrollLeft -= seen.left - box.left + air;
 }
 
+/** Nothing holds the remote — a screen was just closed and took the focus with
+ *  it, or a page was drawn while the box was showing something else. Measured
+ *  from a corner of nothing, every arrow lands wherever the corner happens to
+ *  point, which is how the first press after closing a record went to the
+ *  sections. The press puts the remote back on the screen instead, and the next
+ *  one moves it. The last resort is anything at all: the profile chooser stands
+ *  outside the frame with no main, and a chooser the remote cannot get back
+ *  onto is a box nobody can get into. */
+function reclaim(): boolean {
+	const back =
+		showing(CARD) ??
+		showing(`main :is(${FOCUSABLE}):not([data-aside], [data-aside] *)`) ??
+		barKeys()[0] ??
+		showing(FOCUSABLE);
+	if (!back) return false;
+	back.focus({ preventScroll: true });
+	follow(back);
+	return true;
+}
+
+function holds(active: HTMLElement | null): active is HTMLElement {
+	return active !== null && active !== document.body;
+}
+
 function move(direction: Direction): boolean {
 	const active = document.activeElement as HTMLElement | null;
-	// Nothing holds the remote — a screen was just closed and took the focus
-	// with it. Measured from a corner of nothing, every arrow lands wherever the
-	// corner happens to point, which is how the first press after closing a
-	// record went to the sections. The press puts the remote back on the page
-	// instead, and the next one moves it.
-	if (!active || active === document.body) {
-		const back =
-			showing(CARD) ??
-			showing(`main :is(${FOCUSABLE}):not([data-aside], [data-aside] *)`) ??
-			barKeys()[0];
-		if (!back) return false;
-		back.focus({ preventScroll: true });
-		follow(back);
-		return true;
-	}
+	if (!holds(active)) return reclaim();
 	// Something opened over the screen and the remote is still on what it
 	// covered — the words to a song opened from the bar, and every arrow then
 	// walked a list nobody can see. The press goes in.
@@ -379,6 +400,19 @@ function move(direction: Direction): boolean {
 
 	const from = active.getBoundingClientRect();
 	const side = sideOf(active);
+
+	// The notice stands over the top of every screen, one key wide: down is the
+	// way back to where the remote came up from, and there is nothing else.
+	if (side === 'notice') {
+		if (direction !== 'down') return false;
+		if (leftBehind?.isConnected && candidates().includes(leftBehind)) {
+			leftBehind.focus({ preventScroll: true });
+			follow(leftBehind);
+			return true;
+		}
+		active.blur();
+		return reclaim();
+	}
 
 	// The bar is a row of its own along the bottom: left and right walk it, up
 	// gives the remote back to whatever was holding it, and there is nothing
@@ -498,14 +532,25 @@ function move(direction: Direction): boolean {
 				return true;
 			}
 		}
-		// Up from the top of the shelf is the shelf's own head: how much is on it
-		// and where else to look. It is drawn in the panel, and the panel is
-		// describing whatever poster the remote is on — so the description is
-		// dropped first and the head is what is there a moment later.
-		else if (direction === 'up' && zone === 'content' && toHead(active)) return true;
 		// Up off the top of a column is whatever stands above the column, which
 		// is the page's own head and belongs to the content beside it.
 		else if (direction === 'up' && zone === 'scrub') target = above(from);
+		else if (direction === 'up') {
+			// Up from the top of the shelf is the shelf's own head: how much is on
+			// it and where else to look. It is drawn in the panel, and the panel is
+			// describing whatever poster the remote is on — so the description is
+			// dropped first and the head is what is there a moment later.
+			if (zone === 'content' && !active.closest('.head') && toHead(active)) return true;
+			// Above everything, while there is one, the notice of a newer build:
+			// a key the remote cannot reach is a promise the screen cannot keep.
+			const notice = noticeKey();
+			if (notice) {
+				leftBehind = active;
+				notice.focus({ preventScroll: true });
+				return true;
+			}
+			if (zone === 'content' && toHead(active)) return true;
+		}
 	}
 	if (!target) return false;
 	target.focus({ preventScroll: true });
@@ -734,7 +779,16 @@ export function arrows() {
 		// it is a button or a link, and OK presses it. Anything that wants the
 		// key for something else says so with data-ok and gets it untouched.
 		if (PRESS.has(event.key)) {
-			if (typing(active) || !active || active.dataset.ok !== undefined) return;
+			// OK is the key a person tries first, so it is the one that has to
+			// find the screen again
+			if (!holds(active)) {
+				if (!held && reclaim()) {
+					held = true;
+					event.preventDefault();
+				}
+				return;
+			}
+			if (typing(active) || active.dataset.ok !== undefined) return;
 			if (active.tagName === 'BUTTON' || active.tagName === 'A') {
 				// The remote repeats OK while it is held, and not every repeat says
 				// so; one hold is one press until the key comes up.

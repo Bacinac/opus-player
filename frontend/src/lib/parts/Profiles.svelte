@@ -25,6 +25,9 @@
 		problem = '';
 		const said = await request<Profile[]>('/api/users', {}, { failed: (detail) => (problem = detail) });
 		people = said ?? [];
+		// a question with one answer is not asked: a guest, and a guest's box,
+		// can only ever be their own person
+		if (people.length === 1 && (await pick(people[0].key))) return;
 		loading = false;
 		// every other screen that arrives on a television puts the remote on
 		// something. This one did not, and a screen where nothing holds the
@@ -33,9 +36,10 @@
 		if (surface.isTv) setTimeout(() => focusFirst('.pick .faces button'), 0);
 	}
 
-	async function pick(key: string) {
+	async function pick(key: string): Promise<boolean> {
 		const picked = await request(`/api/users/${encodeURIComponent(key)}/pick`, { method: 'POST' });
 		if (picked) onpicked();
+		return Boolean(picked);
 	}
 
 	$effect(() => {
@@ -107,17 +111,18 @@
 		transition: border-color 0.12s ease;
 	}
 	.face:hover :global(.portrait),
-	.face:focus-visible :global(.portrait) {
+	.face:focus-visible :global(.portrait),
+	.tv .face:focus :global(.portrait) {
 		border-color: var(--accent);
 	}
 	.tv .face {
 		transition: transform 140ms ease;
 	}
-	.tv .face:focus-visible {
+	.tv .face:focus {
 		transform: scale(1.08);
 		z-index: 2;
 	}
-	.tv .face:focus-visible .name {
+	.tv .face:focus .name {
 		color: var(--accent);
 	}
 	.tv .faces {
