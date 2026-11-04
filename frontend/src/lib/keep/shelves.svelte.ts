@@ -22,16 +22,17 @@ type Shelf = {
 	span: [number, number] | null;
 };
 
-// what each shelf is measured in besides the count of it
-const BESIDES: Record<
-	string,
-	{ key: 'hours' | 'episodes' | 'releases' | 'people' | 'countries'; of: string }
-> = {
-	movies: { key: 'hours', of: 'hours' },
-	series: { key: 'episodes', of: 'episodes' },
-	music: { key: 'releases', of: 'releases' },
-	photos: { key: 'people', of: 'people' },
-	radio: { key: 'countries', of: 'countries' }
+type Measure = 'hours' | 'episodes' | 'releases' | 'people' | 'countries';
+
+// what each shelf is measured in besides the count of it; the first is the one
+// the home screen says, and every shelf that can be watched or heard says how
+// long that takes
+const BESIDES: Record<string, Measure[]> = {
+	movies: ['hours'],
+	series: ['episodes', 'hours'],
+	music: ['releases', 'hours'],
+	photos: ['people'],
+	radio: ['countries']
 };
 
 const KIND: Record<string, string> = {
@@ -77,15 +78,16 @@ class ShelvesState {
 		return this.held?.[section]?.span ?? null;
 	}
 
-	/** the counts a panel paints for a shelf: how many, the measure that shelf is
-	 *  read in besides, and the years it runs between */
+	/** the counts a panel paints for a shelf: how many, the measures that shelf
+	 *  is read in besides, and the years it runs between */
 	of(section: string): Count[] {
 		const shelf = this.held?.[section];
 		if (!shelf?.count) return [];
 		const counts = [count(shelf.count, KIND[section] ?? section)];
-		const besides = BESIDES[section];
-		const also = besides ? (shelf[besides.key] ?? 0) : 0;
-		if (also) counts.push(count(also, besides!.of));
+		for (const measure of BESIDES[section] ?? []) {
+			const also = shelf[measure];
+			if (also) counts.push(count(also, measure));
+		}
 		if (shelf.span) counts.push(fact(t('count.span', { a: shelf.span[0], b: shelf.span[1] }), 'years'));
 		return counts;
 	}
@@ -96,9 +98,9 @@ class ShelvesState {
 		return sections.flatMap((section) => {
 			const shelf = this.held?.[section];
 			if (!shelf?.count) return [];
-			const besides = BESIDES[section];
-			const also = besides && section !== 'photos' ? (shelf[besides.key] ?? 0) : 0;
-			return [count(shelf.count, KIND[section]), ...(also ? [count(also, besides.of)] : [])];
+			const [measure] = BESIDES[section] ?? [];
+			const also = measure && section !== 'photos' ? shelf[measure] : 0;
+			return [count(shelf.count, KIND[section]), ...(also ? [count(also, measure)] : [])];
 		});
 	}
 }

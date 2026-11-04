@@ -551,9 +551,11 @@ async def shelves(request: Request, lang: str = "en"):
                    "span": span(playable)},
         "series": {"count": len(series),
                    "episodes": sum(s.get("episodes_have") or 0 for s in series),
+                   "hours": round(sum(s.get("minutes_have") or 0 for s in series) / 60),
                    "span": span(series)},
         "music": {"count": shelf.get("artists") or 0,
                   "releases": shelf.get("albums") or 0,
+                  "hours": shelf.get("hours") or 0,
                   "span": shelf.get("span")},
     }
     if album:

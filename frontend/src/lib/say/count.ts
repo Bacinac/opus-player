@@ -13,7 +13,7 @@ export type Count = { text: string; tone?: TagTone; kind?: Kind; icon: string };
 // kind's colour, and the second measure of it stays a plain fact
 const LOOK: Record<string, { tone?: TagTone; kind?: Kind; icon: string }> = {
 	movies: { kind: 'film', icon: 'film' },
-	hours: { kind: 'film', icon: 'clock' },
+	hours: { tone: 'fact', icon: 'clock' },
 	series: { kind: 'series', icon: 'screen' },
 	episodes: { kind: 'series', icon: 'list' },
 	artists: { kind: 'music', icon: 'note' },
