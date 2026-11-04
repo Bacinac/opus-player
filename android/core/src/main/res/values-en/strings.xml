@@ -5,5 +5,6 @@
     <string name="update_install">Install</string>
     <string name="update_later">Later</string>
     <string name="update_failed">The update failed: %1$s</string>
+    <string name="update_current">The app is already up to date.</string>
     <string name="update_channel">Updates</string>
 </resources>

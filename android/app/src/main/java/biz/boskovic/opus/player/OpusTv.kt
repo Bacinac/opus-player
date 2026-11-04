@@ -79,6 +79,18 @@ class OpusTv(private val host: PlayerActivity, private val engine: Engine) {
     }
 
     @JavascriptInterface
+    fun versionName(key: String): String {
+        admit(key)
+        return Opus.versionName(host)
+    }
+
+    @JavascriptInterface
+    fun update(key: String) {
+        admit(key)
+        host.runOnUiThread { host.updateNow() }
+    }
+
+    @JavascriptInterface
     fun saveFile(key: String, name: String, type: String, size: Long): String {
         admit(key)
         return host.saveFile(name, type, size)

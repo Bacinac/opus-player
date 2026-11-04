@@ -68,9 +68,10 @@ object Car {
     private fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    fun updateCheckedAt(context: Context): Long = prefs(context).getLong("update_checked_at", 0L)
+    /** the build the driver was last told about, so each is said once */
+    fun updateNoticed(context: Context): Long = prefs(context).getLong("update_noticed", 0L)
 
-    fun updateChecked(context: Context, at: Long) = prefs(context).edit { putLong("update_checked_at", at) }
+    fun noticeUpdate(context: Context, build: Long) = prefs(context).edit { putLong("update_noticed", build) }
 
     /** A non-secret namespace for cached audio. It changes with every pairing;
      * the bearer itself never becomes a filename or a cache database key. */

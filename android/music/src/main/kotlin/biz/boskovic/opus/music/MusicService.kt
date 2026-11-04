@@ -42,7 +42,6 @@ import com.google.common.util.concurrent.ListeningExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import java.io.IOException
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -129,18 +128,16 @@ class MusicService : MediaLibraryService() {
     }
 
     /** Checked from here because the car is where the app is used; offered as a
-     *  notification, never as anything that asks for attention while driving. */
+     *  notification, never as anything that asks for attention while driving,
+     *  and once for each build. */
     private suspend fun offerUpdate() {
-        val now = System.currentTimeMillis()
-        if (now - Car.updateCheckedAt(this) < TimeUnit.HOURS.toMillis(12)) return
         val offer = try {
             Updater(this, Car.client(this), "/api/app/music.json", "/api/app/opus-music.apk").offer()
         } catch (failure: IOException) {
             Log.w(TAG, "update check failed", failure)
             return
-        }
-        Car.updateChecked(this, now)
-        if (offer == null) return
+        } ?: return
+        if (offer.versionCode == Car.updateNoticed(this)) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -164,6 +161,7 @@ class MusicService : MediaLibraryService() {
                 .setAutoCancel(true)
                 .build(),
         )
+        Car.noticeUpdate(this, offer.versionCode)
     }
 
     private fun failure(error: Exception): SessionError = when (error) {

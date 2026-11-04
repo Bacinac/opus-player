@@ -32,6 +32,11 @@ declare global {
 			quit?(): void;
 			/** which build of the wrapper this is. Older wrappers do not answer. */
 			version?(): number;
+			/** that build as people read it, v1.0.61. Older wrappers do not have it. */
+			versionName?(): string;
+			/** fetch and install the newest build from the shelf now. Older
+			    wrappers do not have it. */
+			update?(): void;
 			saveFile(name: string, type: string, size: number): string;
 			fileState(id: string): string;
 			writeFile(id: string, at: number, bytes: string): number;

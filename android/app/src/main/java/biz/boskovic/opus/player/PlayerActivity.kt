@@ -105,6 +105,7 @@ class PlayerActivity : ComponentActivity() {
     private var bridged = false
     private val updater by lazy { Updater(this, PlayerApp.http(this), "/api/app/apk.json", "/api/app/opus.apk") }
     private val prefs by lazy { getSharedPreferences("opus_player", MODE_PRIVATE) }
+    private var offering = false
     private val notifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (!granted) Log.i(TAG, "notifications declined; uploads run without showing progress")
     }
@@ -642,36 +643,59 @@ class PlayerActivity : ComponentActivity() {
         engine.hidden()
     }
 
+    /** Asked on every return to the screen, so a new build is offered the first
+     *  time the box is looked at after it appears. "Later" holds back that one
+     *  build for six hours; a check that finds nothing holds back nothing. */
     private suspend fun offerUpdate() {
-        val now = System.currentTimeMillis()
-        if (engine.busy() || now - prefs.getLong("update_checked_at", 0L) < TimeUnit.HOURS.toMillis(6)) return
+        if (engine.busy()) return
         val offer = try {
             updater.offer()
         } catch (failure: IOException) {
             Log.w(TAG, "update check failed", failure)
             return
-        }
-        prefs.edit { putLong("update_checked_at", now) }
-        if (offer == null || isFinishing) return
+        } ?: return
+        val now = System.currentTimeMillis()
+        if (prefs.getLong("update_declined", 0L) == offer.versionCode &&
+            now - prefs.getLong("update_declined_at", 0L) < TimeUnit.HOURS.toMillis(6)
+        ) return
+        if (isFinishing || offering) return
+        offering = true
+        val later = { prefs.edit { putLong("update_declined", offer.versionCode); putLong("update_declined_at", now) } }
         AlertDialog.Builder(this)
             .setTitle(CoreR.string.update_title)
             .setMessage(CoreR.string.update_body)
-            .setPositiveButton(CoreR.string.update_install) { _, _ ->
-                lifecycleScope.launch {
-                    try {
-                        updater.install(this@PlayerActivity, updater.download(offer))
-                    } catch (failure: IOException) {
-                        Log.e(TAG, "update ${offer.versionCode} failed", failure)
-                        Toast.makeText(
-                            this@PlayerActivity,
-                            getString(CoreR.string.update_failed, failure.message),
-                            Toast.LENGTH_LONG,
-                        ).show()
-                    }
-                }
-            }
-            .setNegativeButton(CoreR.string.update_later, null)
+            .setPositiveButton(CoreR.string.update_install) { _, _ -> lifecycleScope.launch { install(offer) } }
+            .setNegativeButton(CoreR.string.update_later) { _, _ -> later() }
+            .setOnCancelListener { later() }
+            .setOnDismissListener { offering = false }
             .show()
+    }
+
+    /** Pressed in the settings: the newest build, now, without asking again. */
+    fun updateNow() {
+        lifecycleScope.launch {
+            val offer = try {
+                updater.offer()
+            } catch (failure: IOException) {
+                Log.e(TAG, "update check failed", failure)
+                Toast.makeText(this@PlayerActivity, getString(CoreR.string.update_failed, failure.message), Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            if (offer == null) {
+                Toast.makeText(this@PlayerActivity, CoreR.string.update_current, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            install(offer)
+        }
+    }
+
+    private suspend fun install(offer: Updater.Offer) {
+        try {
+            updater.install(this, updater.download(offer))
+        } catch (failure: IOException) {
+            Log.e(TAG, "update ${offer.versionCode} failed", failure)
+            Toast.makeText(this, getString(CoreR.string.update_failed, failure.message), Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onDestroy() {

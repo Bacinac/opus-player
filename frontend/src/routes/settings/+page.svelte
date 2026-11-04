@@ -28,11 +28,12 @@
 	import Wants from '#lib/parts/Wants.svelte';
 	import Cars from '#lib/parts/Cars.svelte';
 	import History from '#lib/parts/History.svelte';
+	import { onBox } from '#lib/tv/bridge.js';
 
 	// What is on the shelf to install, or nothing when no app has been built for
 	// this install. The section is absent rather than empty in that case: an
 	// offer to install something that is not there is worse than no offer.
-	type Shelf = { versionName: string; bytes: number };
+	type Shelf = { versionCode: number; versionName: string; bytes: number };
 	let app = $state<Shelf | null>(null);
 	// the second app on the shelf: the one the car runs, offered the same way
 	let music = $state<Shelf | null>(null);
@@ -43,6 +44,12 @@
 			[app, music] = await Promise.all([shelf('/api/app/apk.json'), shelf('/api/app/music.json')]);
 		})();
 	});
+
+	// the app this page is running inside, where it is one: what it is, and
+	// whether the shelf has a newer one
+	const installed = onBox((box) => box.versionName?.());
+	const build = onBox((box) => box.version?.()) ?? 0;
+	const newer = $derived(app !== null && build > 0 && app.versionCode > build);
 
 	let mine = $state<Profile | null>(null);
 
@@ -179,6 +186,22 @@
 		     and this one link belongs to whoever opened it -->
 		<a href="/settings/house">{t('settings.house')}</a>
 		<span class="whose">{watching.person}</span>
+	</section>
+{/if}
+
+{#if installed}
+	<section>
+		<Heading label={t('settings.installed')} />
+		<div class="about">
+			<span class="said">
+				{newer && app
+					? t('settings.installedNewer', { version: installed, offered: app.versionName })
+					: t('settings.installedCurrent', { version: installed })}
+			</span>
+			{#if newer}
+				<Button tone="accent" onclick={() => onBox((box) => box.update?.())}>{t('settings.installedUpdate')}</Button>
+			{/if}
+		</div>
 	</section>
 {/if}
 
