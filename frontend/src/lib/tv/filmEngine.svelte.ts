@@ -180,7 +180,7 @@ export class FilmEngine {
 		this.text = now.text ?? [];
 		this.decoder = now.decoder ?? '';
 		this.dropped = now.dropped ?? 0;
-		this.picture = now.picture ?? '';
+		this.picture = (now.picture ?? '').replace('×', ' × ');
 		this.stalls = now.stalls ?? 0;
 		this.bandwidth = now.bandwidth ?? 0;
 		this.rate = now.rate ?? 0;

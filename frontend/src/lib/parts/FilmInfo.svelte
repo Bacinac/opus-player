@@ -27,6 +27,24 @@
 	const mbits = (kbps: number) => t('play.mbits', { n: formatNumber(kbps / 1000, { maximumFractionDigits: 1 }) });
 	const exact = (n: number) => formatNumber(n, { maximumFractionDigits: 3 });
 
+	// the panel is a third of the screen and a remote cannot scroll it, so what
+	// is playing is said in one line under the title, above the story
+	const playing = $derived(
+		[
+			onEngine && !rebuilt ? plan.source.video_codec : (plan.codec ?? plan.source.video_codec),
+			onEngine && engine.picture
+				? engine.picture
+				: plan.width && plan.height
+					? `${plan.width} × ${plan.height}`
+					: null,
+			plan.source.frame_rate ? t('play.fps', { n: exact(plan.source.frame_rate) }) : null,
+			plan.kbps ? mbits(plan.kbps) : null,
+			`${t('play.screen')} ${screen}${onEngine && engine.rate ? ` · ${exact(engine.rate)} Hz` : ''}`
+		]
+			.filter(Boolean)
+			.join(' · ')
+	);
+
 	let quality = $state<{ dropped: number; total: number } | null>(null);
 	let buffered = $state(0);
 	let server = $state<{ transcodes: { cpu_s: number | null; rss_mb: number | null }[];
@@ -68,6 +86,7 @@
 					.filter(Boolean)
 					.join(' · ')}
 			</p>
+			<p class="playing">{playing}</p>
 			{#if plan.details.directors?.length}
 				<p class="by">
 					<span
@@ -196,11 +215,8 @@
 		font-size: var(--fs-s);
 		border-top: 1px solid var(--border);
 	}
-	/* the panel is a third of the screen and a remote cannot scroll it, so what
-	   is playing comes first and the story runs on below it */
 	.story {
 		grid-column: 1 / -1;
-		order: 1;
 	}
 	.story h2 {
 		margin: 0;
@@ -211,6 +227,10 @@
 	.story .facts {
 		margin: 0.25rem 0 0;
 		color: var(--muted);
+	}
+	.story .playing {
+		margin: 0.25rem 0 0;
+		font-variant-numeric: tabular-nums;
 	}
 	.story .by {
 		margin: 0.5rem 0 0;
