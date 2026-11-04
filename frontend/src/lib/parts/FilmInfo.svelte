@@ -196,8 +196,11 @@
 		font-size: var(--fs-s);
 		border-top: 1px solid var(--border);
 	}
+	/* the panel is a third of the screen and a remote cannot scroll it, so what
+	   is playing comes first and the story runs on below it */
 	.story {
 		grid-column: 1 / -1;
+		order: 1;
 	}
 	.story h2 {
 		margin: 0;
