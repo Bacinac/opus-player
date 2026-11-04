@@ -166,6 +166,10 @@ export function asked(place: Ability, opts: {
 	audio?: number;
 	native?: boolean;
 	rebuildAudio?: boolean;
+	/** what the connection was measured to carry, in kbit/s */
+	reach?: number | null;
+	/** the pictures a re-encode may come in */
+	decodes?: string[];
 } = {}): string {
 	const parts = [
 		`can_decode=${opts.canDecode ? 1 : 0}`,
@@ -177,5 +181,17 @@ export function asked(place: Ability, opts: {
 		`channels=${place.channels}`,
 		`accepts=${encodeURIComponent(place.codecs.join(','))}`
 	];
+	if (opts.reach) parts.push(`reach=${opts.reach}`);
+	if (opts.decodes?.length) parts.push(`decodes=${opts.decodes.join(',')}`);
 	return parts.join('&');
+}
+
+/** Which pictures a re-encode for this place may come in, best first. HEVC
+ *  carries a film in about two thirds of what H.264 needs, which on a slow
+ *  connection is the difference between a picture and a smear. */
+export async function encodable(place: Ability): Promise<string[]> {
+	const hevc = place.engine
+		? (onBox((box) => box.canVideo('hevc', 1920, 1080)) ?? false)
+		: await browserDecodes('hevc', 1920, 1080);
+	return hevc ? ['hevc', 'h264'] : ['h264'];
 }

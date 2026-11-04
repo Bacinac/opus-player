@@ -9,7 +9,7 @@ import asyncio
 import hashlib
 import os
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response, StreamingResponse
 from opus_core.responses import FileResponse
 
@@ -93,10 +93,33 @@ def _from_library(media: dict) -> dict:
     }
 
 
+# what a screen reads to learn how fast the road to it is: random, so nothing on
+# the way can compress it into a faster answer than the film will get
+REACH_CHUNK = 256 * 1024
+
+
+@router.get("/play/reach")
+async def reach(size: int = Query(32 << 20, ge=REACH_CHUNK, le=64 << 20)):
+    chunks = size // REACH_CHUNK
+
+    async def noise():
+        for _ in range(chunks):
+            yield os.urandom(REACH_CHUNK)
+
+    return StreamingResponse(noise(), media_type="application/octet-stream",
+                             headers={"Cache-Control": "no-store",
+                                      "Content-Length": str(chunks * REACH_CHUNK)})
+
+
+def _decodes(said: str) -> set[str]:
+    return {c.strip().lower() for c in said.split(",") if c.strip()}
+
+
 @router.get("/play/{kind}/{item_id}/plan")
 async def plan(kind: str, item_id: int, can_decode: bool = False,
                max_height: int | None = None, max_width: int | None = None,
                audio: int = 0, native: bool = False, rebuild_audio: bool = False, lang: str = "en",
+               reach: int | None = None, decodes: str = "",
                who: User = Depends(require_picked)):
     media = await _media(kind, item_id, lang)
     if kind in AUDIO_KINDS:
@@ -116,7 +139,8 @@ async def plan(kind: str, item_id: int, can_decode: bool = False,
     facts = _from_library(media)
     chosen = playback.decide(media, can_decode=can_decode, max_height=max_height,
                              max_width=max_width, audio=audio, native=native,
-                             rebuild_audio=rebuild_audio)
+                             rebuild_audio=rebuild_audio, reach=reach,
+                             decodes=_decodes(decodes))
     # by the library's own id for the track: its place in a list is not
     # something the next request can count on, and asking for Croatian and
     # being read Bulgarian is what trusting it looked like
@@ -159,6 +183,8 @@ async def plan(kind: str, item_id: int, can_decode: bool = False,
         "reason": chosen.reason,
         "width": chosen.width,
         "height": chosen.height,
+        # what this stream asks of the connection per second
+        "kbps": chosen.kbps or playback.carried_kbps(media),
         "gpu": playback.gpu_available(),
         # what the house comes up in when a film offers a choice — answered once
         # in settings rather than per film
@@ -340,14 +366,16 @@ async def stream(kind: str, item_id: int, request: Request, can_decode: bool = F
                  max_height: int | None = None, max_width: int | None = None,
                  t: float = 0, audio: int = 0, native: bool = False,
                  rebuild_audio: bool = False, accepts: str = "", channels: int = 0,
-                 prefer: str = "stereo", compact: bool = False):
+                 prefer: str = "stereo", compact: bool = False,
+                 reach: int | None = None, decodes: str = ""):
     media = await _media(kind, item_id, prefer=prefer)
     if kind in AUDIO_KINDS:
         return await _audio_stream(request, kind, item_id, media, compact)
     facts = _from_library(media)
     chosen = playback.decide(media, can_decode=can_decode, max_height=max_height,
                              max_width=max_width, audio=audio, native=native,
-                             rebuild_audio=rebuild_audio)
+                             rebuild_audio=rebuild_audio, reach=reach,
+                             decodes=_decodes(decodes))
 
     # Starlette answers HEAD for a file by itself, but a re-encode has no length
     # to declare and no reason to start an encoder nobody is going to read.
@@ -365,7 +393,8 @@ async def stream(kind: str, item_id: int, request: Request, can_decode: bool = F
                                 "application/octet-stream"))
 
     command = await _rebuild_command(media, chosen, facts, t, audio,
-                                     _sound(facts, audio, accepts, channels))
+                                     _sound(facts, audio, accepts, channels,
+                                            lean=chosen.kbps is not None))
     return await rebuilt(request, command, chosen.mode, f"{kind}:{item_id}")
 
 
@@ -391,7 +420,8 @@ async def _audio_stream(request: Request, kind: str, item_id: int, media: dict,
         media_type=AUDIO_TYPES.get(media.get("codec") or "", "application/octet-stream"))
 
 
-def _sound(facts: dict, audio: int, accepts: str, channels: int) -> playback.Sound:
+def _sound(facts: dict, audio: int, accepts: str, channels: int,
+           lean: bool = False) -> playback.Sound:
     """What the renderer can be handed decides what the sound becomes: a box
     wired to an amplifier keeps the film's channels, a browser gets the two
     its speakers have. Asked of the renderer, never assumed."""
@@ -399,7 +429,7 @@ def _sound(facts: dict, audio: int, accepts: str, channels: int) -> playback.Sou
                  facts["audio"][0] if facts["audio"] else None)
     return playback.sound_for((track or {}).get("codec", ""),
                               (track or {}).get("channels") or 0,
-                              accepts.split(","), channels)
+                              accepts.split(","), channels, lean)
 
 
 async def _rebuild_command(media: dict, chosen: playback.Plan, facts: dict, t: float,
@@ -413,7 +443,8 @@ async def _rebuild_command(media: dict, chosen: playback.Plan, facts: dict, t: f
             else playback.transcode_command(media["path"], chosen.width or 1920,
                                             chosen.height or 1080, t, audio,
                                             hdr=facts["hdr"], sound=sound,
-                                            codec=(media.get("video_codec") or "").lower())
+                                            codec=(media.get("video_codec") or "").lower(),
+                                            out=chosen.codec or "h264", kbps=chosen.kbps)
         )
     except playback.PlaybackError as exc:
         raise HTTPException(503, str(exc))

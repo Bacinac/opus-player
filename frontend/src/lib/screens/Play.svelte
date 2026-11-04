@@ -21,7 +21,8 @@
 	import { FilmEngine } from '#lib/tv/filmEngine.svelte.js';
 	import { onBack } from '#lib/keep/back.svelte.js';
 	import { surface } from '#lib/keep/surface.svelte.js';
-	import { asked, decodes, here } from '#lib/ask/ability.js';
+	import { asked, decodes, encodable, here } from '#lib/ask/ability.js';
+	import { narrower, reach, Stalls } from '#lib/ask/reach.js';
 	import { hasEngine, queue } from '#lib/keep/queue.svelte.js';
 	import type { Card, Plan } from '#lib/keep/types.js';
 	import { film, type FilmOnTv } from '#lib/keep/film.svelte.js';
@@ -85,8 +86,14 @@
 	// moved when the file changed. One transport, always, and seeking a direct
 	// stream simply sets the element's clock instead of restarting anything.
 	const native = $derived(plan?.mode === 'direct');
+	// A stream the server has to start again cannot follow a held arrow: each
+	// step was a new ffmpeg on the media host, ten of them inside a second. The
+	// place is shown at once and the stream started where the keys stop.
+	const SETTLE_MS = 400;
+	let aim = $state<number | null>(null);
+	let aiming: ReturnType<typeof setTimeout> | undefined;
 	const position = $derived(
-		engine.on ? engine.from + engine.at : native ? inStream : offset + inStream
+		aim ?? (engine.on ? engine.from + engine.at : native ? inStream : offset + inStream)
 	);
 	const total = $derived(
 		engine.on && !engine.rebuilt && engine.length > 0 ? engine.length : (plan?.duration_s ?? 0)
@@ -209,15 +216,17 @@
 		const place = here();
 		panel = { w: place.width, h: place.height, ratio: window.devicePixelRatio || 1 };
 		const refused = { failed: (detail: string) => (problem = detail) };
-		const [seen, ticket] = await Promise.all([
+		const [seen, ticket, measured, pictures] = await Promise.all([
 			request<Plan>(withLang(`/api/play/${card.kind}/${card.id}/plan?${asked(place)}`), {}, refused),
-			request<{ prefix: string; ticket: string }>(`/api/play/${card.kind}/${card.id}/ticket`, {}, refused)
+			request<{ prefix: string; ticket: string }>(`/api/play/${card.kind}/${card.id}/ticket`, {}, refused),
+			reach(),
+			encodable(place)
 		]);
 		if (!seen || !ticket) return;
 		pass = `ticket=${encodeURIComponent(ticket.ticket)}`;
 		const able = await decodes(place, seen.source.video_codec, seen.source.width, seen.source.height);
 		efficient = able;
-		query = asked(place, { canDecode: able, audio: chosenAudio });
+		query = asked(place, { canDecode: able, audio: chosenAudio, reach: measured, decodes: pictures });
 		const settled = await request<Plan>(
 			withLang(`/api/play/${card.kind}/${card.id}/plan?${query}`),
 			{},
@@ -240,6 +249,7 @@
 	function start(at: number) {
 		offset = at;
 		inStream = 0;
+		flowing = false;
 		// a direct file is served whole and seeks in the element, so the stream
 		// cannot be started elsewhere; the clock is set once the element knows
 		// how long it is
@@ -341,14 +351,65 @@
 
 	function seekTo(to: number) {
 		const at = Math.max(0, total ? Math.min(total, to) : to);
-		if (engine.on && plan) {
+		if (engine.on && plan && !engine.rebuilt) {
 			engine.seek(plan, at);
-		} else if (native && video) {
+			return;
+		}
+		if (!engine.on && native && video) {
 			video.currentTime = at;
-		} else {
+			return;
+		}
+		aim = at;
+		clearTimeout(aiming);
+		aiming = setTimeout(() => {
+			aim = null;
+			if (engine.on && plan) engine.seek(plan, at);
+			else start(at);
+		}, SETTLE_MS);
+	}
+
+	$effect(() => () => clearTimeout(aiming));
+
+	const stalls = new Stalls();
+	// a stream that has not played yet is loading, not stalling
+	let flowing = false;
+	let stalled = 0;
+	let narrowing = false;
+
+	/** The same film again from where it is, narrower: the road carries less
+	 *  than the stream. A plan no narrower than the one playing is left alone. */
+	async function narrow() {
+		const was = plan?.kbps;
+		if (!was || narrowing) return;
+		narrowing = true;
+		const refused = { failed: (detail: string) => (problem = detail) };
+		try {
+			const slower = narrower(was, engine.on ? engine.bandwidth : 0);
+			const at = position;
+			if (engine.on) {
+				const taken = await engine.plan(card, chosenAudio, refused, slower);
+				if (!taken || gone || (taken.plan.kbps ?? was) >= was) return;
+				plan = taken.plan;
+				engine.start(taken.plan, at);
+				return;
+			}
+			const asking = new URLSearchParams(query);
+			asking.set('reach', String(slower));
+			const made = await request<Plan>(withLang(`/api/play/${card.kind}/${card.id}/plan?${asking}`), {}, refused);
+			if (!made || gone || (made.kbps ?? was) >= was) return;
+			query = asking.toString();
+			plan = made;
 			start(at);
+		} finally {
+			narrowing = false;
 		}
 	}
+
+	$effect(() => {
+		const now = engine.stalls;
+		if (now > stalled && stalls.note()) untrack(() => void narrow());
+		stalled = now;
+	});
 
 	function toggle() {
 		if (engine.on) {
@@ -693,6 +754,10 @@
 			controlslist="noremoteplayback"
 			onplay={() => (videoPaused = false)}
 			onpause={() => (videoPaused = true)}
+			onplaying={() => (flowing = true)}
+			onwaiting={() => {
+				if (flowing && !video?.seeking && stalls.note()) void narrow();
+			}}
 			onerror={() => {
 				const refused = video?.error;
 				if (refused?.message) console.error('the browser refused the stream:', refused.message);

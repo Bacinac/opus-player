@@ -32,6 +32,7 @@ import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
 import androidx.media3.session.MediaSession
@@ -136,6 +137,13 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
     private var drawnAt = 0L
     private var reopened = false
     private var opening: Opening? = null
+
+    /** Times this film stopped to wait for data once it had begun. The page
+     * counts them to ask for a narrower stream; a seek, a change of track or the
+     * first fill of the buffer is loading, not a stall. */
+    private var stalls = 0
+    private var flowing = false
+    private val meter = DefaultBandwidthMeter.getSingletonInstance(host)
 
     private class Opening(
         val url: String,
@@ -244,6 +252,8 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
         .put("decoder", decoder)
         .put("dropped", dropped)
         .put("picture", picture)
+        .put("stalls", stalls)
+        .put("bandwidth", meter.bitrateEstimate / 1000)
         .put("error", failure)
         .toString()
 
@@ -362,6 +372,7 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
         trace.clear()
         troubled = false
         reopened = false
+        stalls = 0
         openedAt = SystemClock.elapsedRealtime()
         failure = ""
         opening = Opening(url, subtitles, preferAudio, preferText)
@@ -389,11 +400,13 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
         decoder = ""
         dropped = 0
         picture = ""
+        flowing = false
         captions()
         // A film narrower than the panel is framed in black, not in the colour
         // the library is drawn on.
         screen.setBackgroundColor(Color.BLACK)
         val engine = ExoPlayer.Builder(host, Renderers(host))
+            .setBandwidthMeter(meter)
             .setMediaSourceFactory(DefaultMediaSourceFactory(sources).setLoadErrorHandlingPolicy(WaitsForTheServer))
             .setAudioAttributes(Box.SOUND, true)
             .build()
@@ -412,6 +425,11 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 note("state ${STATES[playbackState] ?: playbackState}")
+                when (playbackState) {
+                    Player.STATE_READY -> flowing = true
+                    Player.STATE_BUFFERING -> if (flowing) stall("the buffer ran out")
+                    Player.STATE_IDLE, Player.STATE_ENDED -> flowing = false
+                }
             }
 
             override fun onRenderedFirstFrame() = note("first picture")
@@ -505,6 +523,14 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
         }
         val waited = now - drawnAt
         if (waited < PICTURE_MS) return
+        // a decoder starved of data draws nothing either, and a reopen would
+        // throw away the little that did arrive
+        val buffered = engine.totalBufferedDuration
+        if (buffered < PICTURE_MS) {
+            drawnAt = 0L
+            stall("no picture drawn for ${waited}ms with ${buffered}ms buffered")
+            return
+        }
         val why = "no picture drawn for ${waited}ms while the sound plays " +
             "(decoder $decoder, dropped ${counters?.droppedBufferCount ?: 0}, " +
             "surface ${(screen.videoSurfaceView as? SurfaceView)?.holder?.surface?.isValid}, " +
@@ -520,6 +546,12 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
         stopPlayer()
         // a panel still on its way brings the sound with it when it arrives
         onStage { begin(at, silent = onSettled != null) }
+    }
+
+    private fun stall(why: String) {
+        flowing = false
+        stalls += 1
+        note("stall $stalls: $why, ${meter.bitrateEstimate / 1000} kbit/s seen")
     }
 
     /** The film is waiting for a screen the box could not take: the stage
@@ -575,6 +607,7 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
     }
 
     fun seek(seconds: Double) {
+        flowing = false
         player?.seekTo((seconds * 1000).toLong())
     }
 
@@ -614,6 +647,7 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
 
     fun choose(type: Int, wanted: Int) {
         val engine = player ?: return
+        flowing = false
         if (wanted < 0) {
             engine.trackSelectionParameters = engine.trackSelectionParameters
                 .buildUpon()
@@ -674,6 +708,7 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
     private fun sound() {
         val engine = player ?: return
         playingOn = screen.display?.mode?.modeId ?: -1
+        flowing = false
         engine.trackSelectionParameters = engine.trackSelectionParameters
             .buildUpon()
             .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)

@@ -39,6 +39,63 @@ def test_decide(media, asked, mode, size):
     assert (plan.width, plan.height) == size
 
 
+# Dune as the library holds it: 4K HEVC at 27.6 Mbit/s over two and a half hours
+DUNE = {**FILM, "size": 27_600 * 1000 * 9000 // 8, "duration_s": 9000}
+BOX = {"can_decode": True, "max_height": 2160, "max_width": 3840, "native": True}
+
+
+@pytest.mark.parametrize(("reach", "decodes", "mode", "codec", "size", "kbps"), [
+    (None, {"hevc", "h264"}, "direct", None, (3840, 2160), None),
+    (50_000, {"hevc", "h264"}, "direct", None, (3840, 2160), None),
+    (20_000, {"hevc", "h264"}, "transcode", "hevc", (3840, 2160), 14_000),
+    (3_500, {"hevc", "h264"}, "transcode", "hevc", (1280, 720), 2_450),
+    (3_500, {"h264"}, "transcode", "h264", (1280, 720), 2_450),
+    (5_000, {"hevc", "h264"}, "transcode", "hevc", (1920, 1080), 3_500),
+    (5_000, {"h264"}, "transcode", "h264", (1280, 720), 3_500),
+    (600, {"hevc", "h264"}, "transcode", "hevc", (960, 540), 684),
+])
+def test_a_film_wider_than_the_connection_is_squeezed_to_fit(reach, decodes, mode, codec, size, kbps):
+    plan = decide(DUNE, **BOX, reach=reach, decodes=decodes)
+    assert (plan.mode, plan.codec if kbps else None, (plan.width, plan.height), plan.kbps) == \
+        (mode, codec, size, kbps)
+
+
+def test_a_squeeze_stays_inside_the_screen():
+    plan = decide(DUNE, **{**BOX, "max_height": 1080, "max_width": 1920}, reach=20_000, decodes={"hevc"})
+    assert (plan.width, plan.height) == (1920, 1080)
+
+
+def test_a_film_of_unknown_rate_is_not_squeezed():
+    assert decide(FILM, **BOX, reach=600, decodes={"hevc"}).mode == "direct"
+
+
+@pytest.mark.parametrize(("codec", "channels", "accepts", "takes", "expected"), [
+    ("truehd", 8, ["eac3", "ac3", "aac"], 0, Sound("aac", 6, "384k")),
+    ("truehd", 8, ["eac3", "aac"], 2, Sound("aac", 2, "192k")),
+    ("eac3", 6, ["eac3"], 0, Sound("aac", 2, "192k")),
+    ("aac", 2, ["aac"], 0, Sound("aac", 2, "192k")),
+])
+def test_a_squeezed_film_never_copies_its_sound(codec, channels, accepts, takes, expected):
+    assert sound_for(codec, channels, accepts, takes, lean=True) == expected
+
+
+def test_the_encoder_is_held_to_the_rate_the_connection_carries():
+    assert playback._encoder_args("hevc", 2_450) == [
+        "-c:v", "hevc_vaapi", "-profile:v", "main", "-tag:v", "hvc1",
+        "-rc_mode", "VBR", "-b:v", "2066k", "-maxrate", "2754k", "-bufsize", "4132k"]
+    assert playback._encoder_args("h264", None) == ["-c:v", "h264_vaapi", "-qp", "24"]
+
+
+def test_the_reach_probe_sends_what_it_says():
+    async def drain():
+        answer = await play.reach(size=1 << 20)
+        got = 0
+        async for chunk in answer.body_iterator:
+            got += len(chunk)
+        return answer.headers["content-length"], answer.headers["cache-control"], got
+    assert run(drain()) == (str(1 << 20), "no-store", 1 << 20)
+
+
 @pytest.mark.parametrize(("codec", "channels", "accepts", "takes", "expected"), [
     ("truehd", 8, [], 0, Sound("aac", 2, "192k")),
     ("eac3", 6, ["eac3", "ac3"], 0, Sound("copy", 0, "")),

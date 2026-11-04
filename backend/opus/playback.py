@@ -11,7 +11,12 @@ and hide that the fast path is broken.
 
 What decides is the device, asked rather than guessed. The browser knows whether
 it can decode a codec *efficiently* — `mediaCapabilities.decodingInfo()` reports
-`powerEfficient` — and that answer is worth more than any table of user agents."""
+`powerEfficient` — and that answer is worth more than any table of user agents.
+
+And the road to it, measured rather than guessed: a box in another house, or on
+a phone's hotspot, decodes the 4K file perfectly and is handed it three times
+faster than its connection carries. A film that does not fit the measured reach
+is re-encoded to fit it, whatever the device could have opened."""
 
 import asyncio
 import logging
@@ -51,6 +56,23 @@ MP4_AUDIO = {"aac", "ac3", "eac3", "mp3"}
 SURROUND_ENCODERS = ("eac3", "ac3")
 SURROUND_MAX = 6
 
+# Of a measured connection, what a film may take: the rest is the margin a mobile
+# link needs for its dips and the house for everything else it is doing.
+SHARE = 0.7
+# A film's average rate is not what its busiest scene needs.
+HEADROOM = 1.5
+# what the sound of a squeezed film is allowed, out of its share
+LEAN_SOUND_KBPS = 384
+# below this a picture is not worth sending at all; it is sent anyway, and the
+# viewer sees why
+LEAST_PICTURE_KBPS = 300
+# The largest picture each rate is worth spending on, by the codec it is spent
+# in: HEVC carries a picture in about two thirds of what H.264 needs.
+RUNGS = {
+    "hevc": ((2160, 12000), (1080, 2500), (720, 1200), (540, 0)),
+    "h264": ((2160, 20000), (1080, 4000), (720, 2000), (540, 0)),
+}
+
 
 class PlaybackError(Exception):
     """Playback could not be arranged. Never swallowed — a silent fallback to a
@@ -65,7 +87,8 @@ class Sound:
     bitrate: str
 
 
-def sound_for(codec: str, channels: int, accepts: list[str], takes: int = 0) -> Sound:
+def sound_for(codec: str, channels: int, accepts: list[str], takes: int = 0,
+              lean: bool = False) -> Sound:
     """The sound a rebuild should carry, given what the renderer can render.
 
     A film's sound was folded to two channels every time the file had to be
@@ -76,10 +99,19 @@ def sound_for(codec: str, channels: int, accepts: list[str], takes: int = 0) -> 
     where the container allows, otherwise the widest encoder the box owns.
 
     An empty `accepts` is a browser, which folds anything down to two channels
-    at the speaker anyway — no reason to send it more."""
+    at the speaker anyway — no reason to send it more.
+
+    A `lean` film is one squeezed to fit a connection: its sound is encoded
+    within `LEAN_SOUND_KBPS`, never copied, because a copied track can be a
+    lossless one carrying more than the whole picture is allowed."""
     src = (codec or "").lower()
     take = {a.strip().lower() for a in accepts if a.strip()}
     if not take:
+        return Sound("aac", 2, "192k")
+    if lean:
+        wide = min(channels, takes) if takes else channels
+        if wide > 2 and "aac" in take:
+            return Sound("aac", min(wide, SURROUND_MAX), f"{LEAN_SOUND_KBPS}k")
         return Sound("aac", 2, "192k")
     # A renderer that says how many channels can leave it is believed: sending a
     # box six of them when two is all its output carries is how a centre channel
@@ -122,6 +154,28 @@ class Plan:
     width: int | None = None
     height: int | None = None
     codec: str = ""
+    # a film squeezed to a connection: the whole stream's rate, sound included
+    kbps: int | None = None
+
+
+def carried_kbps(media: dict) -> int | None:
+    """What the file sends per second, on average over the whole of it."""
+    size, seconds = media.get("size"), media.get("duration_s")
+    return int(size * 8 / seconds / 1000) if size and seconds else None
+
+
+def _squeezed(width: int, height: int, max_width: int | None, max_height: int | None,
+              reach: int, decodes: set[str]) -> Plan:
+    out = "hevc" if "hevc" in decodes else "h264"
+    budget = int(reach * SHARE)
+    picture = max(budget - LEAN_SOUND_KBPS, LEAST_PICTURE_KBPS)
+    rung = next(edge for edge, least in RUNGS[out] if picture >= least)
+    box_h = min(max_height or rung, rung)
+    box_w = min(max_width or 3840, -(-rung * 16 // 9))
+    w, h = fit(width, height, box_w, box_h)
+    return Plan("transcode", f"the connection carries {reach} kbit/s; the film is re-encoded "
+                f"to {picture + LEAN_SOUND_KBPS} kbit/s", w, h, out,
+                picture + LEAN_SOUND_KBPS)
 
 
 def fit(src_w: int, src_h: int, box_w: int, box_h: int) -> tuple[int, int]:
@@ -151,12 +205,19 @@ def gpu_available() -> bool:
 
 def decide(media: dict, *, can_decode: bool, max_height: int | None,
            max_width: int | None = None, audio: int = 0,
-           native: bool = False, rebuild_audio: bool = False) -> Plan:
+           native: bool = False, rebuild_audio: bool = False,
+           reach: int | None = None, decodes: set[str] = frozenset()) -> Plan:
     """`can_decode` is the client's own answer about this file's video codec:
     can it, and would it be power-efficient. `max_height` is the screen it will
     be shown on — sending 4K to a 1080p panel costs bandwidth and battery for a
-    detail nobody can see. `native` is a client that is not a browser at all."""
+    detail nobody can see. `native` is a client that is not a browser at all.
+    `reach` is what the client measured its connection to carry, in kbit/s, and
+    `decodes` the pictures it can be handed a re-encode in."""
     codec, width, height, container = _source(media)
+
+    carried = carried_kbps(media)
+    if reach and carried and carried * HEADROOM > reach:
+        return _squeezed(width, height, max_width, max_height, reach, decodes)
 
     # An engine running on the television opens the containers this library is
     # actually in, and decodes them on hardware that was built for it. Every
@@ -392,7 +453,8 @@ HDR_TRANSFERS = {"smpte2084", "arib-std-b67"}
 
 def transcode_command(path: str, width: int, height: int, start: float = 0,
                       audio: int = 0, hdr: bool = False,
-                      sound: Sound = STEREO, codec: str = "") -> list[str]:
+                      sound: Sound = STEREO, codec: str = "", out: str = "h264",
+                      kbps: int | None = None) -> list[str]:
     """Decode and encode on the GPU, both. The 10-bit sources need saying out
     loud: H.264 is 8-bit, and without the format conversion the encoder reports
     'no usable encoding profile', which reads as if the card cannot do it."""
@@ -444,7 +506,7 @@ def transcode_command(path: str, width: int, height: int, start: float = 0,
         "-i", path,
         "-map", "0:v:0", "-map", f"0:a:{audio}?",
         "-vf", picture,
-        "-c:v", "h264_vaapi", "-qp", "24",
+        *_encoder_args(out, kbps),
         *_audio_args(sound, trim=False),
         # delay_moov holds the first fragment until every track has reached its
         # end. Without it, a file whose sound is stored after a whole GOP of
@@ -454,6 +516,19 @@ def transcode_command(path: str, width: int, height: int, start: float = 0,
         "-movflags", "+frag_keyframe+empty_moov+default_base_moof+delay_moov",
         "-f", "mp4", "pipe:1",
     ]
+
+
+def _encoder_args(out: str, kbps: int | None) -> list[str]:
+    encoder = ["-c:v", "hevc_vaapi", "-profile:v", "main", "-tag:v", "hvc1"] if out == "hevc" \
+        else ["-c:v", "h264_vaapi"]
+    if kbps is None:
+        return [*encoder, "-qp", "24"]
+    # A connection is a ceiling, not an average: the peak is held to a third
+    # over the rate, over two seconds of picture, so a busy scene does not ask
+    # the link for more than the margin it was measured with.
+    picture = max(kbps - LEAN_SOUND_KBPS, LEAST_PICTURE_KBPS)
+    return [*encoder, "-rc_mode", "VBR", "-b:v", f"{picture}k",
+            "-maxrate", f"{picture * 4 // 3}k", "-bufsize", f"{picture * 2}k"]
 
 
 # How many pictures this box will re-encode at once. Not a tuning knob: the

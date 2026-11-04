@@ -1,6 +1,7 @@
 import { t } from '#lib/i18n/index.js';
 import { request, withLang } from '#lib/kit/index.js';
-import { asked, hears, here } from '#lib/ask/ability.js';
+import { asked, encodable, hears, here } from '#lib/ask/ability.js';
+import { reach } from '#lib/ask/reach.js';
 import type { Card, EngineTrack, Plan } from '#lib/keep/types.js';
 import { onBox } from '#lib/tv/bridge.js';
 
@@ -23,6 +24,10 @@ export class FilmEngine {
 	decoder = $state('');
 	dropped = $state(0);
 	picture = $state('');
+	// times the film stopped to wait for data since the box started, and what
+	// the box measured its own film arriving at
+	stalls = $state(0);
+	bandwidth = $state(0);
 
 	#query = '';
 	#pass = '';
@@ -43,11 +48,14 @@ export class FilmEngine {
 		}, this.#failed) ?? false;
 	}
 
-	async plan(card: Card, audio: number, refused: Refused): Promise<{ plan: Plan; audio: number } | null> {
+	/** `slower` is a connection already known to be no faster than this, in
+	 *  kbit/s: the film is planned again for it instead of measuring. */
+	async plan(card: Card, audio: number, refused: Refused, slower?: number): Promise<{ plan: Plan; audio: number } | null> {
 		const base = `/api/play/${card.kind}/${card.id}`;
-		const [pass, native] = await Promise.all([
+		const [pass, native, measured] = await Promise.all([
 			request<{ prefix: string; ticket: string }>(`${base}/ticket`, {}, refused),
-			request<Plan>(withLang(`${base}/plan?${asked(here(), { native: true, canDecode: true })}`), {}, refused)
+			request<Plan>(withLang(`${base}/plan?${asked(here(), { native: true, canDecode: true })}`), {}, refused),
+			slower ?? reach()
 		]);
 		if (!pass || !native) return null;
 		this.#prefix = pass.prefix;
@@ -64,18 +72,19 @@ export class FilmEngine {
 		// track came out of the room as a pair of speakers for as long as nobody
 		// said what else this box would accept.
 		const hasAudio = hears(place, track?.codec ?? '', track?.channels ?? 0);
-		this.rebuilt = !hasVideo || !hasAudio;
 		const chosen = track?.index ?? 0;
 		this.#query = asked(place, {
 			canDecode: hasVideo,
 			audio: chosen,
 			native: true,
-			rebuildAudio: !hasAudio
+			rebuildAudio: !hasAudio,
+			reach: measured,
+			decodes: await encodable(place)
 		});
-		const made = this.rebuilt
-			? await request<Plan>(withLang(`${base}/plan?${this.#query}`), {}, refused)
-			: native;
-		return made ? { plan: made, audio: chosen } : null;
+		const made = await request<Plan>(withLang(`${base}/plan?${this.#query}`), {}, refused);
+		if (!made) return null;
+		this.rebuilt = made.mode !== 'direct';
+		return { plan: made, audio: chosen };
 	}
 
 	start(plan: Plan, at: number): boolean {
@@ -153,6 +162,8 @@ export class FilmEngine {
 			decoder: string;
 			dropped: number;
 			picture: string;
+			stalls?: number;
+			bandwidth?: number;
 			error?: string;
 		};
 		// no player behind the engine — between two films, or while the panel
@@ -167,6 +178,8 @@ export class FilmEngine {
 		this.decoder = now.decoder ?? '';
 		this.dropped = now.dropped ?? 0;
 		this.picture = now.picture ?? '';
+		this.stalls = now.stalls ?? 0;
+		this.bandwidth = now.bandwidth ?? 0;
 		if (now.error && now.error !== this.#said) this.#failed(t('play.engineFailed', { detail: now.error }));
 		this.#said = now.error ?? '';
 		return now.ended;

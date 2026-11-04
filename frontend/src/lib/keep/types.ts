@@ -245,6 +245,8 @@ export type Plan = {
 	width: number | null;
 	height: number | null;
 	duration_s: number | null;
+	/** what the stream carries per second, in kbit/s */
+	kbps?: number | null;
 	subtitles: PlanSubtitle[];
 	audio: PlanAudio[];
 	source: {
