@@ -10,6 +10,7 @@ import type { Card, Plan } from '#lib/keep/types.js';
 let host: ReturnType<typeof mount> | null = null;
 const reports: { kind: string; item_id: number; position_s: number }[] = [];
 let stalls = 0;
+let away = false;
 const slower: (number | undefined)[] = [];
 const card = (kind: Card['kind'], id: number): Card => ({
 	kind, id, title: String(id), image: null, backdrop: null, state: 'complete', overview: ''
@@ -25,6 +26,7 @@ afterEach(async () => {
 	delete window.opusTv;
 	reports.length = 0;
 	stalls = 0;
+	away = false;
 	slower.length = 0;
 	document.body.innerHTML = '';
 });
@@ -47,9 +49,14 @@ async function open(initial: Card, rebuilt = false) {
 		return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
 	});
 	vi.spyOn(FilmEngine.prototype, 'plan').mockImplementation(async function (
-		this: FilmEngine, _card: Card, _audio: number, _refused: unknown, under?: number
+		this: FilmEngine, _card: Card, _audio: number,
+		refused: { failed: (detail: string, status?: number) => void }, under?: number
 	) {
 		slower.push(under);
+		if (under !== undefined && away) {
+			refused.failed('unreachable', 0);
+			return null;
+		}
 		this.rebuilt = rebuilt || under !== undefined;
 		return { audio: 0, plan: {
 			mode: under ? 'transcode' : rebuilt ? 'remux' : 'direct', kbps: under ? Math.round(under * 0.7) : 27_600,
@@ -115,4 +122,16 @@ test('a film that keeps stopping for data is asked for again narrower, from wher
 	await vi.waitFor(() => expect(play).toHaveBeenCalledTimes(2));
 	expect(slower).toEqual([undefined, 13_800]);
 	expect(String(play.mock.calls[1][0])).toContain('&t=120');
+});
+
+test('a narrower stream the server could not be reached for leaves the playing film alone', async () => {
+	await open(card('movie', 105));
+	away = true;
+	stalls = 2;
+	await new Promise((resolve) => setTimeout(resolve, 550));
+	stalls = 3;
+	await vi.waitFor(() => expect(slower).toEqual([undefined, 13_800]));
+	flushSync();
+	expect(document.querySelector('.problem')).toBeNull();
+	expect(window.opusTv?.play).toHaveBeenCalledOnce();
 });

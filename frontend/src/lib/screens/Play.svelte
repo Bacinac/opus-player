@@ -382,7 +382,13 @@
 		const was = plan?.kbps;
 		if (!was || narrowing) return;
 		narrowing = true;
-		const refused = { failed: (detail: string) => (problem = detail) };
+		// a server out of reach for a moment is what the playing film is already
+		// riding out, and the next stall asks again; a refusal is a fault
+		const refused = {
+			failed: (detail: string, status?: number) => {
+				if (status) problem = detail;
+			}
+		};
 		try {
 			const slower = narrower(was, engine.on ? engine.bandwidth : 0);
 			const at = position;

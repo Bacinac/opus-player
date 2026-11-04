@@ -5,7 +5,7 @@ import { reach } from '#lib/ask/reach.js';
 import type { Card, EngineTrack, Plan } from '#lib/keep/types.js';
 import { onBox } from '#lib/tv/bridge.js';
 
-type Refused = { failed: (detail: string) => void };
+type Refused = { failed: (detail: string, status?: number) => void };
 
 export class FilmEngine {
 	// When the box plays for itself the picture is drawn behind this page and
