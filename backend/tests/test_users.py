@@ -83,9 +83,13 @@ def test_a_guest_lists_only_themselves(house, monkeypatch):
     async def rows(session):
         return {"Baka": users.User(id=4, person=None, name="Baka", colour="")}
 
+    async def faces(path, asking=None, **params):
+        return []
+
     monkeypatch.setattr(users, "_rows", rows)
+    monkeypatch.setattr(users.library, "get", faces)
     everybody = run(users.list_users(request({"opus_session": person_cookie("filip")}), session=None))
-    assert [p["key"] for p in everybody] == ["filip", "gost", "Baka"]
+    assert [p["key"] for p in everybody] == ["filip", "gost", "rodjak", "Baka"]
     guest = run(users.list_users(request({"opus_session": person_cookie("gost")}), session=None))
     assert [p["key"] for p in guest] == ["gost"]
 

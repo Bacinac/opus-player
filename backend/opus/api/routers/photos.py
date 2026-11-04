@@ -16,6 +16,7 @@ import asyncio
 import os
 import random
 import re
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -31,7 +32,16 @@ from opus.api.routers.users import picked
 from opus.config import settings
 from opus.db import get_session
 
-router = APIRouter()
+# Who every request on this router is made by, said once for all of them: a
+# route that forgot to say would be the household's whole album to a guest.
+_asking: ContextVar[str | None] = ContextVar("asking", default=None)
+
+
+async def _for_whom(request: Request) -> None:
+    _asking.set(await auth.asking_for(request))
+
+
+router = APIRouter(dependencies=[Depends(_for_whom)])
 
 # A derivative of a photograph is named by the digest of what it was made from,
 # so it can never change and the browser may keep it for as long as it likes.
@@ -59,7 +69,7 @@ def _checked(checksum: str) -> str:
 
 async def _ask(path: str, **params):
     try:
-        return await library.get(path, **params)
+        return await library.get(path, asking=_asking.get(), **params)
     except library.NotInLibrary:
         raise HTTPException(404, "the library has no such thing")
     except library.LibraryError as why:
@@ -178,10 +188,9 @@ async def screensaver(request: Request, session: AsyncSession = Depends(get_sess
         return {"household": True}
     if chosen:
         return {"person": [int(one) for one in chosen.split(",")]}
-    if who is not None and who.person:
-        own = [p["id"] for p in await _ask("/photos/people") if p.get("account") == who.person]
-        if own:
-            return {"person": own[:1]}
+    named = (await auth.authority.people()).get(who.person) if who is not None and who.person else None
+    if named is not None and named.person_id:
+        return {"person": [named.person_id]}
     return {"household": True}
 
 
@@ -235,7 +244,7 @@ async def _stream(path: str, kind: str, keeping: str = FOREVER, asked: Request |
     http = library.client(timeout=60)
     # A player asks for the middle of a recording before it has the beginning,
     # and gets nothing if the range is dropped on the way through.
-    passing = {}
+    passing = {opus_auth.FOR_HEADER: who} if (who := _asking.get()) else {}
     if asked and (span := asked.headers.get("range")):
         passing["Range"] = span
     resp = await _send(http, http.build_request("GET", path, headers=passing))

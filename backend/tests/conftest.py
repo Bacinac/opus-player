@@ -25,11 +25,15 @@ PEOPLE = {
     "filip": Person("filip", 3, "user", "Filip"),
     "boss": Person("boss", 1, "admin", "boss"),
     "gost": Person("gost", 2, "guest", "Gost"),
+    "rodjak": Person("rodjak", 4, "guest", "Rodjak", (40, 41), 40),
 }
 BOX_TOKEN = "b" * 43
 OTHER_BOX = "c" * 43
 HOUSE_TOKEN = "h" * 43
-BOXES = {BOX_TOKEN: auth.Box(7, "Dnevni boravak")}
+COUSIN_BOX = "d" * 43
+GONE_BOX = "e" * 43
+BOXES = {BOX_TOKEN: auth.Box(7, "Dnevni boravak"), COUSIN_BOX: auth.Box(9, "Rodjak", "rodjak"),
+         GONE_BOX: auth.Box(10, "Nekoga više nema", "nobody")}
 
 
 def run(coroutine):

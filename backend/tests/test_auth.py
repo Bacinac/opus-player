@@ -7,9 +7,10 @@ import opus_auth
 import pytest
 from starlette.responses import Response
 
-from conftest import BOX_TOKEN, HOUSE_TOKEN, OTHER_BOX, person_cookie, request, run
-from opus import auth
-from opus.api.routers import system, users
+from conftest import (BOX_TOKEN, COUSIN_BOX, GONE_BOX, HOUSE_TOKEN, OTHER_BOX, PEOPLE, person_cookie,
+                      request, run)
+from opus import auth, library
+from opus.api.routers import photos, system, users
 from opus.config import settings
 
 TOKEN = HOUSE_TOKEN
@@ -84,6 +85,14 @@ def allowed(path, **given):
     ("/api/version", {}, False),
     ("/api/version", {"person_cookie": person_cookie("gost")}, True),
     ("/api/version", {"box": BOX_TOKEN}, True),
+    ("/api/photos/people", {"person_cookie": person_cookie("rodjak")}, True),
+    ("/api/photos/timeline", {"box": COUSIN_BOX}, True),
+    ("/api/launcher/cameras", {"box": COUSIN_BOX}, False),
+    ("/api/game/scores", {"box": COUSIN_BOX}, False),
+    ("/api/explore/want/music", {"box": COUSIN_BOX}, False),
+    ("/api/tv/show", {"box": COUSIN_BOX}, False),
+    ("/api/home", {"box": COUSIN_BOX}, True),
+    ("/api/home", {"box": GONE_BOX}, False),
 ])
 def test_allowed(house, path, given, expected):
     assert allowed(path, **given) is expected
@@ -186,6 +195,60 @@ def test_a_guest_is_not_somebody_elses_profile(house, profiles):
     assert said["authenticated"] and said["role"] == "guest" and said["profile"] is None
 
 
+def test_somebody_s_box_is_that_person_whoever_holds_the_remote(house, monkeypatch):
+    async def rows(session):
+        return {"rodjak": users.User(id=2, person="rodjak", name="", colour="", shelf_orders="{}")}
+
+    monkeypatch.setattr(users, "_rows", rows)
+    said, _ = _session({"box": COUSIN_BOX, "marker": "rodjak"}, surface="tv")
+    assert said["authenticated"] and said["person"] == "rodjak" and said["role"] == "guest"
+    assert said["box"] == "Rodjak" and said["profile"]["key"] == "rodjak"
+    # nobody else's profile is to be had on it
+    assert run(users.chosen(None, "filip", PEOPLE["rodjak"])) is None
+    said, _ = _session({"box": GONE_BOX}, surface="tv")
+    assert not said["authenticated"]
+
+
+def test_every_photograph_is_asked_for_as_whoever_is_asking(house, monkeypatch):
+    asked = []
+
+    async def get(path, asking=None, **params):
+        asked.append((path, asking))
+        return []
+
+    monkeypatch.setattr(library, "get", get)
+
+    async def scenario(cookies):
+        await photos._for_whom(request(cookies))
+        await photos.people()
+        await photos.places()
+
+    run(scenario({auth.DEVICE_COOKIE: COUSIN_BOX}))
+    run(scenario({auth.DEVICE_COOKIE: BOX_TOKEN}))
+    run(scenario({"opus_session": person_cookie("filip")}))
+    assert asked == [("/photos/people", "rodjak"), ("/photos/places", "rodjak"),
+                     ("/photos/people", None), ("/photos/places", None),
+                     ("/photos/people", "filip"), ("/photos/places", "filip")]
+
+
+def test_the_chooser_shows_each_person_by_their_face_and_a_box_only_its_own(house, profiles, monkeypatch):
+    asked = []
+
+    async def get(path, asking=None, **params):
+        asked.append(asking)
+        return [{"id": 40, "cover": 900}, {"id": 41, "cover": None}]
+
+    monkeypatch.setattr(library, "get", get)
+    house_box = run(users.list_users(request({auth.DEVICE_COOKIE: BOX_TOKEN}), session=None))
+    cousin = run(users.list_users(request({auth.DEVICE_COOKIE: COUSIN_BOX}), session=None))
+    guest = run(users.list_users(request({"opus_session": person_cookie("gost")}), session=None))
+    assert {p["key"]: p["face"] for p in house_box} == {"filip": None, "gost": None, "rodjak": 900}
+    assert [(p["key"], p["face"]) for p in cousin] == [("rodjak", 900)]
+    assert [(p["key"], p["face"]) for p in guest] == [("gost", None)]
+    # a guest with no circle is not asked a single photograph for
+    assert asked == [None, "rodjak"]
+
+
 class Verifier:
     def __init__(self):
         self.asked = 0
@@ -218,6 +281,12 @@ def test_a_box_is_asked_about_once_a_minute(verifier):
     assert run(auth.device(BOX_TOKEN)) is None
     assert run(auth.device(BOX_TOKEN)) is None
     assert kept.asked == 2
+
+
+def test_a_box_says_whose_it_is(verifier):
+    kept, _ = verifier
+    kept.answer = lambda: httpx.Response(200, json={"ok": True, "id": 9, "name": "Rodjak", "person": "rodjak"})
+    assert run(auth.device(BOX_TOKEN)) == auth.Box(9, "Rodjak", "rodjak")
 
 
 def test_an_outage_keeps_the_last_answer_and_is_not_asked_every_request(verifier):

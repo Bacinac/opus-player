@@ -74,9 +74,12 @@ def client(timeout: float = 30) -> httpx.AsyncClient:
     return kept
 
 
-async def get(path: str, **params) -> list | dict:
+async def get(path: str, asking: str | None = None, **params) -> list | dict:
+    """`asking` is the person the request is made by, whom the library holds it
+    to; nobody is the household."""
     try:
-        resp = await client().get(path, params=params or None)
+        resp = await client().get(path, params=params or None,
+                                  headers={opus_auth.FOR_HEADER: asking} if asking else None)
     except httpx.HTTPError as exc:
         raise LibraryError(f"library {path} failed: {exc}") from exc
     _raise_for(path, resp)

@@ -17,10 +17,10 @@ def told(path):
 def test_the_wall_is_the_households_stills_and_nothing_narrower(monkeypatch):
     asked = {}
 
-    async def years(path, **params):
+    async def years(path, asking=None, **params):
         if path != "/photos/years":
             return told(path)
-        asked.update(path=path, **params)
+        asked.update(path=path, asking=asking, **params)
         return {"years": [
             {"year": 2024, "photographs": [shot(1), shot(2, kind="video"), shot(3, ready=False)]},
             {"year": 2019, "photographs": [shot(4, undecodable=True), shot(5)]},
@@ -28,7 +28,8 @@ def test_the_wall_is_the_households_stills_and_nothing_narrower(monkeypatch):
 
     monkeypatch.setattr(library, "get", years)
     shown = run(photos.wall(count=30))["photos"]
-    assert asked == {"path": "/photos/years", "each": photos.WALL_EACH, "household": "true"}
+    assert asked == {"path": "/photos/years", "asking": None, "each": photos.WALL_EACH,
+                     "household": "true"}
     assert sorted(p["id"] for p in shown) == [shot(1)["id"], shot(5)["id"]]
     assert shown[0]["place"] == "Rovinj" and shown[0]["country"] == "Hrvatska"
     assert set(shown[0]) == {"id", "taken_at", "place", "country"}

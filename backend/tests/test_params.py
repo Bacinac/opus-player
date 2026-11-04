@@ -1,6 +1,7 @@
 from urllib.parse import unquote
 
 import pytest
+from opus_auth.authority import Person
 
 from conftest import run
 from opus import auth, library
@@ -17,7 +18,7 @@ def asked(monkeypatch):
     async def allowed(path, **given):
         return True
 
-    async def get(path, **params):
+    async def get(path, asking=None, **params):
         paths.append(path)
         if path.endswith("/playback"):
             return {"path": "/photos/clip.mp4", "container": "mp4", "video_codec": "h264", "streams": []}
@@ -105,7 +106,7 @@ def test_every_route_with_a_string_in_its_path_has_been_looked_at():
 def test_a_search_of_the_photographs_reaches_the_library_with_its_words(monkeypatch):
     calls: list[tuple[str, dict]] = []
 
-    async def get(path, **params):
+    async def get(path, asking=None, **params):
         calls.append((path, params))
         return {}
 
@@ -124,7 +125,7 @@ def test_a_search_of_the_photographs_reaches_the_library_with_its_words(monkeypa
 def test_every_screen_passes_whose_photographs_on_in_the_library_words(monkeypatch):
     calls: list[tuple[str, dict]] = []
 
-    async def get(path, **params):
+    async def get(path, asking=None, **params):
         calls.append((path, params))
         return {}
 
@@ -144,16 +145,17 @@ def test_every_screen_passes_whose_photographs_on_in_the_library_words(monkeypat
 
 
 def test_a_screensaver_shows_whoever_the_profile_is_unless_it_chose_somebody(monkeypatch):
-    async def get(path, **params):
-        assert path == "/photos/people"
-        return [{"id": 3, "account": None}, {"id": 5, "account": "nika"}]
+    class Roster:
+        async def people(self):
+            return {"nika": Person("nika", 1, "user", "Nika", person_id=5),
+                    "kata": Person("kata", 1, "user", "Kata")}
 
     picked_now: dict = {"who": None}
 
     async def picked(request, session):
         return picked_now["who"]
 
-    monkeypatch.setattr(library, "get", get)
+    monkeypatch.setattr(auth, "authority", Roster())
     monkeypatch.setattr(photos, "picked", picked)
 
     def profile(person, screensaver=""):

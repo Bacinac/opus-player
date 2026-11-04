@@ -7,7 +7,6 @@ later, because there is no copy to fall behind."""
 import asyncio
 from datetime import timedelta
 
-import opus_auth
 from fastapi import APIRouter, Depends, HTTPException, Request
 from opus_auth import GUEST
 from opus_core.names import croatian
@@ -517,8 +516,9 @@ async def shelves(request: Request, lang: str = "en"):
 
     The album is counted only for somebody it belongs to: how many people and
     places the family has photographed is the album talking."""
-    found = await auth.person(request.cookies.get(opus_auth.SESSION_COOKIE), auth.bearer_of(request))
-    album = found is None or found.role != GUEST
+    asking = await auth.asking_for(request)
+    found = (await auth.authority.people()).get(asking) if asking else None
+    album = found is None or found.role != GUEST or bool(found.circle)
     movies, series, shelf, radio, *photos = await _all(
         (library.get("/video/movies", lang=lang), []),
         (library.get("/video/series", lang=lang), []),
@@ -528,9 +528,9 @@ async def shelves(request: Request, lang: str = "en"):
         # three and a half
         (library.get("/music/library/stats"), {}),
         (stations.listed(), []),
-        *([(library.get("/photos/timeline/buckets"), {}),
-           (library.get("/photos/people"), []),
-           (library.get("/photos/places"), [])] if album else []),
+        *([(library.get("/photos/timeline/buckets", asking=asking), {}),
+           (library.get("/photos/people", asking=asking), []),
+           (library.get("/photos/places", asking=asking), [])] if album else []),
     )
     # a film with no file is something the library is still chasing; the player
     # counts what can be played, not what has been asked for

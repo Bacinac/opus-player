@@ -116,6 +116,8 @@ export type Profile = {
 	key: string;
 	name: string;
 	colour: string;
+	/** the face in the photographs this person is, where the roster says */
+	face?: number | null;
 	/** whether the roster is what says this person exists — and so whether they
 	 *  can be removed here at all */
 	roster?: boolean;

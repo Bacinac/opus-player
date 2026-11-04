@@ -14,7 +14,7 @@
 	import Portrait from '#lib/tvui/Portrait.svelte';
 	import Press from '#lib/tvui/Press.svelte';
 	import { json, request } from '#lib/kit/index.js';
-	import { me } from '#lib/opus/index.js';
+	import { cropOf, me } from '#lib/opus/index.js';
 
 	let { onpicked }: { onpicked: () => void } = $props();
 
@@ -74,7 +74,12 @@
 		<div class="faces">
 			{#each people as who (who.key)}
 				<button class="face" data-own-mark onclick={() => pick(who.key)}>
-					<Portrait rung="door" hue={who.colour || undefined} name={who.name} />
+					<Portrait
+						rung="door"
+						src={who.face ? cropOf(who.face) : undefined}
+						hue={who.colour || undefined}
+						name={who.name}
+					/>
 					<span class="name">{who.name}</span>
 				</button>
 			{/each}

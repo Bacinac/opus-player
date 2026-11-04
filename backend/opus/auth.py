@@ -129,6 +129,12 @@ HOUSEHOLD_ONLY = ("/api/photos", "/api/explore/want", "/api/game", "/api/tv/phot
                   "/api/tv/show", "/api/launcher/cameras")
 
 
+# What of the album a guest with a circle reaches: the album's screens, each of
+# which the library narrows to the photographs somebody of the circle is in.
+# The library decides that, not this list; this only stops refusing them.
+CIRCLE_MAY = ("/api/photos",)
+
+
 # What of the album the house itself may put on the television: somebody of the
 # family through the years, asked for aloud in the living room. The house names
 # a person of the household and never a photograph, so it reaches none of the
@@ -202,6 +208,8 @@ _DEVICE_SHAPE = re.compile(r"^[A-Za-z0-9_-]{43}$")
 class Box:
     id: int
     name: str
+    # whose box it is, when it is not the household's
+    person: str | None = None
 
 
 _devices: OrderedDict[str, tuple[float, float, Box | None]] = OrderedDict()
@@ -325,7 +333,8 @@ async def device(token: str | None) -> Box | None:
                                    headers={opus_auth.TOKEN_HEADER: authority.token})
             resp.raise_for_status()
             said = resp.json()
-        found = Box(int(said["id"]), str(said.get("name") or "device")) if said["ok"] else None
+        found = (Box(int(said["id"]), str(said.get("name") or "device"), said.get("person") or None)
+                 if said["ok"] else None)
     except (httpx.HTTPError, ValueError, KeyError, TypeError) as why:
         complaint = type(why).__name__
         if complaint != _device_complaint:
@@ -343,6 +352,15 @@ async def device(token: str | None) -> Box | None:
     while len(_devices) > DEVICES_KEPT:
         _devices.popitem(last=False)
     return found
+
+
+async def asking_for(request) -> str | None:
+    """The person a request is made by, for the library to hold it to: the one
+    signed in, or the one whose box this is. A household's box is nobody.
+    Asked exactly as the guard asks, so the two cannot name different people."""
+    came = await way_in(request.cookies.get(opus_auth.SESSION_COOKIE), request.cookies.get(DEVICE_COOKIE),
+                        request.headers.get(opus_auth.TOKEN_HEADER), bearer_of(request))
+    return came.person.name if came is not None and came.person is not None else None
 
 
 def issue(who: str) -> str:
@@ -442,8 +460,14 @@ async def way_in(person_cookie: str | None, box: str | None = None,
             return Way(person=found)
     if box:
         held = await device(box)
-        if held is not None:
+        if held is None:
+            return None
+        if held.person is None:
             return Way(box=held)
+        # somebody's box is that person whoever holds the remote, and a person
+        # the roster no longer carries leaves their box outside with them
+        whose = (await authority.people()).get(held.person)
+        return Way(person=whose, box=held) if whose is not None else None
     return None
 
 
@@ -473,7 +497,8 @@ async def allowed(path: str, person_cookie: str | None = None, ticket: str | Non
                 and (not opus_auth.under(path, HOUSEHOLD_ONLY)
                      or opus_auth.under(path, HOUSE_SHOWS)))
         return (came.person is None or came.person.role != GUEST
-                or not opus_auth.under(path, HOUSEHOLD_ONLY))
+                or not opus_auth.under(path, HOUSEHOLD_ONLY)
+                or (bool(came.person.circle) and opus_auth.under(path, CIRCLE_MAY)))
     # A ticket opens the exact item it was signed for, and only on the routes
     # that hand over its bytes, so a leaked ticket is a file for an afternoon
     # rather than a way into the catalogue.

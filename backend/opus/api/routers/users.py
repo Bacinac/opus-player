@@ -41,7 +41,7 @@ from pydantic import BaseModel, Field, StringConstraints, field_validator
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from opus import auth
+from opus import auth, library
 from opus.config import settings
 from opus.db import get_session
 from opus.models import User
@@ -129,10 +129,12 @@ def profile_key(user: User) -> str:
     return user.person or user.name
 
 
-def _json(user: User, display: str | None = None) -> dict:
+def _json(user: User, display: str | None = None, face: int | None = None) -> dict:
     return {"key": profile_key(user),
             "name": display or user.name or user.person,
             "colour": user.colour,
+            # the face in the photographs this person is, for the chooser to show
+            "face": face,
             # whether the roster is what says this person exists, which is the
             # difference between a profile that can be removed here and one that
             # cannot
@@ -189,7 +191,18 @@ def _may_be(person: Person | None, key: str) -> bool:
 
 
 async def _signed_in(request: Request) -> Person | None:
-    return await auth.person(request.cookies.get(opus_auth.SESSION_COOKIE), auth.bearer_of(request))
+    """Whoever signed in, or whose box this is."""
+    name = await auth.asking_for(request)
+    return (await auth.authority.people()).get(name) if name else None
+
+
+async def _faces(me: Person | None) -> dict[int, int]:
+    """Each named person's best face, asked as whoever is asking: a guest with
+    no circle sees no photograph, so not one of a face either."""
+    if me is not None and me.role == GUEST and not me.circle:
+        return {}
+    named = await library.get("/photos/people", asking=me.name if me else None)
+    return {one["id"]: one["cover"] for one in named if one.get("cover")}
 
 
 async def chosen(session: AsyncSession, marker: str | None, person: Person | None) -> User | None:
@@ -234,7 +247,9 @@ async def list_users(request: Request, session: AsyncSession = Depends(get_sessi
     people = await auth.authority.people()
     rows = await _rows(session)
     me = await _signed_in(request)
-    out = [_json(rows.get(name) or User(person=name, name=""), said.display)
+    faces = await _faces(me)
+    out = [_json(rows.get(name) or User(person=name, name=""), said.display,
+                 faces.get(said.person_id) if said.person_id else None)
            for name, said in people.items() if _watches(said) and _may_be(me, name)]
     out += [_json(u) for key, u in rows.items()
             if u.person is None and key not in people and _may_be(me, key)]
