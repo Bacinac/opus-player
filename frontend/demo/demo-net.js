@@ -270,9 +270,9 @@
 		}
 		if (path === '/api/app/apk.json') return answer({ versionName: '0.1.444', bytes: 2442628 });
 		if (path === '/api/app/music.json') return answer({ versionName: '0.1.448', bytes: 2298392 });
-		if (path === '/api/play/stats') return answer({ active: 0, transcodes: 0 });
+		if (path === '/api/play/stats') return answer({ transcodes: [], limit: 2, gpu: 'Intel Arc A380', load: [0.4, 0.3, 0.3], cores: 8 });
 		if (/^\/api\/play\//.test(path) && path.endsWith('/ticket')) return answer({ prefix: path.slice(0, -'ticket'.length), ticket: 'demo' });
-		if (/^\/api\/play\//.test(path) && path.endsWith('/plan')) return answer({ title: 'Demo playback', mode: 'direct', width: 3840, height: 2160, duration_s: h.resume.duration_s, subtitles: [{ id: 1, lang: 'hr', codec: 'srt', title: 'Croatian', external: true, forced: false }], audio: [{ index: 0, lang: 'en', codec: 'eac3', channels: 6, title: 'English 5.1' }], source: { container: 'mkv', video_codec: 'hevc', width: 3840, height: 2160 }, chapters: [], details: h.about.movie[h.resume.id] });
+		if (/^\/api\/play\//.test(path) && path.endsWith('/plan')) return answer({ title: 'Demo playback', mode: 'direct', width: 3840, height: 2160, codec: 'hevc', kbps: 27600, duration_s: h.resume.duration_s, subtitles: [{ id: 1, lang: 'hr', codec: 'srt', title: 'Croatian', external: true, forced: false }], audio: [{ index: 0, lang: 'en', codec: 'eac3', channels: 6, title: 'English 5.1' }], source: { container: 'mkv', video_codec: 'hevc', width: 3840, height: 2160, frame_rate: 23.976 }, chapters: [], year: h.about.movie[h.resume.id]?.year, runtime_min: h.about.movie[h.resume.id]?.runtime_min, details: h.about.movie[h.resume.id] });
 		return answer({ detail: `Demo fixture is missing ${method} ${path}` }, 404);
 	}
 	window.fetch = async function (input, init) {

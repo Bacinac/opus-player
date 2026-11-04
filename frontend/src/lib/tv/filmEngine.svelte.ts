@@ -3,6 +3,7 @@ import { request, withLang } from '#lib/kit/index.js';
 import { asked, encodable, hears, here } from '#lib/ask/ability.js';
 import { reach } from '#lib/ask/reach.js';
 import type { Card, EngineTrack, Plan } from '#lib/keep/types.js';
+import { pictureSize } from '#lib/say/says.js';
 import { onBox } from '#lib/tv/bridge.js';
 
 type Refused = { failed: (detail: string, status?: number) => void };
@@ -180,7 +181,8 @@ export class FilmEngine {
 		this.text = now.text ?? [];
 		this.decoder = now.decoder ?? '';
 		this.dropped = now.dropped ?? 0;
-		this.picture = (now.picture ?? '').replace('×', ' × ');
+		const [width, height] = (now.picture ?? '').split('×').map(Number);
+		this.picture = width && height ? pictureSize(width, height) : '';
 		this.stalls = now.stalls ?? 0;
 		this.bandwidth = now.bandwidth ?? 0;
 		this.rate = now.rate ?? 0;

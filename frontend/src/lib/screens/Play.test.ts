@@ -45,7 +45,11 @@ async function open(initial: Card, rebuilt = false) {
 	vi.stubGlobal('fetch', async (url: RequestInfo | URL, options?: RequestInit) => {
 		if (String(url) === '/api/progress' && options?.body)
 			reports.push(JSON.parse(String(options.body)));
-		const data = String(url).includes('/api/progress/') ? { position_s: 120 } : { boxes: [], ok: true };
+		const data = String(url).includes('/api/progress/')
+			? { position_s: 120 }
+			: String(url).includes('/api/play/stats')
+				? { transcodes: [], limit: 2, gpu: null }
+				: { boxes: [], ok: true };
 		return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
 	});
 	vi.spyOn(FilmEngine.prototype, 'plan').mockImplementation(async function (
@@ -62,7 +66,9 @@ async function open(initial: Card, rebuilt = false) {
 			mode: under ? 'transcode' : rebuilt ? 'remux' : 'direct', kbps: under ? Math.round(under * 0.7) : 27_600,
 			title: 'Test', duration_s: 1800, subtitles: [], audio: [], chapters: [],
 			source: { video_codec: 'h264', width: 1920, height: 1080, frame_rate: 24 },
-			next: { id: 3381, season_number: 2, number: 2, title: 'Next' }
+			next: { id: 3381, season_number: 2, number: 2, title: 'Next' }, year: 2011, runtime_min: 90,
+			details: { overview: 'Po and the Five.', genres: [], directors: [{ id: 7, name: 'Jennifer Yuh Nelson' }],
+				cast: [{ id: 8, name: 'Jack Black', character: 'Po', profile_url: null }] }
 		} as unknown as Plan };
 	});
 	film.ask(initial);
@@ -134,4 +140,26 @@ test('a narrower stream the server could not be reached for leaves the playing f
 	flushSync();
 	expect(document.querySelector('.problem')).toBeNull();
 	expect(window.opusTv?.play).toHaveBeenCalledOnce();
+});
+
+const press = (key: string) => {
+	(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+	flushSync();
+};
+
+test('the film panel names who directed it, says what is playing, and opens the rest from the remote', async () => {
+	await open(card('movie', 105));
+	flushSync(() => [...document.querySelectorAll<HTMLElement>('[data-control]')].at(-1)!.click());
+	expect(document.querySelector('.facts')?.textContent).toContain('Jennifer Yuh Nelson');
+	expect(document.querySelector('.now')?.textContent).toContain('1920 × 1080');
+	expect(document.querySelector('.cast')).toBeNull();
+	press('ArrowUp');
+	expect(document.activeElement?.hasAttribute('data-more')).toBe(true);
+	press('Enter');
+	expect(window.opusTv?.toggle).not.toHaveBeenCalled();
+	flushSync(() => (document.activeElement as HTMLElement).click());
+	expect(document.querySelector('.cast')?.textContent).toContain('Jack Black');
+	expect(document.querySelector('.detail')).not.toBeNull();
+	press('ArrowLeft');
+	expect(document.querySelector('[data-info]')).toBeNull();
 });

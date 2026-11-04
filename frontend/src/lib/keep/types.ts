@@ -270,7 +270,7 @@ export type Plan = {
 	details?: {
 		overview?: string;
 		genres?: string[];
-		directors?: string[];
+		directors?: Named[];
 		cast?: { id: number; name: string; character: string; profile_url: string | null }[];
 	};
 };

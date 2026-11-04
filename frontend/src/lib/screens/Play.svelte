@@ -12,6 +12,7 @@
 	import { t, formatNumber, formatTime, plural } from '#lib/i18n/index.js';
 	import Press from '#lib/tvui/Press.svelte';
 	import { episodeLabel } from '#lib/say/episode.js';
+	import { pictureSize } from '#lib/say/says.js';
 	import Choose from '#lib/tvui/Choose.svelte';
 	import PlayerBar from '#lib/parts/PlayerBar.svelte';
 	import Captions from '#lib/parts/Captions.svelte';
@@ -459,9 +460,9 @@
 	function screenSize(): string {
 		if (engine.on) {
 			const place = here();
-			if (place.width && place.height) return `${formatNumber(place.width)} × ${formatNumber(place.height)}`;
+			if (place.width && place.height) return pictureSize(place.width, place.height);
 		}
-		return `${formatNumber(panel.w)} × ${formatNumber(panel.h)}${panel.ratio !== 1 ? ` · ${formatNumber(panel.ratio)}×` : ''}`;
+		return `${pictureSize(panel.w, panel.h)}${panel.ratio !== 1 ? ` · ${formatNumber(panel.ratio)}×` : ''}`;
 	}
 
 	/** The tracks on the screen and the track that changes have to be one list,

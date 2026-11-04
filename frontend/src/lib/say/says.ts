@@ -161,3 +161,9 @@ export function namesOf(all: string[]): string {
 		? names[0]
 		: `${names.slice(0, -1).join(', ')} ${t('common.and')} ${names[names.length - 1]}`;
 }
+
+/** A picture's or a screen's size: 3840 × 2160, never with a thousands mark. */
+export function pictureSize(width: number, height: number): string {
+	const plain = { useGrouping: false };
+	return `${formatNumber(width, plain)} × ${formatNumber(height, plain)}`;
+}

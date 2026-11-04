@@ -75,6 +75,28 @@ export class FilmRemote {
 		return this.#film.stage()?.querySelector<HTMLElement>('[data-position]') ?? null;
 	}
 
+	/** The way into the rest of what the film is, while its panel is open. */
+	#more(): HTMLElement | null {
+		return this.#film.stage()?.querySelector<HTMLElement>('[data-more]') ?? null;
+	}
+
+	/** On the panel the remote reads: OK is the button's own, down and up walk
+	 *  an opened panel a page at a time, and down past its end is the film. */
+	#read(event: KeyboardEvent) {
+		const panel = this.#film.stage()?.querySelector<HTMLElement>('[data-info]');
+		const page = (panel?.clientHeight ?? 0) * 0.6;
+		if (event.key === 'ArrowDown') {
+			if (panel && panel.scrollTop + panel.clientHeight < panel.scrollHeight - 1) panel.scrollBy({ top: page });
+			else this.#film.stage()?.focus();
+			event.preventDefault();
+		} else if (event.key === 'ArrowUp') {
+			panel?.scrollBy({ top: -page });
+			event.preventDefault();
+		} else if (event.key === 'ArrowRight') {
+			event.preventDefault();
+		}
+	}
+
 	/** The bar is a visit, not a state. It leaves by itself a few seconds after
 	 *  the last press, the way it would if a hand had stopped moving — a list
 	 *  being read is the one thing that holds it. */
@@ -111,7 +133,10 @@ export class FilmRemote {
 	onkey = (event: KeyboardEvent) => {
 		const film = this.#film;
 		if (!surface.isTv || event.defaultPrevented || !film.ready()) return;
+		const more = this.#more();
+		const reading = more !== null && document.activeElement === more;
 		if (!this.menu && (event.key === 'Escape' || event.key === 'ArrowLeft') && film.hideInfo()) {
+			if (reading) film.stage()?.focus();
 			event.preventDefault();
 			return;
 		}
@@ -130,8 +155,15 @@ export class FilmRemote {
 			}
 			return;
 		}
+		if (reading) {
+			this.#read(event);
+			return;
+		}
 		if (!this.inBar) {
-			if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+			if (event.key === 'ArrowUp' && more) {
+				more.focus();
+				event.preventDefault();
+			} else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
 				film.seek(film.position() + (event.key === 'ArrowRight' ? SKIP_S : -SKIP_S));
 				this.glance();
 				event.preventDefault();
@@ -147,7 +179,8 @@ export class FilmRemote {
 		this.#keepBar();
 		// Up from the controls is the position, and on the position the arrows go
 		// back to being the film while the bar stays up and shows where they are
-		// taking it. Down comes back to the controls; up again puts the bar away.
+		// taking it. Down comes back to the controls; up again puts the bar away,
+		// onto the film's panel where one is open.
 		if (this.scrubbing) {
 			if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
 				// On the position the arrows move by scene where a film has them,
@@ -162,6 +195,7 @@ export class FilmRemote {
 			} else if (event.key === 'ArrowUp' || event.key === 'Escape') {
 				this.scrubbing = false;
 				this.leaveBar();
+				if (event.key === 'ArrowUp') more?.focus();
 			}
 			event.preventDefault();
 			return;

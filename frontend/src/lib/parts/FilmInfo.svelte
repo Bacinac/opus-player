@@ -2,7 +2,9 @@
 	import { art } from '#lib/ask/art.js';
 	import { t, formatNumber } from '#lib/i18n/index.js';
 	import { request } from '#lib/kit/index.js';
+	import Clamped from '#lib/opus/Clamped.svelte';
 	import { genreName } from '#lib/say/genre.js';
+	import { pictureSize as size } from '#lib/say/says.js';
 	import type { Plan } from '#lib/keep/types.js';
 	import Portrait from '#lib/tvui/Portrait.svelte';
 
@@ -24,31 +26,51 @@
 		screen: string;
 	} = $props();
 
+	let opened = $state(false);
+
 	const mbits = (kbps: number) => t('play.mbits', { n: formatNumber(kbps / 1000, { maximumFractionDigits: 1 }) });
 	const exact = (n: number) => formatNumber(n, { maximumFractionDigits: 3 });
-
-	// the panel is a third of the screen and a remote cannot scroll it, so what
-	// is playing is said in one line under the title, above the story
-	const playing = $derived(
-		[
-			onEngine && !rebuilt ? plan.source.video_codec : (plan.codec ?? plan.source.video_codec),
-			onEngine && engine.picture
-				? engine.picture
-				: plan.width && plan.height
-					? `${plan.width} × ${plan.height}`
-					: null,
-			plan.source.frame_rate ? t('play.fps', { n: exact(plan.source.frame_rate) }) : null,
-			plan.kbps ? mbits(plan.kbps) : null,
-			`${t('play.screen')} ${screen}${onEngine && engine.rate ? ` · ${exact(engine.rate)} Hz` : ''}`
-		]
-			.filter(Boolean)
-			.join(' · ')
-	);
+	const said = (...parts: (string | null | false | undefined)[]) => parts.filter(Boolean).join(' · ');
 
 	let quality = $state<{ dropped: number; total: number } | null>(null);
 	let buffered = $state(0);
+	let decoded = $state('');
 	let server = $state<{ transcodes: { cpu_s: number | null; rss_mb: number | null }[];
 		limit: number; gpu: string | null; load?: number[]; cores?: number } | null>(null);
+
+	const directors = $derived((plan.details?.directors ?? []).map((who) => who.name));
+	const facts = $derived(
+		said(
+			plan.year ? String(plan.year) : null,
+			plan.runtime_min ? t('play.minutes', { n: formatNumber(plan.runtime_min) }) : null,
+			...(plan.details?.genres ?? []).map(genreName),
+			directors.length
+				? `${directors.length > 1 ? t('play.directors') : t('play.director')} ${directors.join(', ')}`
+				: null
+		)
+	);
+
+	const now = $derived([
+		{
+			label: t('play.picture'),
+			value: said(
+				onEngine ? engine.picture : decoded || (plan.width && plan.height ? size(plan.width, plan.height) : null),
+				onEngine && !rebuilt ? plan.source.video_codec : (plan.codec ?? plan.source.video_codec),
+				plan.kbps ? mbits(plan.kbps) : null
+			)
+		},
+		{
+			label: t('play.source'),
+			value: said(
+				size(plan.source.width, plan.source.height),
+				plan.source.video_codec,
+				plan.source.container,
+				plan.source.frame_rate ? t('play.fps', { n: exact(plan.source.frame_rate) }) : null
+			)
+		},
+		{ label: t('play.screen'), value: said(screen, onEngine && engine.rate ? `${exact(engine.rate)} Hz` : null) },
+		{ label: t('play.connection'), value: onEngine && engine.bandwidth ? mbits(engine.bandwidth) : '' }
+	].filter((row) => row.value));
 
 	function sample() {
 		if (!video) return;
@@ -56,6 +78,7 @@
 		if (q) quality = { dropped: q.droppedVideoFrames, total: q.totalVideoFrames };
 		const end = video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0;
 		buffered = Math.max(0, end - video.currentTime);
+		decoded = video.videoWidth ? size(video.videoWidth, video.videoHeight) : '';
 	}
 
 	async function askServer() {
@@ -64,159 +87,129 @@
 	}
 
 	$effect(() => {
-		askServer();
+		if (opened) askServer();
+	});
+
+	$effect(() => {
+		sample();
 		const beat = setInterval(() => {
 			sample();
-			askServer();
+			if (opened) askServer();
 		}, 2000);
 		return () => clearInterval(beat);
 	});
 </script>
 
-<aside class="info">
-	{#if plan.details?.overview || plan.details?.cast?.length}
-		<div class="story">
-			<h2>{plan.title}</h2>
-			<p class="facts">
-				{[
-					plan.year,
-					plan.runtime_min ? t('play.minutes', { n: formatNumber(plan.runtime_min) }) : null,
-					...(plan.details.genres ?? []).map(genreName)
-				]
-					.filter(Boolean)
-					.join(' · ')}
-			</p>
-			<p class="playing">{playing}</p>
-			{#if plan.details.directors?.length}
-				<p class="by">
-					<span
-						>{plan.details.directors.length > 1
-							? t('play.directors')
-							: t('play.director')}</span
-					>
-					{plan.details.directors.join(', ')}
-				</p>
-			{/if}
-			{#if plan.details.overview}
-				<p class="overview">{plan.details.overview}</p>
-			{/if}
-			{#if plan.details.cast?.length}
-				<ul class="cast">
-					{#each plan.details.cast as person (person.id)}
-						<li>
-							<Portrait
-								rung="beside"
-								src={person.profile_url ? art(person.profile_url, 154) : undefined}
-								name={person.name}
-							/>
-							<strong>{person.name}</strong>
-							{#if person.character}<em>{person.character}</em>{/if}
-						</li>
-					{/each}
-				</ul>
-			{/if}
+<aside class="info" class:opened data-info>
+	<div class="story">
+		<h2>{plan.title}</h2>
+		{#if facts}<p class="facts">{facts}</p>{/if}
+		<Clamped text={plan.details?.overview ?? ''} bind:opened beyond class="overview" data-more />
+	</div>
+	<dl class="now">
+		{#each now as row (row.label)}
+			<div>
+				<dt>{row.label}</dt>
+				<dd>{row.value}</dd>
+			</div>
+		{/each}
+	</dl>
+	{#if opened}
+		{#if plan.details?.cast?.length}
+			<ul class="cast">
+				{#each plan.details.cast as person (person.id)}
+					<li>
+						<Portrait
+							rung="beside"
+							src={person.profile_url ? art(person.profile_url, 154) : undefined}
+							name={person.name}
+						/>
+						<strong>{person.name}</strong>
+						{#if person.character}<em>{person.character}</em>{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		<div class="detail">
+			<div>
+				<h3>{t('play.server')}</h3>
+				<dl>
+					<dt>{t('play.sent')}</dt>
+					<dd>{onEngine && !rebuilt ? t('play.untouched') : plan.mode}</dd>
+					<dt>{t('play.target')}</dt>
+					<dd>
+						{onEngine && !rebuilt
+							? t('play.noResize')
+							: plan.width && plan.height
+								? size(plan.width, plan.height)
+								: '—'}
+					</dd>
+					<dt>{t('play.transcodes')}</dt>
+					<dd>
+						{server ? `${formatNumber(server.transcodes.length)} / ${formatNumber(server.limit)}` : '—'}{server?.transcodes[0]?.cpu_s != null
+							? ` · ${formatNumber(server.transcodes[0].cpu_s)} s cpu · ${formatNumber(server.transcodes[0].rss_mb ?? 0)} MB`
+							: ''}
+					</dd>
+					<dt>{t('play.load')}</dt>
+					<dd>
+						{server?.load
+							? `${server.load.map((n) => formatNumber(n)).join(' · ')} / ${formatNumber(server.cores ?? 0)}`
+							: '—'}
+					</dd>
+				</dl>
+			</div>
+			<div>
+				<h3>{t('play.local')}</h3>
+				<dl>
+					<dt>{t('play.decoding')}</dt>
+					<dd>
+						{#if onEngine}
+							{engine.decoder || '—'}
+						{:else if plan.mode === 'transcode'}
+							{plan.codec ?? 'h264'} · {t('play.hardware')}
+						{:else if efficient}
+							{plan.source.video_codec} · {t('play.hardware')}
+						{:else}
+							{plan.source.video_codec} · {t('play.software')}
+						{/if}
+					</dd>
+					<dt>{t('play.dropped')}</dt>
+					<dd>
+						{onEngine
+							? formatNumber(engine.dropped)
+							: quality
+								? `${formatNumber(quality.dropped)} / ${formatNumber(quality.total)}`
+								: '—'}
+					</dd>
+					{#if onEngine}
+						<dt>{t('play.stalls')}</dt>
+						<dd>{formatNumber(engine.stalls)}</dd>
+					{:else}
+						<dt>{t('play.buffered')}</dt>
+						<dd>{buffered ? `${formatNumber(buffered, { maximumFractionDigits: 0 })} s` : '—'}</dd>
+					{/if}
+				</dl>
+			</div>
 		</div>
 	{/if}
-	<div>
-		<h3>{t('play.server')}</h3>
-		<dl>
-			<dt>{t('play.source')}</dt>
-			<dd>
-				{[
-					plan.source.video_codec,
-					`${plan.source.height}p`,
-					plan.source.container,
-					plan.source.frame_rate ? t('play.fps', { n: exact(plan.source.frame_rate) }) : null
-				]
-					.filter(Boolean)
-					.join(' · ')}
-			</dd>
-			<dt>{t('play.sent')}</dt>
-			<dd>
-				{onEngine && !rebuilt ? t('play.untouched') : plan.mode}{plan.mode === 'transcode'
-					? ` · ${plan.codec} · ${plan.height}p`
-					: ''}{plan.kbps ? ` · ${mbits(plan.kbps)}` : ''}
-			</dd>
-			<dt>{t('play.target')}</dt>
-			<dd>
-				{onEngine && !rebuilt
-					? t('play.noResize')
-					: plan.width && plan.height
-						? `${plan.width} × ${plan.height}`
-						: '—'}
-			</dd>
-			<dt>{t('play.transcodes')}</dt>
-			<dd>
-				{server ? `${formatNumber(server.transcodes.length)} / ${formatNumber(server.limit)}` : '—'}{server?.transcodes[0]?.cpu_s != null
-					? ` · ${formatNumber(server.transcodes[0].cpu_s)} s cpu · ${formatNumber(server.transcodes[0].rss_mb ?? 0)} MB`
-					: ''}
-			</dd>
-			<dt>{t('play.load')}</dt>
-			<dd>
-				{server?.load
-					? `${server.load.map((n) => formatNumber(n)).join(' · ')} / ${formatNumber(server.cores ?? 0)}`
-					: '—'}
-			</dd>
-		</dl>
-	</div>
-	<div>
-		<h3>{t('play.local')}</h3>
-		<dl>
-			<dt>{t('play.decoding')}</dt>
-			<dd>
-				{#if onEngine}
-					{engine.decoder || '—'}
-				{:else if plan.mode === 'transcode'}
-					h264 · {t('play.hardware')}
-				{:else if efficient}
-					{plan.source.video_codec} · {t('play.hardware')}
-				{:else}
-					{plan.source.video_codec} · {t('play.software')}
-				{/if}
-			</dd>
-			<dt>{t('play.dropped')}</dt>
-			<dd>
-				{onEngine
-					? formatNumber(engine.dropped)
-					: quality
-						? `${formatNumber(quality.dropped)} / ${formatNumber(quality.total)}`
-						: '—'}
-			</dd>
-			{#if onEngine}
-				<dt>{t('play.picture')}</dt>
-				<dd>{engine.picture || '—'}</dd>
-			{/if}
-			<dt>{t('play.screen')}</dt>
-			<dd>{screen}{onEngine && engine.rate ? ` · ${exact(engine.rate)} Hz` : ''}</dd>
-			{#if onEngine}
-				<dt>{t('play.connection')}</dt>
-				<dd>{engine.bandwidth ? mbits(engine.bandwidth) : '—'}</dd>
-				<dt>{t('play.stalls')}</dt>
-				<dd>{formatNumber(engine.stalls)}</dd>
-			{/if}
-			{#if !onEngine}
-				<dt>{t('play.buffered')}</dt>
-				<dd>{buffered ? `${formatNumber(buffered, { maximumFractionDigits: 0 })} s` : '—'}</dd>
-			{/if}
-		</dl>
-	</div>
 </aside>
 
 <style>
 	.info {
-		max-height: 40vh;
-		overflow-y: auto;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
-		gap: 1.5rem;
-		padding: 0.9rem 1.1rem 1.2rem;
+		padding: 0.9rem 1.1rem 1.1rem;
 		background: var(--bg);
 		color: color-mix(in srgb, var(--text) 85%, var(--bg));
 		font-size: var(--fs-s);
 		border-top: 1px solid var(--border);
 	}
+	/* opened, it is read rather than glanced at: as much of the screen as it
+	   needs, and a remote walks it a page at a time */
+	.info.opened {
+		max-height: 85vh;
+		overflow-y: auto;
+	}
 	.story {
-		grid-column: 1 / -1;
+		--lines: 2;
 	}
 	.story h2 {
 		margin: 0;
@@ -224,32 +217,43 @@
 		font-weight: 600;
 		color: var(--bright, var(--text));
 	}
-	.story .facts {
+	.facts {
 		margin: 0.25rem 0 0;
 		color: var(--muted);
 	}
-	.story .playing {
-		margin: 0.25rem 0 0;
-		font-variant-numeric: tabular-nums;
-	}
-	.story .by {
-		margin: 0.5rem 0 0;
-	}
-	.story .by span {
-		color: var(--muted);
-		margin-right: 0.5rem;
-	}
-	.story .overview {
+	.story :global(.overview) {
 		margin: 0.6rem 0 0;
 		max-width: 62ch;
 		font-size: var(--fs-l);
 		line-height: 1.5;
 		color: var(--text);
 	}
+	.story :global(.more) {
+		font-size: var(--fs-m);
+	}
+	.now {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem 2rem;
+		margin: 0.9rem 0 0;
+		font-size: var(--fs-m);
+		font-variant-numeric: tabular-nums;
+	}
+	.now div {
+		display: flex;
+		gap: 0.5rem;
+	}
+	.now dt {
+		color: var(--muted);
+	}
+	.now dd {
+		margin: 0;
+		color: var(--text);
+	}
 	.cast {
 		display: flex;
 		gap: 1rem;
-		margin: 1rem 0 0;
+		margin: 1.1rem 0 0;
 		padding: 0 0 0.3rem;
 		list-style: none;
 		overflow-x: auto;
@@ -273,7 +277,13 @@
 		font-style: normal;
 		color: var(--muted);
 	}
-	.info h3 {
+	.detail {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+		gap: 1.5rem;
+		margin-top: 1.1rem;
+	}
+	.detail h3 {
 		margin: 0 0 0.5rem;
 		font-size: var(--fs-xs);
 		font-weight: 700;
@@ -281,16 +291,16 @@
 		text-transform: uppercase;
 		color: var(--muted);
 	}
-	.info dl {
+	.detail dl {
 		display: grid;
 		grid-template-columns: auto 1fr;
 		gap: 0.3rem 0.9rem;
 		margin: 0;
 	}
-	.info dt {
+	.detail dt {
 		color: var(--muted);
 	}
-	.info dd {
+	.detail dd {
 		margin: 0;
 		font-variant-numeric: tabular-nums;
 	}
