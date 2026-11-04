@@ -301,8 +301,6 @@
 		text-align: center;
 		color: var(--muted);
 	}
-	/* Ten feet away the whole frame grows, not just the cards: the shell's own
-	   header and padding are part of what makes a screen readable from a sofa. */
 	/* The second level takes the screen, and the column the menu kept goes with
 	   it — RELEASED rather than merely uncovered, in the same rule that stops
 	   drawing the menu. Six things reserve room for that column: the shelf's
@@ -313,19 +311,14 @@
 	.surface-tv.deep {
 		--rail-w: 0px;
 	}
-	.surface-tv :global(.shell) {
-		max-width: 1800px;
-		/* The sections keep a column of their own and the shelf begins after it.
-		   No air at the top — the panel that keeps the top of the screen starts
-		   there, and a gap above it is a gap it jumps over the first time you
-		   scroll. */
+	/* A television's frame is the shell's bare one, not the kit's Frame. A page
+	   with its own fixed .screen places itself; a page that just flows (Settings,
+	   About, Help) begins after the menu's column only because of this. */
+	.surface-tv :global(.bare) {
+		max-width: none;
+		margin: 0;
 		padding: 0 var(--tenfoot-pad, 3rem) 0
 			calc(var(--rail-w, 11rem) + var(--tenfoot-pad, 3rem));
-		/* A pill says a fact ABOUT the thing on the screen; it is not the thing.
-		   At 1.05rem it read as a headline and the row of them took the top of
-		   the screen away from what it was describing. Ten feet away it still
-		   has to be legible, which is what keeps it a step above the desk's. */
-		--tag-font: var(--fs-s);
 	}
 	/* The notices stand in the page's column, over the screen that starts below
 	   them, rather than centred across the menu's mark. */
@@ -344,9 +337,6 @@
 	   the whole of what a screen scrolled to reach. */
 	.surface-tv :global(main) {
 		padding-bottom: 0.5rem;
-	}
-	.surface-mobile :global(.shell) {
-		padding: 0 0.9rem;
 	}
 	/* room for the bar the thumb reaches for */
 	.surface-mobile :global(main) {
