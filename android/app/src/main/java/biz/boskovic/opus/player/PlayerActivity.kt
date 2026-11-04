@@ -438,7 +438,11 @@ class PlayerActivity : ComponentActivity() {
             layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            if (isTelevision()) settings.userAgentString = settings.userAgentString + " " + SAYS_TV
+            settings.userAgentString = listOfNotNull(
+                settings.userAgentString,
+                SAYS_TV.takeIf { isTelevision() },
+                Opus.userAgent(this@PlayerActivity),
+            ).joinToString(" ")
             // A remote has nothing to tap with, so no user gesture ever precedes playback.
             settings.mediaPlaybackRequiresUserGesture = false
             // Off a remote a WebView answers requestFocus() by dropping the page's

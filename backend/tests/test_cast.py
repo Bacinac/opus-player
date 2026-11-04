@@ -71,7 +71,7 @@ def test_posting_wakes_only_that_box(boxes):
 
 
 def test_only_a_box_that_was_let_in_has_a_mailbox(monkeypatch, boxes):
-    async def device(token):
+    async def device(token, app=""):
         return auth.Box(7, "Dnevni boravak") if token == "b" * 43 else None
 
     monkeypatch.setattr(auth, "device", device)
@@ -253,7 +253,7 @@ def asleep(monkeypatch, boxes):
     async def episodes(path, **params):
         return [SILO]
 
-    async def device(cookie):
+    async def device(cookie, app=""):
         return auth.Box(7, "Dnevni boravak")
 
     monkeypatch.setattr(cast, "current_runtime", runtime)
@@ -344,7 +344,7 @@ def test_the_phone_moving_on_while_the_television_wakes_wakes_it_once(asleep):
 
 
 def test_the_television_says_which_photograph_it_shows(house_tv, monkeypatch):
-    async def device(cookie):
+    async def device(cookie, app=""):
         return auth.Box(7, "Dnevni boravak")
 
     monkeypatch.setattr(cast.auth, "device", device)
@@ -420,7 +420,7 @@ def receiver(monkeypatch):
         return {2: BoxPreference(box_id=2, amp_source="SHIELD", amp_sink=""),
                 7: BoxPreference(box_id=7, amp_source="Chromecast", amp_sink=MARANTZ)}.get(box)
 
-    async def device(cookie):
+    async def device(cookie, app=""):
         return auth.Box(asking["box"], "box") if asking["box"] else None
 
     async def control(action):

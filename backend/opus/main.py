@@ -71,7 +71,8 @@ async def refusal(request: Request) -> JSONResponse | None:
                               ticket=request.query_params.get("ticket"),
                               box=request.cookies.get(auth.DEVICE_COOKIE),
                               token=request.headers.get(opus_auth.TOKEN_HEADER),
-                              bearer=bearer):
+                              bearer=bearer,
+                              app=auth.app_of(request.headers.get("user-agent"))):
         # somebody who said who they are and is still refused is told so, rather
         # than sent back to a login they already passed
         if (person or bearer) and await auth.person(person, bearer):

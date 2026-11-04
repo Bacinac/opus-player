@@ -76,7 +76,7 @@ def settings_table(monkeypatch):
 def house(monkeypatch, settings_table):
     monkeypatch.setattr(auth, "authority", Roster())
 
-    async def device(token):
+    async def device(token, app=""):
         return BOXES.get(token)
 
     monkeypatch.setattr(auth, "device", device)

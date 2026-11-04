@@ -208,6 +208,13 @@ DEVICE_RETRY = 5.0
 DEVICE_MAX_STALE = 5 * 60.0
 DEVICES_KEPT = 256
 _DEVICE_SHAPE = re.compile(r"^[A-Za-z0-9_-]{43}$")
+# the app names its build in every request it makes, its page's included
+_APP_SAYS = re.compile(r"\bOPUS-player/(v?[0-9][0-9A-Za-z.+-]{0,31})")
+
+
+def app_of(user_agent: str | None) -> str:
+    found = _APP_SAYS.search(user_agent or "")
+    return found.group(1) if found else ""
 
 
 @dataclass(frozen=True)
@@ -307,7 +314,7 @@ async def owns(cookie: str | None) -> bool:
     return found is not None and found.role == ADMIN
 
 
-async def device(token: str | None) -> Box | None:
+async def device(token: str | None, app: str = "") -> Box | None:
     """The box holding this token, if it is still one of ours.
 
     Kept briefly and keyed by a digest rather than by the token itself: this
@@ -335,7 +342,7 @@ async def device(token: str | None) -> Box | None:
     url = f"{authority.url}/api/auth/devices/verify"
     try:
         async with httpx.AsyncClient(timeout=10) as http:
-            resp = await http.post(url, json={"token": token},
+            resp = await http.post(url, json={"token": token, "app": app},
                                    headers={opus_auth.TOKEN_HEADER: authority.token})
             resp.raise_for_status()
             said = resp.json()
@@ -451,7 +458,8 @@ class Way:
 
 
 async def way_in(person_cookie: str | None, box: str | None = None,
-                 token: str | None = None, bearer: str | None = None) -> Way | None:
+                 token: str | None = None, bearer: str | None = None,
+                 app: str = "") -> Way | None:
     """The one answer to whether a request is inside, which the guard and the
     session the frame asks for must never give differently.
 
@@ -465,7 +473,7 @@ async def way_in(person_cookie: str | None, box: str | None = None,
         if found is not None:
             return Way(person=found)
     if box:
-        held = await device(box)
+        held = await device(box, app)
         if held is None:
             return None
         if held.person is None:
@@ -479,7 +487,7 @@ async def way_in(person_cookie: str | None, box: str | None = None,
 
 async def allowed(path: str, person_cookie: str | None = None, ticket: str | None = None,
                   box: str | None = None, token: str | None = None,
-                  bearer: str | None = None) -> bool:
+                  bearer: str | None = None, app: str = "") -> bool:
     """Any of the ways in opens the player. What is behind them differs
     elsewhere: a route that hands over something belonging to one person asks
     for the person itself, not merely for a door to have opened.
@@ -495,7 +503,7 @@ async def allowed(path: str, person_cookie: str | None = None, ticket: str | Non
         return True
     if opus_auth.under(path, ADMIN_PATHS):
         return bool(person_cookie) and await owns(person_cookie)
-    came = await way_in(person_cookie, box, token, bearer)
+    came = await way_in(person_cookie, box, token, bearer, app)
     if came is not None:
         if came.person is None and came.box is None:
             return bool(HOUSE_WALL.match(path)) or (

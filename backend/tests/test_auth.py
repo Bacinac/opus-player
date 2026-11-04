@@ -1,3 +1,4 @@
+import json
 import re
 import time
 from types import SimpleNamespace
@@ -255,10 +256,12 @@ def test_the_chooser_shows_each_person_by_their_face_and_a_box_only_its_own(hous
 class Verifier:
     def __init__(self):
         self.asked = 0
+        self.bodies: list[dict] = []
         self.answer = lambda: httpx.Response(200, json={"ok": True, "id": 3, "name": "Terasa"})
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         self.asked += 1
+        self.bodies.append(json.loads(request.content))
         return self.answer()
 
 
@@ -284,6 +287,15 @@ def test_a_box_is_asked_about_once_a_minute(verifier):
     assert run(auth.device(BOX_TOKEN)) is None
     assert run(auth.device(BOX_TOKEN)) is None
     assert kept.asked == 2
+
+
+def test_a_box_tells_the_library_which_build_it_runs(verifier):
+    kept, _ = verifier
+    page = "Mozilla/5.0 (Linux; Android 11; wv) Chrome/150.0 Safari/537.36 OPUSPlayer/tv OPUS-player/v1.0.65"
+    assert auth.app_of(page) == "v1.0.65"
+    assert auth.app_of("Mozilla/5.0 Chrome/150.0") == ""
+    assert run(auth.allowed("/api/home", box=BOX_TOKEN, app=auth.app_of(page)))
+    assert kept.bodies == [{"token": BOX_TOKEN, "app": "v1.0.65"}]
 
 
 def test_a_box_says_whose_it_is(verifier):
