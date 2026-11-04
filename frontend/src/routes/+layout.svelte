@@ -202,7 +202,7 @@
 	]);
 
 	$effect(() => {
-		if (!watching.album && page.url.pathname.startsWith('/photos')) goto('/');
+		if (watching.album === false && page.url.pathname.startsWith('/photos')) goto('/');
 	});
 
 </script>

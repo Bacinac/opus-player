@@ -19,11 +19,12 @@
 		status,
 		headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
 	});
-	const profile = { key: 'demo', name: 'Nora', colour: '#cf765f', roster: true, audio_languages: 'hr,en', subtitle_languages: 'hr,en', shelf_orders: '' };
-	let people = [profile,
-		{ key: 'bruno', name: 'Bruno', colour: '#4f8e9b', roster: true, audio_languages: 'hr,en', subtitle_languages: 'hr,en', shelf_orders: '' },
-		{ key: 'mia', name: 'Mia', colour: '#8f7ac2', roster: true, audio_languages: 'en,hr', subtitle_languages: 'en,hr', shelf_orders: '' },
-		{ key: 'toma', name: 'Toma', colour: '#7a9b4f', roster: true, audio_languages: 'hr', subtitle_languages: 'hr', shelf_orders: '' }];
+	// the roster's people, each with the face the library says they are
+	const profile = { key: 'demo', name: 'Nora', colour: '#cf765f', face: 501, audio_languages: 'hr,en', subtitle_languages: 'hr,en', screensaver: '' };
+	const people = [profile,
+		{ key: 'bruno', name: 'Bruno', colour: '#4f8e9b', face: 502, audio_languages: 'hr,en', subtitle_languages: 'hr,en', screensaver: 'household' },
+		{ key: 'mia', name: 'Mia', colour: '#8f7ac2', face: 503, audio_languages: 'en,hr', subtitle_languages: 'en,hr', screensaver: '' },
+		{ key: 'toma', name: 'Toma', colour: '#7a9b4f', face: 504, audio_languages: 'hr', subtitle_languages: 'hr', screensaver: 'cameras' }];
 
 	let loading;
 	function catalogue() {
@@ -137,21 +138,102 @@
 		const position = Math.min(onTv.duration, onTv.at + (onTv.since === null ? 0 : (Date.now() - onTv.since) / 1000));
 		return { box: 1, listening: true, transport: onTv.since === null ? 'paused' : 'playing', kind: onTv.kind, item_id: onTv.id, title: onTv.title, artist: onTv.subtitle, cover_url: onTv.cover, position, duration: onTv.duration, photo: photoOnTv };
 	};
+	// The quiz asks only what the demo knows of a photograph — where it was taken,
+	// in which year, which of two came first — and marks it as the server does.
+	const rounds = new Map();
+	const standing = [
+		{ key: 'demo', name: 'Nora', colour: '#cf765f', rounds: 3, points: 2140, best: 960, right: 22, asked: 30 },
+		{ key: 'bruno', name: 'Bruno', colour: '#4f8e9b', rounds: 2, points: 1310, best: 780, right: 13, asked: 20 },
+		{ key: 'mia', name: 'Mia', colour: '#8f7ac2', rounds: 1, points: 690, best: 690, right: 7, asked: 10 }];
+	function quiz(h, count) {
+		const shuffled = (list) => list.map((x) => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(([, x]) => x);
+		const picture = (p) => ({ id: p.id, w: p.w, h: p.h, hash: p.hash, turn: 0 });
+		const facts = (p) => ({ taken_at: p.taken_at, place: h.placeOf(p.id)?.place ?? null, country: h.placeOf(p.id)?.country ?? null, people: [] });
+		const year = (p) => Number(p.taken_at.slice(0, 4));
+		const places = [...new Set(h.places.map((p) => p.place))];
+		const photos = shuffled(h.photos.filter((p) => p.kind === 'image' && h.placeOf(p.id)));
+		const questions = [];
+		for (const p of photos) {
+			if (questions.length >= count) break;
+			const n = questions.length + 1;
+			const kind = ['where', 'when', 'order'][n % 3];
+			if (kind === 'where') {
+				const here = h.placeOf(p.id).place;
+				const options = shuffled([here, ...shuffled(places.filter((x) => x !== here)).slice(0, 3)]).map((x) => ({ key: `l${x}`, label: x }));
+				questions.push({ n, kind, photo: picture(p), options, answer: `l${here}`, facts: facts(p) });
+			} else if (kind === 'when') {
+				const y = year(p);
+				const wrong = shuffled([-4, -3, -2, -1, 1, 2].map((d) => y + d).filter((x) => x <= 2026)).slice(0, 3);
+				const options = [y, ...wrong].sort((a, b) => a - b).map((x) => ({ key: `y${x}`, label: String(x) }));
+				questions.push({ n, kind, photo: picture(p), options, answer: `y${y}`, facts: facts(p) });
+			} else {
+				const other = photos.find((q) => year(q) !== year(p));
+				if (!other) continue;
+				questions.push({ n, kind, photo: picture(p), second: picture(other), options: [{ key: 'a', label: 'A' }, { key: 'b', label: 'B' }],
+					answer: p.taken_at < other.taken_at ? 'a' : 'b', facts: facts(p), second_facts: facts(other) });
+			}
+		}
+		return questions;
+	}
+	function game(h, path, method, body) {
+		if (path === '/api/game/scores') return answer({ standing: clone(standing).sort((a, b) => b.points - a.points), me: 'demo' });
+		if (path === '/api/game/rounds' && method === 'POST') {
+			const id = rounds.size + 1;
+			const questions = quiz(h, Math.min(Number(body.count) || 10, 10));
+			rounds.set(id, { questions, started: {}, total: 0, streak: 0 });
+			return answer({ id, seconds: 20, questions: questions.map(({ answer: _, facts: __, second_facts: ___, ...q }) => q) }, 201);
+		}
+		let match = path.match(/^\/api\/game\/rounds\/(\d+)\/(start|answer)$/);
+		if (match && rounds.has(Number(match[1]))) {
+			const round = rounds.get(Number(match[1]));
+			const n = Number(body.n);
+			if (match[2] === 'start') {
+				round.started[n] = Date.now();
+				return answer({ seconds: 20 });
+			}
+			const q = round.questions[n - 1];
+			const elapsed = (Date.now() - (round.started[n] ?? Date.now())) / 1000;
+			const right = body.key === q.answer;
+			round.streak = right ? round.streak + 1 : 0;
+			const left = Math.max(0, Math.min(1, (20 - elapsed) / 20));
+			const points = right ? Math.round((100 + 100 * left) * Math.min(1 + 0.2 * Math.max(round.streak - 1, 0), 2)) : 0;
+			round.total += points;
+			const done = n === round.questions.length;
+			if (done) {
+				const me = standing.find((s) => s.key === 'demo');
+				Object.assign(me, { rounds: me.rounds + 1, points: me.points + round.total, best: Math.max(me.best, round.total), asked: me.asked + round.questions.length });
+			}
+			if (right) standing.find((s) => s.key === 'demo').right++;
+			return answer({ n, right, seconds: elapsed, points, correct: q.answer, facts: q.facts, second_facts: q.second_facts, total: round.total, streak: round.streak, done });
+		}
+		// together needs phones on the same house; the demo opens the lobby and nobody comes
+		const lobby = { id: 1, seconds: 20, count: 10, host: { key: 'demo', name: 'Nora', colour: '#cf765f' }, mine: 'host', me: 'demo', n: null, left: null, revealed: false, done: false, question: null, players: [] };
+		if (path === '/api/game/parties' && method === 'POST') return answer(lobby, 201);
+		if (path === '/api/game/parties') return answer([]);
+		match = path.match(/^\/api\/game\/parties\/\d+$/);
+		if (match) return answer(method === 'DELETE' ? {} : lobby);
+		return null;
+	}
 	async function api(path, method, url, input, init) {
 		const body = await bodyOf(input, init);
 		const h = await catalogue();
 		if (path === '/api/version') return realFetch('/demo-version.json', { cache: 'no-store' });
-		if (path === '/api/auth/session') return answer({ required: true, authenticated: true, username: 'demo', role: 'admin', person: 'demo', profile });
+		if (path === '/api/auth/session') return answer({ required: true, authenticated: true, box: '', username: 'demo', role: 'admin', person: 'demo', album: true, shelf_orders: '{}', profile: { key: profile.key, name: profile.name, colour: profile.colour } });
 		if (path === '/api/auth/login' || path === '/api/auth/logout' || path === '/api/auth/password') return answer({ ok: true });
 		if (path === '/api/auth/token') return answer({ token: method === 'POST' ? 'opus_demo_new_token' : 'opus_demo_service_token' });
-		if (path === '/api/auth/people') return answer({ people: [{ name: 'demo', display: 'Demo administrator', role: 'admin', disabled: false }, { name: 'obitelj', display: 'Family member', role: 'user', disabled: false }] });
-		if (path === '/api/auth/devices') return answer({ devices: [{ id: 1, name: 'OPUS TV · living room', module: 'player', collected: true, seen_at: '2026-09-19T09:15:00Z' }] });
+		if (path === '/api/auth/people') return answer({ people: [
+			{ name: 'demo', display: 'Demo administrator', role: 'admin', disabled: false, person_id: null, circle: [] },
+			{ name: 'obitelj', display: 'Family member', role: 'user', disabled: false, person_id: 42, circle: [] },
+			{ name: 'gost', display: 'Guest', role: 'guest', disabled: false, person_id: null, circle: [45, 46] }
+		] });
+		if (path === '/api/auth/devices') return answer({ devices: [
+			{ id: 1, name: 'OPUS TV · living room', module: 'player', collected: true, let_in_by: 'demo', let_in_at: '2026-09-01T18:00:00Z', seen_at: '2026-09-19T09:15:00Z', app: 'v1.0.65', person: null },
+			{ id: 2, name: 'Guest room', module: 'player', collected: true, let_in_by: 'demo', let_in_at: '2026-09-12T16:30:00Z', seen_at: '2026-09-18T21:05:00Z', app: 'v1.0.64', person: 'gost' }
+		] });
 		if (path === '/api/auth/cars') return answer({ cars: [{ id: 1, name: 'Family car', seen_at: '2026-09-18T17:20:00Z' }] });
 		if (path.startsWith('/api/auth/')) return answer({ ok: true });
 		if (path === '/api/users' && method === 'GET') return answer(clone(people));
-		if (path === '/api/users' && method === 'POST') { const made = { key: 'new-demo', name: body.name || 'New profile', colour: body.colour || '#777', roster: false }; people.push(made); return answer(made); }
 		if (/^\/api\/users\/[^/]+\/pick$/.test(path)) return answer({ ok: true, profile });
-		if (/^\/api\/users\//.test(path) && method === 'DELETE') { people = people.filter((p) => encodeURIComponent(p.key) !== path.split('/')[3]); return answer({ ok: true }); }
 		if (/^\/api\/users\//.test(path)) return answer({ ok: true });
 		const owned = h.movies.filter((m) => m.state !== 'downloading');
 		const playing = h.tracks.find((t) => t.album === 'Svjetla na rivi' && t.position === 2);
@@ -175,8 +257,8 @@
 			const span = (list) => [Math.min(...list), Math.max(...list)];
 			return answer({
 				movies: { count: owned.length, hours: Math.round(owned.reduce((n, m) => n + m.runtime_min, 0) / 60), span: span(owned.map((m) => m.year)) },
-				series: { count: h.shows.length, episodes: h.episodes.length, span: span(h.shows.map((s) => s.year)) },
-				music: { count: h.artists.length, releases: h.albums.length, span: span(Object.values(h.releases).map((r) => Number(r.release_date.slice(0, 4)))) },
+				series: { count: h.shows.length, episodes: h.episodes.length, hours: Math.round(h.episodes.length * 3 / 60), span: span(h.shows.map((s) => s.year)) },
+				music: { count: h.artists.length, releases: h.albums.length, hours: Math.round(h.tracks.reduce((n, t) => n + t.duration_s, 0) / 3600), span: span(Object.values(h.releases).map((r) => Number(r.release_date.slice(0, 4)))) },
 				photos: { count: h.photos.length, people: h.people.length, places: h.places.length, span: span(h.photos.map((p) => Number(p.taken_at.slice(0, 4)))) }
 			});
 		}
@@ -202,7 +284,7 @@
 			return answer(match[2] ? record(r) : clone(r));
 		}
 		if (/^\/api\/progress\/watched\//.test(path)) return answer({ watched: [h.episodes[0].id], partly: { [h.episodes[1].id]: 0.38 } });
-		if (/^\/api\/progress\//.test(path)) return answer({ position_s: h.resume.position_s, watched: false });
+		if (/^\/api\/progress\//.test(path)) return answer({ position_s: 6, watched: false });
 		if (path === '/api/progress') return answer({ ok: true });
 		if (path === '/api/music/favorites') return answer({ tracks: clone(h.tracks.filter((t) => t.position === 2).slice(0, 5)) });
 		if (path.startsWith('/api/music/favorites/')) return answer({ ok: true });
@@ -211,6 +293,8 @@
 		if (path === '/api/words') return answer({ hr: {}, en: {} });
 		if (path === '/api/explore' || path === '/api/explore/music') return answer({ rows: [{ key: 'trending', cards: [...owned].reverse() }] });
 		if (path.startsWith('/api/explore/want')) return answer({ added: true, name: 'Demo content' });
+		// the world's winners come from TMDB, which a demo does not reach; none of its films won one
+		if (path === '/api/explore/awarded') return answer({ awards: [], cards: [] });
 		if (path.startsWith('/api/explore/')) return answer([]);
 		if (path === '/api/photos/timeline/buckets') {
 			const months = [];
@@ -237,8 +321,17 @@
 		if (path === '/api/photos/vault/keys') return answer({ keys: [] });
 		if (path === '/api/photos/vault/stat') return answer({ files: 0, bytes: 0 });
 		if (path.startsWith('/api/photos/vault')) return answer({ items: [], next: null });
+		if (path.startsWith('/api/game/')) {
+			const said = game(h, path, method, body);
+			if (said) return said;
+		}
 		if (path === '/api/tv/boxes') return answer({ boxes: [{ id: 1, name: 'Living room', listening: true, house: true, wakes: true }] });
 		if (path === '/api/tv/now') return answer(tvNow());
+		// the television's mailbox: the house sends it nothing in a demo, so it waits as the real one does
+		if (path === '/api/tv/inbox') {
+			await new Promise((resolve) => setTimeout(resolve, 25000));
+			return answer({ boot: 'demo', seq: 0, order: null, control: null });
+		}
 		if (path === '/api/tv/open' && method === 'POST') {
 			const found = h.movies.find((m) => m.id === body.id);
 			const episode = h.episodes.find((e) => e.id === body.id);
@@ -261,6 +354,7 @@
 		}
 		if (path === '/api/cast/outputs') return answer({ outputs: [{ id: 'browser', name: 'This browser' }, { id: 'stereo', entity: 'dac', name: 'iFi Zen DAC' }, { id: 'multi', entity: 'tv', name: 'OPUS TV · living room' }] });
 		if (path === '/api/cast/options') return answer({ media: [{ value: 'dac', label: 'iFi Zen DAC' }, { value: 'denon:marantz_main', label: 'Living room · Marantz' }], sources: ['MUSIC', 'SHIELD'], boxes: [{ value: '1', label: 'OPUS TV · living room' }] });
+		if (path === '/api/cast/boxes' && method === 'GET') return answer({ sources: ['MUSIC', 'SHIELD', 'GAME'], boxes: [{ id: 1, name: 'Living room', source: 'SHIELD', wired_on: 'Marantz SR6015', sink: 'Marantz SR6015' }] });
 		if (path === '/api/cast/state') return answer({ transport: 'stopped', title: '', artist: '', album: '', source: null, position: null, duration: null, index: null, volume: 42, mute: false });
 		if (path.startsWith('/api/cast/') || path === '/api/tv/state') return answer({ ok: true });
 		if (path === '/api/storage') return answer({ volumes: [{ holds: ['movies', 'series'], path: '/media/video', total: 8000000000000, used: 4600000000000, free: 3400000000000 }, { holds: ['music', 'photos'], path: '/media/archive', total: 4000000000000, used: 1700000000000, free: 2300000000000 }] });
@@ -268,11 +362,26 @@
 			if (method === 'PUT') settings = settings.map((s) => body[s.key] === undefined || s.secret ? s : { ...s, value: String(body[s.key]) });
 			return answer(clone(settings));
 		}
-		if (path === '/api/app/apk.json') return answer({ versionCode: 10000065, versionName: 'v1.0.65', bytes: 2693951 });
-		if (path === '/api/app/music.json') return answer({ versionName: '0.1.448', bytes: 2298392 });
+		if (path === '/api/app/apk.json' || path === '/api/app/music.json') return realFetch(path, { cache: 'no-store' });
+		if (path === '/api/history' && method === 'GET') {
+			const service = (name) => ({ service: name, account: name === 'listenbrainz' ? 'nora-kovac' : null, waiting: 0, unknown: 0, problem: '' });
+			return answer({ simkl_ready: true, services: [service('listenbrainz'), service('simkl')] });
+		}
+		if (path.startsWith('/api/history/')) return answer({ ok: true });
 		if (path === '/api/play/stats') return answer({ transcodes: [], limit: 2, gpu: 'Intel Arc A380', load: [0.4, 0.3, 0.3], cores: 8 });
 		if (/^\/api\/play\//.test(path) && path.endsWith('/ticket')) return answer({ prefix: path.slice(0, -'ticket'.length), ticket: 'demo' });
-		if (/^\/api\/play\//.test(path) && path.endsWith('/plan')) return answer({ title: 'Demo playback', mode: 'direct', width: 3840, height: 2160, codec: 'hevc', kbps: 27600, duration_s: h.resume.duration_s, subtitles: [{ id: 1, lang: 'hr', codec: 'srt', title: 'Croatian', external: true, forced: false }], audio: [{ index: 0, lang: 'en', codec: 'eac3', channels: 6, title: 'English 5.1' }], source: { container: 'mkv', video_codec: 'hevc', width: 3840, height: 2160, frame_rate: 23.976 }, chapters: [], year: h.about.movie[h.resume.id]?.year, runtime_min: h.about.movie[h.resume.id]?.runtime_min, details: h.about.movie[h.resume.id] });
+		// every film, episode and song plays the demo's one clip, and says so: 20 seconds of Big Buck Bunny
+		match = path.match(/^\/api\/play\/(movie|episode)\/(\d+)\/plan$/);
+		if (match) {
+			const about = h.about.movie[match[2]] ?? (match[1] === 'movie' ? h.about.movie[h.resume.id] : null);
+			return answer({ title: 'Demo playback', mode: 'direct', width: 640, height: 360, codec: 'h264', kbps: 1620, duration_s: 20, subtitles: [],
+				audio: [{ index: 0, lang: 'en', codec: 'aac', channels: 2, title: 'English' }], source: { container: 'mp4', video_codec: 'h264', width: 640, height: 360, frame_rate: 24 },
+				chapters: [], year: about?.year, runtime_min: about?.runtime_min, details: about });
+		}
+		// a song plays the same clip, and its score has no words
+		if (/^\/api\/play\/track\/\d+\/lyrics$/.test(path)) return answer({ source: '', instrumental: true, lines: [], plain: '' });
+		// the road a demo has is the visitor's own to Cloudflare, which nothing here can measure honestly
+		if (path === '/api/play/reach') return new Response(null, { status: 204 });
 		return answer({ detail: `Demo fixture is missing ${method} ${path}` }, 404);
 	}
 	window.fetch = async function (input, init) {

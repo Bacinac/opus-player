@@ -17,8 +17,10 @@ class Watching {
 	 *  nobody, so what belongs to one person is not drawn there at all. */
 	person = $state('');
 	/** whether the family's photographs are open to whoever holds this screen:
-	 *  the server's word, because a guest sees them only through a circle */
-	album = $state(false);
+	 *  the server's word, because a guest sees them only through a circle;
+	 *  null until it has said, so a page opened on the album is not sent away
+	 *  before the answer arrives */
+	album = $state<boolean | null>(null);
 
 	/** Put the question back. */
 	again() {

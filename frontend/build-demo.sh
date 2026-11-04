@@ -23,9 +23,16 @@ mkdir -p "$OUT/api/app"
 cp "$ROOT/android/dist/opus-player.apk" "$OUT/api/app/opus.apk"
 cp "$ROOT/android/dist/opus-player.apk" "$OUT/api/app/opus-tv.apk"
 cp "$ROOT/android/dist/opus-music.apk" "$OUT/api/app/opus-music.apk"
+cp "$ROOT/android/dist/apk.json" "$OUT/api/app/apk.json"
+cp "$ROOT/android/dist/music.json" "$OUT/api/app/music.json"
 cp demo/qr.svg "$OUT/api/app/qr.svg"
 
-printf '/*  /index.html  200\n' > "$OUT/_redirects"
+# a film plays the catalogue's clip; map tiles come from OpenStreetMap, as the library's own do
+cat > "$OUT/_redirects" <<'REDIRECTS'
+/api/play/*  /demo/film/bbb-clip.mp4  200
+/api/tiles/*  https://tile.openstreetmap.org/:splat  302
+/*  /index.html  200
+REDIRECTS
 cat > "$OUT/_headers" <<'HEADERS'
 /api/app/*.apk
   Content-Type: application/vnd.android.package-archive
