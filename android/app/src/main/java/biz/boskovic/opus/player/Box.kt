@@ -3,20 +3,14 @@ package biz.boskovic.opus.player
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.media.AudioDeviceInfo
-import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.MediaFormat
-import android.media.AudioTrack
 import android.media.MediaCodecList
 import android.os.Build
 import android.view.Display
-import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.media3.common.AudioAttributes as Media3AudioAttributes
 import androidx.media3.common.C
-import androidx.media3.common.Format
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.audio.AudioCapabilities
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -68,40 +62,18 @@ object Box {
         "vc1" to "video/wvc1",
     )
 
-    /** The engine's OWN name for a codec, which is not always the platform's.
-     * Media3 calls TrueHD `audio/true-hd` where MediaCodec calls it
-     * `audio/vnd.dolby.mlp`; asking the engine in the platform's word got a
-     * flat no for a format this box passes perfectly well, and the film was
-     * repackaged for nothing. */
-    private val ENGINE_MIME = mapOf(
-        "truehd" to "audio/true-hd",
-        "dts" to "audio/vnd.dts",
-        "dca" to "audio/vnd.dts",
-        "ac3" to "audio/ac3",
-        "eac3" to "audio/eac3",
-    )
-
-    /** Sound the amplifier can be handed whole, even with no decoder here. */
-    private val PASSTHROUGH = mapOf(
-        "ac3" to AudioFormat.ENCODING_AC3,
-        "eac3" to AudioFormat.ENCODING_E_AC3,
-        "dts" to AudioFormat.ENCODING_DTS,
-        "dca" to AudioFormat.ENCODING_DTS,
-        "truehd" to AudioFormat.ENCODING_DOLBY_TRUEHD,
-    )
+    /** ffprobe's second name for DTS, where the sound check knows only one. */
+    private val SAME = mapOf("dca" to "dts")
 
     fun describe(context: Context): String {
         val size = displaySize(context)
+        val heard = SoundCheck.heard(context)
+        val widest = MIME.keys.associateWith { heard[SAME[it] ?: it] ?: 0 }.filterValues { it > 0 }
         return JSONObject()
             .put("w", size.first)
             .put("h", size.second)
-            .put("audio", JSONArray(MIME.keys.filter { plays(context, it) }))
-            .put("widest", JSONObject().also { w ->
-                for (codec in PASSTHROUGH.keys) {
-                    val most = widest(context, codec)
-                    if (most > 0) w.put(codec, most)
-                }
-            })
+            .put("audio", JSONArray(MIME.keys.filter { decodes(it) || it in widest }))
+            .put("widest", JSONObject(widest))
             .put("channels", channels(context))
             .toString()
     }
@@ -156,37 +128,11 @@ object Box {
         return if (most > 0) most else 2
     }
 
-    private fun plays(context: Context, codec: String): Boolean =
-        decodes(codec) || passesThrough(context, codec)
-
     private fun decodes(codec: String): Boolean {
         val mime = MIME[codec] ?: return false
         return MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.any { info ->
             !info.isEncoder && info.supportedTypes.any { it.equals(mime, ignoreCase = true) }
         }
-    }
-
-    private fun passesThrough(context: Context, codec: String): Boolean =
-        widest(context, codec) > 0
-
-    /** The most channels of this codec the amplifier will take whole. Asked of
-     *  the engine with a channel count, never of AudioTrack: the platform can
-     *  say yes to a format the engine then drops, and the film plays silent. */
-    @OptIn(UnstableApi::class)
-    private fun widest(context: Context, codec: String): Int {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return 0
-        val mime = ENGINE_MIME[codec] ?: return 0
-        if (!PASSTHROUGH.containsKey(codec)) return 0
-        val able = AudioCapabilities.getCapabilities(context, SOUND, null, emptyList())
-        for (channels in intArrayOf(8, 6, 2)) {
-            val format = Format.Builder()
-                .setSampleMimeType(mime)
-                .setChannelCount(channels)
-                .setSampleRate(48000)
-                .build()
-            if (able.isPassthroughPlaybackSupported(format, SOUND)) return channels
-        }
-        return 0
     }
 
     /** The panel the picture ends up on, in real pixels: the box draws its own

@@ -17,7 +17,8 @@ import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 
 /** The renderers ExoPlayer would build, with the picture's decoder chosen by
- *  [BaseLayer] and the sound's AudioTrack handed over by [ReleasedFirst]. */
+ *  [BaseLayer], the sound's AudioTrack handed over by [ReleasedFirst], and
+ *  only the surround formats [SoundCheck] heard start passed through. */
 @UnstableApi
 internal class Renderers(private val context: Context) : DefaultRenderersFactory(context) {
     override fun buildVideoRenderers(
@@ -55,8 +56,26 @@ internal class Renderers(private val context: Context) : DefaultRenderersFactory
     ): AudioSink = DefaultAudioSink.Builder(context)
         .setEnableFloatOutput(enableFloatOutput)
         .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
-        .setAudioOutputProvider(ReleasedFirst(AudioTrackAudioOutputProvider.Builder(context).build()))
+        .setAudioOutputProvider(
+            Heard(ReleasedFirst(AudioTrackAudioOutputProvider.Builder(context).build()), SoundCheck.known(context)),
+        )
         .build()
+}
+
+/** The engine asks the platform the same question the page used to, and would
+ *  pick the TrueHD track a box cannot start all over again: refused here, it
+ *  takes the decoder or another track instead. Null is an output never
+ *  checked, where the platform's word is all there is. */
+@UnstableApi
+private class Heard(
+    provider: AudioOutputProvider,
+    private val heard: Map<String, Int>?,
+) : ForwardingAudioOutputProvider(provider) {
+    override fun getFormatSupport(config: AudioOutputProvider.FormatConfig): AudioOutputProvider.FormatSupport {
+        val kind = SoundCheck.kindOf(config.format.sampleMimeType)
+        if (heard != null && kind != null && (heard[kind] ?: 0) == 0) return AudioOutputProvider.FormatSupport.UNSUPPORTED
+        return super.getFormatSupport(config)
+    }
 }
 
 /** Every seek throws the sound's AudioTrack away and opens another. Media3
