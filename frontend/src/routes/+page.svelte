@@ -10,7 +10,7 @@
 	import { onBack } from '#lib/keep/back.svelte.js';
 	import { focusContent } from '#lib/tv/spatial.svelte.js';
 	import { request, withLang } from '#lib/kit/index.js';
-	import { me } from '#lib/opus/index.js';
+	import { watching } from '#lib/keep/watching.svelte.js';
 	import { carryOn } from '#lib/ask/puton.js';
 	import { preview } from '#lib/keep/preview.svelte.js';
 	import { shelves } from '#lib/keep/shelves.svelte.js';
@@ -89,11 +89,11 @@
 
 	// What the whole library holds, for the panel to say before anything on the
 	// screen has been pointed at. The photographs are the fifth kind — except
-	// for a guest, who is trusted with the address and not with the family
-	// album, and to whom a count of it is an inventory of a room they may not
-	// enter.
+	// for a guest outside any circle, who is trusted with the address and not
+	// with the family album, and to whom a count of it is an inventory of a room
+	// they may not enter.
 	const rest = $derived({
-		counts: shelves.everything(['movies', 'series', 'music', ...(me.guest ? [] : ['photos'])])
+		counts: shelves.everything(['movies', 'series', 'music', ...(watching.album ? ['photos'] : [])])
 	});
 </script>
 

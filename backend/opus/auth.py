@@ -135,6 +135,12 @@ HOUSEHOLD_ONLY = ("/api/photos", "/api/explore/want", "/api/game", "/api/tv/phot
 CIRCLE_MAY = ("/api/photos",)
 
 
+def sees_album(person: Person | None) -> bool:
+    """Whether the family's photographs are open to somebody: anybody of the
+    household, and a guest only through the people of their circle."""
+    return person is None or person.role != GUEST or bool(person.circle)
+
+
 # What of the album the house itself may put on the television: somebody of the
 # family through the years, asked for aloud in the living room. The house names
 # a person of the household and never a photograph, so it reaches none of the
@@ -498,7 +504,7 @@ async def allowed(path: str, person_cookie: str | None = None, ticket: str | Non
                      or opus_auth.under(path, HOUSE_SHOWS)))
         return (came.person is None or came.person.role != GUEST
                 or not opus_auth.under(path, HOUSEHOLD_ONLY)
-                or (bool(came.person.circle) and opus_auth.under(path, CIRCLE_MAY)))
+                or (sees_album(came.person) and opus_auth.under(path, CIRCLE_MAY)))
     # A ticket opens the exact item it was signed for, and only on the routes
     # that hand over its bytes, so a leaked ticket is a file for an afternoon
     # rather than a way into the catalogue.

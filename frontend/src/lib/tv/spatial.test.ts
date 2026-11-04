@@ -201,8 +201,23 @@ describe('where nothing holds the remote', () => {
 		expect(focused()?.id).toBe('a1');
 	});
 
-	test('a text field keeps its own arrows', () => {
-		shelf('<input id="q" data-box="200 20 300 40" />');
+	test('a line of text keeps the arrows that move its caret', () => {
+		shelf('<input id="q" data-box="200 20 100 40" />');
+		at('#q').focus();
+		const event = press('ArrowLeft');
+		expect(focused()?.id).toBe('q');
+		expect(event.defaultPrevented).toBe(false);
+	});
+
+	test('up and down leave a line of text', () => {
+		shelf('<input id="q" data-box="200 20 100 40" />');
+		at('#q').focus();
+		press('ArrowDown');
+		expect(focused()?.id).toBe('a1');
+	});
+
+	test('a box of text keeps every arrow', () => {
+		shelf('<textarea id="q" data-box="200 20 100 40"></textarea>');
 		at('#q').focus();
 		const event = press('ArrowDown');
 		expect(focused()?.id).toBe('q');

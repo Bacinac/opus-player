@@ -186,13 +186,14 @@ def test_a_television_is_answered_as_its_box_and_keeps_the_shared_cookie(house, 
     assert not any(value.startswith("opus_session=") for value in response.headers.getlist("set-cookie"))
     said, response = _session({"person": person_cookie("filip"), "box": BOX_TOKEN, "marker": "filip"}, surface="tv")
     assert said["authenticated"] and said["person"] == "" and said["role"] == "" and said["box"] == "Dnevni boravak"
-    assert said["profile"]["key"] == "filip"
+    assert said["profile"]["key"] == "filip" and said["album"] is True
     assert response.headers.getlist("set-cookie") == []
 
 
 def test_a_guest_is_not_somebody_elses_profile(house, profiles):
     said, _ = _session({"person": person_cookie("gost"), "marker": "filip"})
     assert said["authenticated"] and said["role"] == "guest" and said["profile"] is None
+    assert said["album"] is False
 
 
 def test_somebody_s_box_is_that_person_whoever_holds_the_remote(house, monkeypatch):
@@ -203,6 +204,8 @@ def test_somebody_s_box_is_that_person_whoever_holds_the_remote(house, monkeypat
     said, _ = _session({"box": COUSIN_BOX, "marker": "rodjak"}, surface="tv")
     assert said["authenticated"] and said["person"] == "rodjak" and said["role"] == "guest"
     assert said["box"] == "Rodjak" and said["profile"]["key"] == "rodjak"
+    # a guest, and still shown the album: the people of the circle are in it
+    assert said["album"] is True
     # nobody else's profile is to be had on it
     assert run(users.chosen(None, "filip", PEOPLE["rodjak"])) is None
     said, _ = _session({"box": GONE_BOX}, surface="tv")

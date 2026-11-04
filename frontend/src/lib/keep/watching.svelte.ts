@@ -16,6 +16,9 @@ class Watching {
 	 *  themselves. Empty on a television, which is let in as a box and is
 	 *  nobody, so what belongs to one person is not drawn there at all. */
 	person = $state('');
+	/** whether the family's photographs are open to whoever holds this screen:
+	 *  the server's word, because a guest sees them only through a circle */
+	album = $state(false);
 
 	/** Put the question back. */
 	again() {

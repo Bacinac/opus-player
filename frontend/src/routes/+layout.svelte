@@ -54,6 +54,7 @@
 		// picked after it, and stays null until it is
 		watching.profile = (said.profile as Profile | undefined) ?? null;
 		watching.person = String(said.person ?? '');
+		watching.album = said.album === true;
 		if (!watching.person)
 			void forgetKeys().catch((why) => toasts.error(t('vault.forgetFailed', { detail: String(why) })));
 		// the arrangement whoever holds this screen chose last time: the profile
@@ -74,6 +75,9 @@
 	onMount(() => {
 		surface.init();
 		captions.init();
+		// the chooser and the door are drawn outside the shell, and a box left on
+		// either never heard of a deploy
+		version.watch();
 		void check();
 		const unarrow = arrows();
 		return unarrow;
@@ -161,7 +165,8 @@
 	// part one hand cannot reach — and that bar has no room for the pages under a
 	// section, so on a phone they stay the pills in the page's head.
 	// The photographs are the household's own. A guest is trusted with the
-	// address and not handed the family album, so the section is absent rather
+	// address and not handed the family album beyond the people of their
+	// circle, so where there is none the section is absent rather
 	// than present and refused — and the address bar is told as well as the
 	// list, because a page whose every request the door turns away is worse than
 	// a page that was never offered.
@@ -183,7 +188,7 @@
 		{ href: '/series', label: t('nav.series'), icon: icons.series, children: pagesOf('series') },
 		{ href: '/music', label: t('nav.music'), icon: icons.music, children: pagesOf('music') },
 		...(surface.isTv ? [{ href: '/radio', label: t('find.radio') }] : []),
-		...(me.guest
+		...(!watching.album
 			? []
 			: [
 					{
@@ -196,7 +201,7 @@
 	]);
 
 	$effect(() => {
-		if (me.guest && page.url.pathname.startsWith('/photos')) goto('/');
+		if (!watching.album && page.url.pathname.startsWith('/photos')) goto('/');
 	});
 
 </script>

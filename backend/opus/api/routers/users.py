@@ -199,7 +199,7 @@ async def _signed_in(request: Request) -> Person | None:
 async def _faces(me: Person | None) -> dict[int, int]:
     """Each named person's best face, asked as whoever is asking: a guest with
     no circle sees no photograph, so not one of a face either."""
-    if me is not None and me.role == GUEST and not me.circle:
+    if not auth.sees_album(me):
         return {}
     named = await library.get("/photos/people", asking=me.name if me else None)
     return {one["id"]: one["cover"] for one in named if one.get("cover")}

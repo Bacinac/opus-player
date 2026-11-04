@@ -100,6 +100,7 @@ async def auth_session(request: Request, response: Response, surface: str = "",
         # person only when there is one
         "person": person.name if person else "",
         "role": person.role if person else "",
+        "album": auth.sees_album(person),
         "passkey": passkey,
     }
 

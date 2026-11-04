@@ -8,7 +8,6 @@ import asyncio
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from opus_auth import GUEST
 from opus_core.names import croatian
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -518,7 +517,7 @@ async def shelves(request: Request, lang: str = "en"):
     places the family has photographed is the album talking."""
     asking = await auth.asking_for(request)
     found = (await auth.authority.people()).get(asking) if asking else None
-    album = found is None or found.role != GUEST or bool(found.circle)
+    album = auth.sees_album(found)
     movies, series, shelf, radio, *photos = await _all(
         (library.get("/video/movies", lang=lang), []),
         (library.get("/video/series", lang=lang), []),

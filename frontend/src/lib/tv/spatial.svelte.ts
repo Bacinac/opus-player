@@ -761,8 +761,10 @@ export function arrows() {
 		const direction = KEYS[event.key];
 		if (!direction) return;
 		hero.wake();
-		// a text field owns its own arrows — moving the caret is not moving focus
-		if (typing(active)) return;
+		// a text field owns the arrows that move its caret; a single line has no
+		// up or down, and taking those too left the remote with no way out
+		if (typing(active) && !(active instanceof HTMLInputElement && (direction === 'up' || direction === 'down')))
+			return;
 		// An arrow held down goes faster. A wall of two hundred records is four
 		// rows a screen, too long to cross one row at a time. Only the LENGTH of
 		// the press changes the step: one press is always one thing, so nothing
