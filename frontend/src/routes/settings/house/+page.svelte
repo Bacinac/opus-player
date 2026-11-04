@@ -13,7 +13,6 @@
 	import { goto } from '$app/navigation';
 	import { formatBytes, t, type MessageKey } from '#lib/i18n/index.js';
 	import {
-		ArmedButton,
 		Button,
 		Card,
 		Heading,
@@ -21,7 +20,6 @@
 		SaveBar,
 		SettingField,
 		SettingsDraft,
-		json,
 		request
 	} from '#lib/kit/index.js';
 	import {
@@ -29,15 +27,11 @@
 		Tokens
 	} from '#lib/opus/index.js';
 	import type { Profile, Volume } from '#lib/keep/types.js';
-	import { COLOURS } from '#lib/tvui/colours.js';
 	import Portrait from '#lib/tvui/Portrait.svelte';
 	import Wants from '#lib/parts/Wants.svelte';
 	import Wiring, { type Wired } from '#lib/parts/Wiring.svelte';
 
 	let people = $state<Profile[]>([]);
-	let adding = $state('');
-	// the form to name somebody stays shut until it is asked for
-	let naming = $state(false);
 	let plumbing = $state(false);
 	let volumes = $state<Volume[]>([]);
 	const form = new SettingsDraft();
@@ -91,22 +85,6 @@
 		wiring = wired;
 	}
 
-	async function addProfile(event: Event) {
-		event.preventDefault();
-		const made = await request(
-			'/api/users',
-			json({ name: adding, colour: COLOURS[people.length % COLOURS.length] })
-		);
-		if (!made) return;
-		adding = '';
-		naming = false;
-		await load();
-	}
-
-	async function removeProfile(who: Profile) {
-		if (await request(`/api/users/${encodeURIComponent(who.key)}`, { method: 'DELETE' })) await load();
-	}
-
 	// The door already refuses everything behind this page; the address is what
 	// is left, and an address that draws an empty frame is worse than one that
 	// takes you back where you came from. A television is inside as a box and is
@@ -148,13 +126,6 @@
 				<li>
 					<Portrait rung="mark" hue={who.colour || undefined} name={who.name} />
 					<span class="name">{who.name}</span>
-					<!-- Somebody on the roster exists next door and is removed next door.
-					     Only a profile that is nobody's account is this screen's to take
-					     away, and taking it away loses a colour and a language order,
-					     never a person. -->
-					{#if !who.roster}
-						<ArmedButton onconfirm={() => removeProfile(who)}>{t('profiles.remove')}</ArmedButton>
-					{/if}
 
 					<div class="rows">
 						<Wants {who} onchanged={load} />
@@ -162,16 +133,6 @@
 				</li>
 			{/each}
 		</ul>
-
-		{#if naming}
-			<form class="naming" onsubmit={addProfile}>
-				<input bind:value={adding} placeholder={t('profiles.name')} required />
-				<Button tone="primary" type="submit">{t('profiles.add')}</Button>
-				<Button onclick={() => (naming = false)}>{t('common.cancel')}</Button>
-			</form>
-		{:else}
-			<Button tone="primary" onclick={() => (naming = true)}>{t('profiles.add')}</Button>
-		{/if}
 	</section>
 
 	{#if wiring?.boxes.length}
@@ -258,11 +219,6 @@
 
 	.name {
 		flex: 1;
-	}
-	.naming {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
 	}
 	.plumbing {
 		display: grid;

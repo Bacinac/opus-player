@@ -27,8 +27,8 @@
 		 * an error to show a broken picture for — they are a still. */
 		instead?: string;
 		name: string;
-		/** the colour a person is told apart by across a room — COLOURS, or
-		 *  whatever the roster recorded */
+		/** the colour a person is told apart by across a room, where their
+		 *  profile has one */
 		hue?: string;
 		rung: 'mark' | 'beside' | 'face' | 'door';
 	} = $props();

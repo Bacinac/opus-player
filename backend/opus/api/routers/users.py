@@ -14,10 +14,10 @@ a question of bookkeeping and not of secrecy — the questions that are about
 secrecy are asked at the door, and answered by whether somebody signed in as
 themselves.
 
-Somebody with no account at all can still be here: a guest on the sofa is a
-person to keep a place in a film for. Those are the only rows this module makes
-on purpose, and the only ones it will remove — removing anybody else is done
-where they exist, which is next door.
+Nobody is made here. Somebody new to the house, or on the sofa for an evening,
+gets an account next door, as a guest if that is all they are; a profile made
+here as well was a second list of people, and the chooser's way of making one
+was a text field a remote could not leave.
 
 An admin is not offered. The account that keeps the place is not a person who
 watches — it is how the library is maintained, and its half-finished films are
@@ -37,7 +37,7 @@ import opus_auth
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from opus_auth import ADMIN, GUEST
 from opus_auth.authority import Person
-from pydantic import BaseModel, Field, StringConstraints, field_validator
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -81,11 +81,6 @@ def checked_orders(given: str) -> str:
 SCREENSAVER = r"^(|household|cameras|[1-9][0-9]{0,9}(,[1-9][0-9]{0,9})*)$"
 
 
-class NewUser(BaseModel):
-    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
-    colour: Colour = ""
-
-
 class UserPatch(BaseModel):
     colour: Colour | None = None
     audio_languages: str | None = None
@@ -123,10 +118,10 @@ def _watches(said: Person) -> bool:
 
 
 def profile_key(user: User) -> str:
-    """What a profile is called from outside. The roster name where there is
-    one, so the same person is the same key on every surface and survives this
-    database being rebuilt; the local name otherwise."""
-    return user.person or user.name
+    """What a profile is called from outside: the roster name, so the same
+    person is the same key on every surface and survives this database being
+    rebuilt."""
+    return user.person or ""
 
 
 def _json(user: User, display: str | None = None, face: int | None = None) -> dict:
@@ -135,17 +130,13 @@ def _json(user: User, display: str | None = None, face: int | None = None) -> di
             "colour": user.colour,
             # the face in the photographs this person is, for the chooser to show
             "face": face,
-            # whether the roster is what says this person exists, which is the
-            # difference between a profile that can be removed here and one that
-            # cannot
-            "roster": user.person is not None,
             "audio_languages": user.audio_languages,
             "subtitle_languages": user.subtitle_languages,
             "screensaver": user.screensaver}
 
 
 async def _rows(session) -> dict[str, User]:
-    result = await session.execute(select(User))
+    result = await session.execute(select(User).where(User.person.is_not(None)))
     return {profile_key(u): u for u in result.scalars()}
 
 
@@ -239,7 +230,7 @@ async def watching(request: Request, session: AsyncSession, lent: str | None, ki
 
 @router.get("/users")
 async def list_users(request: Request, session: AsyncSession = Depends(get_session)):
-    """Everybody on the roster, then anybody here who is on no roster.
+    """Everybody on the roster who watches.
 
     The roster's order is kept as it arrives — it already sorts by standing and
     then by name, and re-sorting it here would be a second opinion about a list
@@ -251,35 +242,13 @@ async def list_users(request: Request, session: AsyncSession = Depends(get_sessi
     out = [_json(rows.get(name) or User(person=name, name=""), said.display,
                  faces.get(said.person_id) if said.person_id else None)
            for name, said in people.items() if _watches(said) and _may_be(me, name)]
-    out += [_json(u) for key, u in rows.items()
-            if u.person is None and key not in people and _may_be(me, key)]
     return out
 
 
-async def _refuse_guest(request: Request, key: str | None = None) -> None:
+async def _refuse_guest(request: Request, key: str) -> None:
     found = await _signed_in(request)
     if found is not None and found.role == GUEST and key != found.name:
         raise HTTPException(403, "a guest is their own profile and nobody else's")
-
-
-@router.post("/users", status_code=201)
-async def add_user(body: NewUser, request: Request, session: AsyncSession = Depends(get_session)):
-    """Somebody with no account, for the evening. Anybody who came through the
-    door may make one, because that is all a profile has ever been — except a
-    guest, who is somebody with an account and only that."""
-    await _refuse_guest(request)
-    name = body.name
-    if name in await auth.authority.people():
-        # they exist already and are already in the list; a second row under the
-        # same name would be a second person as far as everything here can tell
-        raise HTTPException(409, "somebody on the roster is already called that")
-    if name in await _rows(session):
-        raise HTTPException(409, "somebody here is already called that")
-    user = User(name=name, colour=body.colour)
-    session.add(user)
-    await session.commit()
-    await session.refresh(user)
-    return _json(user)
 
 
 @router.post("/users/{key}/pick")
@@ -290,20 +259,14 @@ async def pick_user(key: str, request: Request, response: Response,
     again; it only writes down who came through it."""
     await _refuse_guest(request, key)
     people = await auth.authority.people()
-    user = (await _rows(session)).get(key)
     # not offered, so not pickable. A list that hides a tile while the route
     # behind it still answers is two answers to one question
-    if key in people and not _watches(people[key]):
+    if key not in people or not _watches(people[key]):
         raise HTTPException(404, "no such profile")
-    if user is None:
-        if key not in people:
-            raise HTTPException(404, "no such profile")
-        user = await _adopt(session, key)
-    elif user.person is not None and user.person not in people:
-        raise HTTPException(404, "no such profile")
+    user = (await _rows(session)).get(key) or await _adopt(session, key)
     opus_auth.set_cookie(response, request, settings.cookie_domain, auth.SESSION_COOKIE,
                          auth.issue(profile_key(user)), auth.SESSION_MAX_AGE)
-    return _json(user, people[key].display if key in people else None)
+    return _json(user, people[key].display)
 
 
 @router.patch("/users/{key}")
@@ -315,13 +278,9 @@ async def edit_user(key: str, body: UserPatch, request: Request,
     answers start out agreeing and then stop."""
     await _refuse_guest(request, key)
     people = await auth.authority.people()
-    if key in people and not _watches(people[key]):
+    if key not in people or not _watches(people[key]):
         raise HTTPException(404, "no such profile")
-    user = (await _rows(session)).get(key)
-    if user is None:
-        if key not in people:
-            raise HTTPException(404, "no such profile")
-        user = await _adopt(session, key)
+    user = (await _rows(session)).get(key) or await _adopt(session, key)
     if body.colour is not None:
         user.colour = body.colour
     if body.audio_languages is not None:
@@ -333,23 +292,4 @@ async def edit_user(key: str, body: UserPatch, request: Request,
     if body.screensaver is not None:
         user.screensaver = body.screensaver
     await session.commit()
-    return _json(user, people[key].display if key in people else None)
-
-
-@router.delete("/users/{key}", status_code=204)
-async def remove_user(key: str, request: Request, session: AsyncSession = Depends(get_session)):
-    """Only somebody who is on no roster. Everybody else exists next door, and a
-    row removed here would simply be made again the next time they sat down —
-    which is the right answer, and the reason not to pretend this removes
-    anybody."""
-    await _refuse_guest(request)
-    user = (await _rows(session)).get(key)
-    if user is None:
-        return
-    if user.person is not None:
-        raise HTTPException(409, "this person is on the roster; remove them there")
-    left = (await session.execute(select(func.count()).select_from(User))).scalar() or 0
-    if left <= 1:
-        raise HTTPException(409, "somebody has to be here")
-    await session.delete(user)
-    await session.commit()
+    return _json(user, people[key].display)

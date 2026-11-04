@@ -4,35 +4,28 @@
 	// has a password.
 	//
 	// Built for the hardest input in the house: four arrow keys and OK. Big
-	// targets, one row, nothing to type.
+	// targets, one row, nothing to type: nobody is made here, everybody on it
+	// has an account in the library.
 
 	import { t } from '#lib/i18n/index.js';
 	import { surface } from '#lib/keep/surface.svelte.js';
 	import { focusFirst } from '#lib/tv/spatial.svelte.js';
 	import type { Profile } from '#lib/keep/types.js';
-	import { COLOURS } from '#lib/tvui/colours.js';
 	import Portrait from '#lib/tvui/Portrait.svelte';
-	import Press from '#lib/tvui/Press.svelte';
-	import { json, request } from '#lib/kit/index.js';
-	import { cropOf, me } from '#lib/opus/index.js';
+	import { request } from '#lib/kit/index.js';
+	import { cropOf } from '#lib/opus/index.js';
 
 	let { onpicked }: { onpicked: () => void } = $props();
 
 	let people = $state<Profile[]>([]);
 	let loading = $state(true);
-	let adding = $state(false);
-	let name = $state('');
 	let problem = $state('');
-
 
 	async function load() {
 		problem = '';
 		const said = await request<Profile[]>('/api/users', {}, { failed: (detail) => (problem = detail) });
 		people = said ?? [];
 		loading = false;
-		// nobody at all, not even on the roster: the first screen is the one that
-		// makes somebody, not one that asks you to choose from nothing
-		adding = said !== null && people.length === 0;
 		// every other screen that arrives on a television puts the remote on
 		// something. This one did not, and a screen where nothing holds the
 		// remote is a screen where OK does nothing at all — which is indis-
@@ -43,21 +36,6 @@
 	async function pick(key: string) {
 		const picked = await request(`/api/users/${encodeURIComponent(key)}/pick`, { method: 'POST' });
 		if (picked) onpicked();
-	}
-
-	async function add(event: Event) {
-		event.preventDefault();
-		problem = '';
-		const made = await request<Profile>(
-			'/api/users',
-			json({ name, colour: COLOURS[people.length % COLOURS.length] }),
-			{ failed: (detail) => (problem = detail) }
-		);
-		if (!made) return;
-		name = '';
-		adding = false;
-		await load();
-		if (people.length === 1) pick(made.key);
 	}
 
 	$effect(() => {
@@ -83,25 +61,9 @@
 					<span class="name">{who.name}</span>
 				</button>
 			{/each}
-
-			{#if !adding && !me.guest}
-				<button class="face add" data-own-mark onclick={() => (adding = true)}>
-					<Portrait rung="door" name="+" />
-					<span class="name">{t('profiles.add')}</span>
-				</button>
-			{/if}
 		</div>
 
-		{#if adding}
-			<form onsubmit={add}>
-				<!-- svelte-ignore a11y_autofocus -->
-				<input bind:value={name} placeholder={t('profiles.name')} autofocus required />
-				<Press tone="go" type="submit">{t('profiles.add')}</Press>
-				{#if people.length}
-					<Press tone="bare" onclick={() => (adding = false)}>{t('common.close')}</Press>
-				{/if}
-			</form>
-		{/if}
+		{#if !people.length && !problem}<p class="muted">{t('profiles.none')}</p>{/if}
 		{#if problem}<p class="problem">{problem}</p>{/if}
 	{/if}
 </div>
@@ -144,11 +106,6 @@
 		border: 3px solid transparent;
 		transition: border-color 0.12s ease;
 	}
-	.add :global(.portrait) {
-		background: transparent;
-		border: 2px dashed var(--border);
-		color: var(--muted);
-	}
 	.face:hover :global(.portrait),
 	.face:focus-visible :global(.portrait) {
 		border-color: var(--accent);
@@ -165,19 +122,6 @@
 	}
 	.tv .faces {
 		gap: 2.6rem;
-	}
-	form {
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-	input {
-		padding: 0.5rem 0.7rem;
-		border-radius: var(--radius-s);
-		border: 1px solid var(--border);
-		background: var(--surface);
-		color: inherit;
-		font: inherit;
 	}
 	.problem {
 		color: var(--danger);

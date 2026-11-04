@@ -55,12 +55,12 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # the name on the roster this belongs to. Null for somebody who has no
-    # account at all — a guest on the sofa is still a person to keep a place in
-    # a film for
+    # the name on the roster this belongs to. Null only on a row from before
+    # profiles came from the roster, which nobody reaches until somebody of the
+    # same name is picked and takes it over, half-finished films and all
     person: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
-    # only for those: whoever is on the roster is called what the roster calls
-    # them, asked fresh every time it is drawn
+    # only on those, for that taking over: whoever is on the roster is called
+    # what the roster calls them, asked fresh every time it is drawn
     name: Mapped[str] = mapped_column(String(64), default="")
     # what tells them apart across the room, where a photograph would be a
     # face too small to read

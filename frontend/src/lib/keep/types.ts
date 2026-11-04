@@ -111,16 +111,12 @@ export type Somebody = {
 export type Row = { key: string; cards: Card[]; label?: string };
 
 export type Profile = {
-	/** the name on the roster, or a local name for somebody who is on none.
-	 *  One key space, because a local profile may not take a roster name. */
+	/** the name on the roster */
 	key: string;
 	name: string;
 	colour: string;
 	/** the face in the photographs this person is, where the roster says */
 	face?: number | null;
-	/** whether the roster is what says this person exists — and so whether they
-	 *  can be removed here at all */
-	roster?: boolean;
 	audio_languages?: string;
 	subtitle_languages?: string;
 	/** what a box's screensaver shows while this profile is picked: '' whoever
