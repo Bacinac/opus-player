@@ -909,7 +909,14 @@
 				onEngine={engine.on}
 				rebuilt={engine.rebuilt}
 				{efficient}
-				engine={{ decoder: engine.decoder, dropped: engine.dropped, picture: engine.picture }}
+				engine={{
+					decoder: engine.decoder,
+					dropped: engine.dropped,
+					picture: engine.picture,
+					rate: engine.rate,
+					stalls: engine.stalls,
+					bandwidth: engine.bandwidth
+				}}
 				screen={screenSize()}
 			/>
 		{/if}

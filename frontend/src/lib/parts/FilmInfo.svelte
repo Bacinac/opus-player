@@ -20,9 +20,12 @@
 		onEngine: boolean;
 		rebuilt: boolean;
 		efficient: boolean | null;
-		engine: { decoder: string; dropped: number; picture: string };
+		engine: { decoder: string; dropped: number; picture: string; rate: number; stalls: number; bandwidth: number };
 		screen: string;
 	} = $props();
+
+	const mbits = (kbps: number) => t('play.mbits', { n: formatNumber(kbps / 1000, { maximumFractionDigits: 1 }) });
+	const exact = (n: number) => formatNumber(n, { maximumFractionDigits: 3 });
 
 	let quality = $state<{ dropped: number; total: number } | null>(null);
 	let buffered = $state(0);
@@ -99,12 +102,21 @@
 		<h3>{t('play.server')}</h3>
 		<dl>
 			<dt>{t('play.source')}</dt>
-			<dd>{plan.source.video_codec} · {plan.source.height}p · {plan.source.container}</dd>
+			<dd>
+				{[
+					plan.source.video_codec,
+					`${plan.source.height}p`,
+					plan.source.container,
+					plan.source.frame_rate ? t('play.fps', { n: exact(plan.source.frame_rate) }) : null
+				]
+					.filter(Boolean)
+					.join(' · ')}
+			</dd>
 			<dt>{t('play.sent')}</dt>
 			<dd>
 				{onEngine && !rebuilt ? t('play.untouched') : plan.mode}{plan.mode === 'transcode'
-					? ` · h264 · ${plan.height}p`
-					: ''}
+					? ` · ${plan.codec} · ${plan.height}p`
+					: ''}{plan.kbps ? ` · ${mbits(plan.kbps)}` : ''}
 			</dd>
 			<dt>{t('play.target')}</dt>
 			<dd>
@@ -156,7 +168,13 @@
 				<dd>{engine.picture || '—'}</dd>
 			{/if}
 			<dt>{t('play.screen')}</dt>
-			<dd>{screen}</dd>
+			<dd>{screen}{onEngine && engine.rate ? ` · ${exact(engine.rate)} Hz` : ''}</dd>
+			{#if onEngine}
+				<dt>{t('play.connection')}</dt>
+				<dd>{engine.bandwidth ? mbits(engine.bandwidth) : '—'}</dd>
+				<dt>{t('play.stalls')}</dt>
+				<dd>{formatNumber(engine.stalls)}</dd>
+			{/if}
 			{#if !onEngine}
 				<dt>{t('play.buffered')}</dt>
 				<dd>{buffered ? `${formatNumber(buffered, { maximumFractionDigits: 0 })} s` : '—'}</dd>

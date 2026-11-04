@@ -28,6 +28,8 @@ export class FilmEngine {
 	// the box measured its own film arriving at
 	stalls = $state(0);
 	bandwidth = $state(0);
+	// the panel's refresh rate, in Hz
+	rate = $state(0);
 
 	#query = '';
 	#pass = '';
@@ -164,6 +166,7 @@ export class FilmEngine {
 			picture: string;
 			stalls?: number;
 			bandwidth?: number;
+			rate?: number;
 			error?: string;
 		};
 		// no player behind the engine — between two films, or while the panel
@@ -180,6 +183,7 @@ export class FilmEngine {
 		this.picture = now.picture ?? '';
 		this.stalls = now.stalls ?? 0;
 		this.bandwidth = now.bandwidth ?? 0;
+		this.rate = now.rate ?? 0;
 		if (now.error && now.error !== this.#said) this.#failed(t('play.engineFailed', { detail: now.error }));
 		this.#said = now.error ?? '';
 		return now.ended;

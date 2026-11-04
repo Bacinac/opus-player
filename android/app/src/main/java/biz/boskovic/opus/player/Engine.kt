@@ -252,6 +252,7 @@ class Engine(private val host: Activity, private val screen: PlayerView) {
         .put("decoder", decoder)
         .put("dropped", dropped)
         .put("picture", picture)
+        .put("rate", (screen.display?.mode?.refreshRate ?: 0f).toDouble())
         .put("stalls", stalls)
         .put("bandwidth", meter.bitrateEstimate / 1000)
         .put("error", failure)

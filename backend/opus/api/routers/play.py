@@ -183,6 +183,7 @@ async def plan(kind: str, item_id: int, can_decode: bool = False,
         "reason": chosen.reason,
         "width": chosen.width,
         "height": chosen.height,
+        "codec": chosen.codec,
         # what this stream asks of the connection per second
         "kbps": chosen.kbps or playback.carried_kbps(media),
         "gpu": playback.gpu_available(),
