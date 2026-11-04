@@ -110,7 +110,7 @@ _waiting: dict[int, tuple[dict, float]] = {}
 
 
 async def _this_box(request: Request) -> _TvChannel:
-    box = await auth.device(request.cookies.get(auth.DEVICE_COOKIE))
+    box = await auth.box_of(request)
     if box is None:
         raise HTTPException(403, "only a television that was let in has a mailbox")
     channel = _boxes.get(box.id)
@@ -943,7 +943,7 @@ async def tv_video(request: Request):
     Stopping MPD prevents the previous iFi record from continuing underneath
     the picture it has just been turned away from."""
     config = await current_runtime()
-    box = await auth.device(request.cookies.get(auth.DEVICE_COOKIE))
+    box = await auth.box_of(request)
     try:
         if await _to_box(config, box.id if box else None):
             try:

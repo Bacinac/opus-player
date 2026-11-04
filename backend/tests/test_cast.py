@@ -75,11 +75,11 @@ def test_only_a_box_that_was_let_in_has_a_mailbox(monkeypatch, boxes):
         return auth.Box(7, "Dnevni boravak") if token == "b" * 43 else None
 
     monkeypatch.setattr(auth, "device", device)
-    held = SimpleNamespace(cookies={auth.DEVICE_COOKIE: "b" * 43})
+    held = SimpleNamespace(cookies={auth.DEVICE_COOKIE: "b" * 43}, headers={})
     first = run(cast._this_box(held))
     assert first.box.id == 7 and run(cast._this_box(held)) is first
     with pytest.raises(HTTPException) as refused:
-        run(cast._this_box(SimpleNamespace(cookies={})))
+        run(cast._this_box(SimpleNamespace(cookies={}, headers={})))
     assert refused.value.status_code == 403
 
 
@@ -268,7 +268,7 @@ def test_a_film_sent_to_a_sleeping_television_wakes_it_and_waits_for_it(asleep):
     run(cast.tv_open(cast.TvOpen(kind="episode", id=2934, lang="hr", box=7, at=600.0), request()))
     assert asleep == [("androidtv:streamer_living_room", "source", "set_source",
                        {"value": cast.TV_APP})]
-    door = SimpleNamespace(cookies={})
+    door = SimpleNamespace(cookies={}, headers={})
     # the screen's first question only learns where the count stands; an order
     # posted before it would be history to it
     first = run(cast.tv_inbox(door))
@@ -348,7 +348,7 @@ def test_the_television_says_which_photograph_it_shows(house_tv, monkeypatch):
         return auth.Box(7, "Dnevni boravak")
 
     monkeypatch.setattr(cast.auth, "device", device)
-    door = SimpleNamespace(cookies={})
+    door = SimpleNamespace(cookies={}, headers={})
     run(cast.tv_state(cast.TvState(kind="none", playing=False, photo=PHOTO), door))
     now = run(cast.tv_now())
     assert (now["transport"], now["photo"]) == ("idle", PHOTO)
@@ -438,7 +438,7 @@ def receiver(monkeypatch):
 def test_a_film_turns_the_receiver_to_the_box_that_plays_it(receiver, box, source):
     told, asking = receiver
     asking["box"] = box
-    run(cast.tv_video(SimpleNamespace(cookies={})))
+    run(cast.tv_video(SimpleNamespace(cookies={}, headers={})))
     assert told == [("turn_on", None), ("set_source", {"value": source}),
                     ("set_video_select", {"value": "off"}), ("dac", "stop")]
 
@@ -447,7 +447,7 @@ def test_a_film_turns_the_receiver_to_the_box_that_plays_it(receiver, box, sourc
 def test_a_box_the_receiver_does_not_carry_leaves_the_receiver_and_the_record_alone(receiver, box):
     told, asking = receiver
     asking["box"] = box
-    run(cast.tv_video(SimpleNamespace(cookies={})))
+    run(cast.tv_video(SimpleNamespace(cookies={}, headers={})))
     assert told == []
 
 
@@ -459,7 +459,7 @@ def test_a_box_carried_to_another_screen_leaves_the_receiver_alone(receiver, mon
     told, asking = receiver
     asking["box"] = 7
     monkeypatch.setitem(cast._boxes, 7, SimpleNamespace(sink=sink))
-    run(cast.tv_video(SimpleNamespace(cookies={})))
+    run(cast.tv_video(SimpleNamespace(cookies={}, headers={})))
     assert bool(told) is turned
 
 

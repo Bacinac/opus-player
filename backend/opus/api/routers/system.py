@@ -68,7 +68,8 @@ async def auth_session(request: Request, response: Response, surface: str = "",
     drawing a profile every request under it is refused."""
     person_cookie = None if surface in auth.BOXES else request.cookies.get(opus_auth.SESSION_COOKIE)
     came = await auth.way_in(person_cookie, request.cookies.get(auth.DEVICE_COOKIE),
-                             request.headers.get(opus_auth.TOKEN_HEADER), auth.bearer_of(request))
+                             request.headers.get(opus_auth.TOKEN_HEADER), auth.bearer_of(request),
+                             auth.app_of(request.headers.get("user-agent")))
     cookie = request.cookies.get(auth.SESSION_COOKIE)
     passkey = surface not in auth.BOXES and _door(request) is not None
     if came is None:
@@ -125,7 +126,7 @@ class BoxPatch(BaseModel):
 @router.patch("/box")
 async def edit_box(body: BoxPatch, request: Request, session: AsyncSession = Depends(get_session)):
     """What a television keeps for itself while nobody is picked on it."""
-    box = await auth.device(request.cookies.get(auth.DEVICE_COOKIE))
+    box = await auth.box_of(request)
     if box is None:
         raise HTTPException(401, "only a box that was let in keeps anything of its own")
     kept = await session.get(BoxPreference, box.id) or BoxPreference(box_id=box.id)

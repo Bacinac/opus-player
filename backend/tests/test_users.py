@@ -32,7 +32,7 @@ def test_a_screensaver_is_people_the_library_knows_or_one_of_its_words():
 
 
 def test_only_a_box_keeps_orders_of_its_own(monkeypatch):
-    async def nobody(token):
+    async def nobody(token, app=""):
         return None
 
     monkeypatch.setattr(users.auth, "device", nobody)

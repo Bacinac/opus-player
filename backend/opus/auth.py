@@ -217,6 +217,10 @@ def app_of(user_agent: str | None) -> str:
     return found.group(1) if found else ""
 
 
+async def box_of(request) -> Box | None:
+    return await device(request.cookies.get(DEVICE_COOKIE), app_of(request.headers.get("user-agent")))
+
+
 @dataclass(frozen=True)
 class Box:
     id: int
@@ -372,7 +376,8 @@ async def asking_for(request) -> str | None:
     signed in, or the one whose box this is. A household's box is nobody.
     Asked exactly as the guard asks, so the two cannot name different people."""
     came = await way_in(request.cookies.get(opus_auth.SESSION_COOKIE), request.cookies.get(DEVICE_COOKIE),
-                        request.headers.get(opus_auth.TOKEN_HEADER), bearer_of(request))
+                        request.headers.get(opus_auth.TOKEN_HEADER), bearer_of(request),
+                        app_of(request.headers.get("user-agent")))
     return came.person.name if came is not None and came.person is not None else None
 
 

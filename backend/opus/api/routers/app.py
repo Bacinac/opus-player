@@ -119,7 +119,7 @@ async def _reporter(request: Request) -> str:
     """Who is reporting, under an open prefix: the car's bearer, a person's
     cookie or a box that was let in. A stranger cannot fill the log."""
     found = await auth.person(request.cookies.get(opus_auth.SESSION_COOKIE), auth.bearer_of(request))
-    box = None if found else await auth.device(request.cookies.get(auth.DEVICE_COOKIE))
+    box = None if found else await auth.box_of(request)
     if found is None and box is None:
         raise HTTPException(401, "authentication required")
     return found.name if found else box.name
