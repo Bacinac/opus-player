@@ -24,6 +24,7 @@
 	import { formatBytes } from '#lib/i18n/index.js';
 	import type { Profile } from '#lib/keep/types.js';
 	import { surface } from '#lib/keep/surface.svelte.js';
+	import { nav } from '#lib/tvui/nav.svelte.js';
 	import Wants from '#lib/parts/Wants.svelte';
 	import Cars from '#lib/parts/Cars.svelte';
 	import History from '#lib/parts/History.svelte';
@@ -64,6 +65,10 @@
 	$effect(() => {
 		load();
 	});
+
+	// on a television settings takes the screen: no menu beside it, and back
+	// is the one way out
+	$effect(() => (surface.isTv ? nav.takes() : undefined));
 </script>
 
 <section>

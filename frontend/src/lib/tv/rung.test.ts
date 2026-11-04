@@ -37,6 +37,20 @@ describe('back on a television', () => {
 		expect(rung.asked(asked)).toBe(false);
 	});
 
+	test('from settings is wherever settings was opened from', () => {
+		rung.went(url('/series/12'), url('/settings'));
+		expect(rung.climb(url('/settings'))).toBe(true);
+		expect(goto).toHaveBeenCalledWith('/series/12', { replace: true });
+		expect(rung.leaving).toBe(false);
+	});
+
+	test('from settings nobody remembers opening is the home screen', () => {
+		draw('<main><button id="b" data-box="200 100 100 40"></button></main>');
+		expect(rung.climb(url('/settings'))).toBe(true);
+		expect(goto).toHaveBeenCalledWith('/', { replace: true });
+		expect(rung.leaving).toBe(false);
+	});
+
 	test('does not remember going somewhere that is not a question', () => {
 		rung.went(url('/movies'), url('/movies/7'));
 		expect(rung.asked(url('/movies/7'))).toBe(false);

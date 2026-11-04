@@ -11,15 +11,21 @@ const here = (url: ReadonlyURL) => url.pathname + url.search;
 const depth = (url: ReadonlyURL) => url.pathname.split('/').filter(Boolean).length;
 const inMenu = () => Boolean(document.activeElement?.closest('nav.rail'));
 
+/** Settings is not a place in the menu: it is opened from wherever you were and
+ *  takes the screen until you leave it. */
+const SETTINGS = '/settings';
+const opened = (url: ReadonlyURL) => pageOf(url.searchParams) === 'discover' || url.pathname === SETTINGS;
+
 class Rung {
 	/** Nothing left to climb: what back can still mean is offered instead. */
 	leaving = $state(false);
 	#askedFrom = new Map<string, string>();
 
 	/** A question — everything one actor was in — is asked from a page, and the
-	 *  rung above it is that page, not the section it happens to be answered on. */
+	 *  rung above it is that page, not the section it happens to be answered on.
+	 *  Settings likewise. */
 	went(from: ReadonlyURL, to: ReadonlyURL) {
-		if (here(from) === here(to) || pageOf(to.searchParams) !== 'discover') return;
+		if (here(from) === here(to) || !opened(to)) return;
 		if (!this.#askedFrom.has(here(to))) this.#askedFrom.set(here(to), here(from));
 	}
 
@@ -33,7 +39,9 @@ class Rung {
 			this.leaving = false;
 			return true;
 		}
-		const asked = this.#askedFrom.get(here(url));
+		// Settings opened before a reload forgot where from; the home screen is
+		// the one place that is always there to go back to
+		const asked = this.#askedFrom.get(here(url)) ?? (url.pathname === SETTINGS ? '/' : undefined);
 		if (asked) {
 			this.#askedFrom.delete(here(url));
 			goto(asked, { replace: true });
