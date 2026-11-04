@@ -271,38 +271,3 @@ describe('OK', () => {
 		expect(event.defaultPrevented).toBe(false);
 	});
 });
-
-describe('the notice of a newer build', () => {
-	const NOTICE = (y: number) =>
-		`<div class="bar" role="status"><button id="reload" data-box="400 ${y} 80 30"></button></div>`;
-
-	test('up off the top reaches it, and down comes back', () => {
-		shelf('', NOTICE(10));
-		at('#a2').focus();
-		press('ArrowUp');
-		expect(focused()?.id).toBe('reload');
-		press('ArrowDown');
-		expect(focused()?.id).toBe('a2');
-	});
-
-	test('the sections reach it too', () => {
-		shelf('', NOTICE(10));
-		at('#films').focus();
-		press('ArrowUp');
-		expect(focused()?.id).toBe('reload');
-	});
-
-	test('it is not a row of the screen it stands over', () => {
-		shelf('', NOTICE(260));
-		at('#b2').focus();
-		press('ArrowUp');
-		expect(focused()?.id).toBe('a2');
-	});
-
-	test('it is not the transport', () => {
-		shelf('', BAR + NOTICE(10));
-		at('#b2').focus();
-		press('ArrowDown');
-		expect(focused()?.id).toBe('prev');
-	});
-});
